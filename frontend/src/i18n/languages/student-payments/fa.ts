@@ -1,18 +1,18 @@
 export const studentPaymentsFa = {
-  studentPayments: "پرداختهای دانشآموزان",
+  studentPayments: "پرداخت های شاگردان",
   addPayment: "افزودن پرداخت",
   editPayment: "ویرایش پرداخت",
   paymentDetails: "جزئیات پرداخت",
   paymentInformation: "اطلاعات پرداخت",
 
   // Export
-  exportPayments: "صادرات پرداختهای دانشآموزان",
-  exportDescription: "صادرات پرداختهای دانشآموزان با تفکیک ماهانه به اکسل",
+  exportPayments: "صادرات پرداخت های شاگردان",
+  exportDescription: "صادرات پرداخت های شاگردان با تفکیک ماهانه به اکسل",
   exportToExcel: "صادرات به اکسل",
   startDate: "تاریخ شروع",
   endDate: "تاریخ پایان",
-  selectClassLevels: "انتخاب سطح کلاس (اختیاری - انتخاب چندگانه برگههای جداگانه ایجاد میکند)",
-  multiTabInfo: "چند کلاس انتخاب شده - هر کلاس برگه مخصوص خود را خواهد داشت",
+  selectClassLevels: "انتخاب سطح صنف (اختیاری - انتخاب چندگانه برگههای جداگانه ایجاد میکند)",
+  multiTabInfo: "چند صنف انتخاب شده - هر صنف برگه مخصوص خود را خواهد داشت",
 
   // Payment Information
   amount: "مبلغ",
@@ -25,8 +25,8 @@ export const studentPaymentsFa = {
   description: "توضیحات",
   receipt: "رسید",
   currency: "ارز",
-  student: "دانشآموز",
-  selectStudent: "انتخاب دانشآموز",
+  student: "شاگرد",
+  selectStudent: "انتخاب شاگرد",
   selectStatus: "انتخاب وضعیت",
   selectMonth: "انتخاب ماه",
   selectCycle: "انتخاب چرخه",
@@ -58,7 +58,7 @@ export const studentPaymentsFa = {
   markAsRefunded: "علامتگذاری به عنوان برگشت خورده",
 
   // UI Components
-  managePayments: "مدیریت سوابق پرداخت دانشآموزان",
+  managePayments: "مدیریت سوابق پرداخت شاگردان",
   searchPayments: "جستجوی پرداختها...",
   filterByStatus: "فیلتر بر اساس وضعیت",
   filterByDate: "فیلتر بر اساس تاریخ",
@@ -80,6 +80,6 @@ export const studentPaymentsFa = {
     amount: "مبلغ الزامی است",
     paymentDate: "تاریخ پرداخت الزامی است",
     paymentStatus: "وضعیت پرداخت الزامی است",
-    student: "دانشآموز الزامی است"
+    student: "شاگرد الزامی است"
   }
 };

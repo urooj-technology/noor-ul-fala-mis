@@ -11,8 +11,8 @@ export const studentPaymentsPs = {
   exportToExcel: "ایکسل ته صادرات",
   startDate: "د پیل نیټه",
   endDate: "د پای نیټه",
-  selectClassLevels: "د کلاس کچې وټاکئ (اختیاري - ډیری انتخاب جلا ټبونه جوړوي)",
-  multiTabInfo: "څو کلاسونه غوره شوي - هر کلاس به خپل جلا ټب ولري",
+  selectClassLevels: "د صنف کچې وټاکئ (اختیاري - ډیری انتخاب جلا ټبونه جوړوي)",
+  multiTabInfo: "څو صنفونه غوره شوي - هر صنف به خپل جلا ټب ولري",
 
   // Payment Information
   amount: "مقدار",

@@ -8,11 +8,11 @@ export const reportsFa = {
   reportType: 'نوع گزارش',
   summary: 'خلاصه',
   trialBalance: 'تراز آزمایشی',
-  incomeStatement: 'صورت سود و زیان',
+  incomeStatement: 'صورت فایده و زیان',
   balanceSheet: 'ترازنامه',
-  studentPayments: 'پرداخت دانش‌آموزان',
+  studentPayments: 'پرداخت شاگردان',
   payroll: 'حقوق و دستمزد',
-  rental: 'درآمد اجاره',
+  rental: 'درآمد کرایه',
   expenses: 'هزینه‌ها',
   dailyReport: 'گزارش روزانه',
   
@@ -37,8 +37,8 @@ export const reportsFa = {
   income: 'درآمد',
   totalIncome: 'کل درآمد',
   projectIncome: 'درآمد پروژه',
-  studentPaymentsIncome: 'پرداخت دانش‌آموزان',
-  rentalIncome: 'درآمد اجاره',
+  studentPaymentsIncome: 'پرداخت شاگردان',
+  rentalIncome: 'درآمد کرایه',
   otherIncome: 'درآمد سایر',
   
   // Expense Categories
@@ -49,8 +49,8 @@ export const reportsFa = {
   advanceExpenses: 'پیش‌پرداخت‌ها',
   
   // Financial Results
-  profit: 'سود',
-  netProfit: 'سود خالص',
+  profit: 'فایده',
+  netProfit: 'فایده خالص',
   netLoss: 'زیان خالص',
   netIncome: 'درآمد خالص',
   
@@ -113,7 +113,7 @@ export const reportsFa = {
   expenseDetails: 'جزئیات هزینهها',
   incomeBreakdown: 'تفکیک درآمد',
   expenseBreakdown: 'تفکیک هزینهها',
-  expenseByCategory: 'هزینهها بر اساس دستهبندی',
+  expenseByCategory: 'هزینهها بر اساس کتگوری',
   advances: 'پیشپرداختها',
   loadingReport: 'در حال بارگذاری گزارش...',
   

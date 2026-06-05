@@ -64,7 +64,7 @@ export const advanceFa = {
   edit: 'ویرایش',
   delete: 'حذف',
   view: 'مشاهده',
-  manageEmployeeAdvances: 'مدیریت پیشپرداختهای کارمندان',
+  manageEmployeeAdvances: 'مدیریت پیشپرداخت های کارمندان',
   searchAdvances: 'جستجوی پیشپرداختها...',
   filterByEmployee: 'فیلتر بر اساس کارمند',
   filterByMonth: 'فیلتر بر اساس ماه',

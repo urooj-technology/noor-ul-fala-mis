@@ -7,22 +7,22 @@ export const otherIncomeFa = {
   
   // Income Information
   amount: "مبلغ",
-  category: "دستهبندی",
+  category: "کتگوری",
   incomeDate: "تاریخ درآمد",
   source: "منبع",
   description: "توضیحات",
   receipt: "رسید",
   currency: "ارز",
-  selectCategory: "انتخاب دستهبندی",
+  selectCategory: "انتخاب کتگوری",
   enterAmount: "مبلغ را وارد کنید",
   enterSource: "منبع را وارد کنید",
   enterDescription: "توضیحات را وارد کنید",
   afn: "AFN - افغانی",
   usd: "USD - دلار آمریکا",
-  allCategories: "همه دستهبندیها",
+  allCategories: "همه کتگوریها",
   
   // Category Types
-  categoryType: "نوع دستهبندی",
+  categoryType: "نوع کتگوری",
   categoryTypes: {
     service: "درآمد خدماتی",
     miscellaneous: "متفرقه",
@@ -32,16 +32,16 @@ export const otherIncomeFa = {
   },
   
   // Category Management
-  incomeCategories: "دستهبندیهای درآمد",
-  categoryName: "نام دستهبندی",
-  addCategory: "افزودن دستهبندی",
-  editCategory: "ویرایش دستهبندی",
-  deleteCategory: "حذف دستهبندی",
-  manageCategories: "مدیریت دستهبندیهای درآمد",
-  searchCategories: "جستجوی دستهبندیها...",
-  noCategoriesFound: "هیچ دستهبندی یافت نشد",
-  addFirstCategory: "برای شروع اولین دستهبندی را اضافه کنید",
-  loadingCategories: "بارگذاری دستهبندیها...",
+  incomeCategories: "کتگوریهای درآمد",
+  categoryName: "نام کتگوری",
+  addCategory: "افزودن کتگوری",
+  editCategory: "ویرایش کتگوری",
+  deleteCategory: "حذف کتگوری",
+  manageCategories: "مدیریت کتگوریهای درآمد",
+  searchCategories: "جستجوی کتگوریها...",
+  noCategoriesFound: "هیچ کتگوری یافت نشد",
+  addFirstCategory: "برای شروع اولین کتگوری را اضافه کنید",
+  loadingCategories: "بارگذاری کتگوریها...",
   tryAdjustingSearch: "لطفاً عبارت جستجو خود را تغییر دهید",
   status: "وضعیت",
   active: "فعال",
@@ -56,26 +56,26 @@ export const otherIncomeFa = {
   // UI Components
   manageIncome: "مدیریت سوابق درآمد دیگر",
   searchIncome: "جستجوی درآمدها...",
-  filterByCategory: "فیلتر بر اساس دستهبندی",
+  filterByCategory: "فیلتر بر اساس کتگوری",
   filterByDate: "فیلتر بر اساس تاریخ",
   clearFilters: "پاک کردن فیلترها",
   noIncomeFound: "هیچ درآمدی یافت نشد",
   tryAdjustingSearch: "لطفاً عبارت جستجو خود را تغییر دهید",
   addFirstIncome: "برای شروع اولین درآمد خود را اضافه کنید",
   loadingIncome: "در حال بارگذاری درآمدها...",
-  allCategories: "همه دستهبندیها",
+  allCategories: "همه کتگوریها",
   
   // Summary
   dailySummary: "خلاصه روزانه درآمد",
   monthlySummary: "خلاصه ماهانه درآمد",
   totalAmount: "مجموع مبلغ",
   incomeCount: "تعداد درآمدها",
-  byCategory: "درآمد بر اساس دستهبندی",
+  byCategory: "درآمد بر اساس کتگوری",
   
   // Validation
   validation: {
     amount: "مبلغ الزامی است",
-    category: "دستهبندی الزامی است",
+    category: "کتگوری الزامی است",
     incomeDate: "تاریخ درآمد الزامی است",
     source: "منبع الزامی است"
   }

@@ -1,6 +1,6 @@
 export const shopRentalFa = {
-  shopRental: "اجاره فروشگاه",
-  shopRentals: "اجارههای فروشگاه",
+  shopRental: "کرایه فروشگاه",
+  shopRentals: "کرایههای فروشگاه",
   status: "وضعیت",
   allStatuses: "همه وضعیتها",
   usd: "USD - دلار آمریکا",
@@ -14,7 +14,7 @@ export const shopRentalFa = {
   name: "نام",
   location: "مکان",
   area: "مساحت",
-  monthlyRent: "اجاره ماهانه",
+  monthlyRent: "کرایه ماهانه",
   currency: "ارز",
   description: "توضیحات",
   shop: "فروشگاه",
@@ -29,12 +29,12 @@ export const shopRentalFa = {
   address: "آدرس",
   afn: "AFN - افغانی",
   selectStatus: "انتخاب وضعیت",
-  selectRentalStatus: "انتخاب وضعیت اجاره",
+  selectRentalStatus: "انتخاب وضعیت کرایه",
   
   // Statuses
   statusOptions: {
     available: "در دسترس",
-    rented: "اجاره شده",
+    rented: "کرایه شده",
     maintenance: "در حال تعمیر",
     reserved: "رزرو شده"
   },
@@ -47,14 +47,14 @@ export const shopRentalFa = {
   editTenant: "ویرایش مستأجر",
   
   // Rental Information
-  rental: "اجاره",
-  rentalDetails: "جزئیات اجاره",
-  rentalInformation: "اطلاعات اجاره",
-  addRental: "افزودن اجاره",
-  editRental: "ویرایش اجاره",
+  rental: "کرایه",
+  rentalDetails: "جزئیات کرایه",
+  rentalInformation: "اطلاعات کرایه",
+  addRental: "افزودن کرایه",
+  editRental: "ویرایش کرایه",
   startDate: "تاریخ شروع",
   endDate: "تاریخ پایان",
-  rentalStatus: "وضعیت اجاره",
+  rentalStatus: "وضعیت کرایه",
   securityDeposit: "سپرده امنیتی",
   
   // Rental Statuses
@@ -71,38 +71,38 @@ export const shopRentalFa = {
   delete: "حذف",
   deleteShop: "حذف فروشگاه",
   deleteTenant: "حذف مستأجر",
-  deleteRental: "حذف اجاره",
+  deleteRental: "حذف کرایه",
   
   // UI Components
   manageShops: "مدیریت سوابق فروشگاهها",
   manageTenants: "مدیریت سوابق مستأجرین",
-  manageRentals: "مدیریت سوابق اجاره",
+  manageRentals: "مدیریت سوابق کرایه",
   searchShops: "جستجوی فروشگاهها...",
   searchTenants: "جستجوی مستأجرین...",
-  searchRentals: "جستجوی اجارهها...",
+  searchRentals: "جستجوی کرایهها...",
   filterByStatus: "فیلتر بر اساس وضعیت",
-  filterByRentalStatus: "فیلتر بر اساس وضعیت اجاره",
+  filterByRentalStatus: "فیلتر بر اساس وضعیت کرایه",
   clearFilters: "پاک کردن فیلترها",
   noShopsFound: "هیچ فروشگاهی یافت نشد",
   noTenantsFound: "هیچ مستأجری یافت نشد",
-  noRentalsFound: "هیچ اجارهای یافت نشد",
+  noRentalsFound: "هیچ کرایهای یافت نشد",
   tryAdjustingSearch: "لطفاً عبارت جستجو خود را تغییر دهید",
   addFirstShop: "برای شروع اولین فروشگاه خود را اضافه کنید",
   addFirstTenant: "برای شروع اولین مستأجر خود را اضافه کنید",
-  addFirstRental: "برای شروع اولین اجاره خود را اضافه کنید",
+  addFirstRental: "برای شروع اولین کرایه خود را اضافه کنید",
   loadingShops: "در حال بارگذاری فروشگاهها...",
   loadingTenants: "در حال بارگذاری مستأجرین...",
-  loadingRentals: "در حال بارگذاری اجارهها...",
+  loadingRentals: "در حال بارگذاری کرایهها...",
   allStatuses: "همه وضعیتها",
   
   // Summary
   shopStatistics: "آمار فروشگاهها",
   totalShops: "مجموع فروشگاهها",
   availableShops: "فروشگاههای در دسترس",
-  rentedShops: "فروشگاههای اجاره شده",
-  totalMonthlyRent: "مجموع اجاره ماهانه",
-  activeRentals: "اجارههای فعال",
-  expiringRentals: "اجارههای در حال انقضا",
+  rentedShops: "فروشگاههای کرایه شده",
+  totalMonthlyRent: "مجموع کرایه ماهانه",
+  activeRentals: "کرایههای فعال",
+  expiringRentals: "کرایههای در حال انقضا",
   monthlyIncome: "درآمد ماهانه",
   
   // Validation
@@ -110,7 +110,7 @@ export const shopRentalFa = {
     shopNumber: "شماره فروشگاه الزامی است",
     name: "نام الزامی است",
     location: "مکان الزامی است",
-    monthlyRent: "اجاره ماهانه الزامی است",
+    monthlyRent: "کرایه ماهانه الزامی است",
     tenant: "مستأجر الزامی است",
     startDate: "تاریخ شروع الزامی است",
     endDate: "تاریخ پایان الزامی است",
@@ -121,7 +121,7 @@ export const shopRentalFa = {
 
   // Payments
   payments: "پرداختها",
-  managePayments: "مدیریت سوابق پرداخت اجاره",
+  managePayments: "مدیریت سوابق پرداخت کرایه",
   addPayment: "افزودن پرداخت",
   editPayment: "ویرایش پرداخت",
   paymentDetails: "جزئیات پرداخت",
@@ -145,7 +145,7 @@ export const shopRentalFa = {
   remove: "حذف",
   enterAmount: "مبلغ را وارد کنید",
   enterDescription: "توضیحات را وارد کنید",
-  selectRental: "انتخاب اجاره",
+  selectRental: "انتخاب کرایه",
   searchPayments: "جستجوی پرداختها...",
   noPaymentsFound: "هیچ پرداختی یافت نشد",
   addFirstPayment: "برای شروع اولین پرداخت خود را اضافه کنید",
@@ -154,7 +154,7 @@ export const shopRentalFa = {
   paymentNotFound: "پرداخت یافت نشد",
   
   // Financial Info
-  rentalInfo: "اطلاعات اجاره",
+  rentalInfo: "اطلاعات کرایه",
   monthlyPaymentStatus: "وضعیت پرداخت ماهانه",
   paidThisMonth: "پرداخت شده این ماه",
   remaining: "باقیمانده",
