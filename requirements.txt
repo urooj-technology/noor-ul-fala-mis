@@ -40,4 +40,3 @@ django-ratelimit==4.1.0
 # Additional utilities
 python-dateutil==2.8.2
 pytz==2024.1
-decimal==1.10
