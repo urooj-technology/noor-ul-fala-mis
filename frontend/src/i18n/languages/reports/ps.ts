@@ -42,7 +42,6 @@ export const reportsPs = {
   otherIncome: 'نور عاید',
   
   // Expense Categories
-  expenses: 'لګښتونه',
   totalExpenses: 'ټول لګښتونه',
   generalExpenses: 'عمومي لګښتونه',
   payrollExpenses: 'معاشونه',
@@ -84,10 +83,10 @@ export const reportsPs = {
   financialSummary: 'مالي لنډيز',
   incomeSummary: 'د عاید لنډيز',
   expenseSummary: 'د لګښت لنډيز',
-  assets: 'ش一手ې',
+  assets: 'شياوې',
   liabilities: 'بدهکاري',
   equity: 'سرپل',
-  totalAssets: 'ټول ش一手ې',
+  totalAssets: 'ټول شياوې',
   totalLiabilities: 'ټول بدهکاري',
   totalEquity: 'ټول سرپل',
   totalLiabilitiesAndEquity: 'ټول بدهکاري او سرپل',

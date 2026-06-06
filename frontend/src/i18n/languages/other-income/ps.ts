@@ -40,7 +40,7 @@ export const otherIncomePs = {
   manageCategories: "د درېدې وېشنيزې اداره کړئ",
   searchCategories: "وېشنيزې لټول...",
   noCategoriesFound: "هیڅ وېشنيزه ونه موندل شوه",
-  addFirstCategory: "د پیل لپاره خپله لومړۍ وېشنيزه زياته کړئ",
+  addFirstCategory: "د پیل لپاره خپله لومړۍ وېشنيزه زاته کړئ",
   loadingCategories: "وېشنيزې لوډیږي...",
   tryAdjustingSearch: "د لټون شرایط سم کړئ",
   status: "حالت",
@@ -60,10 +60,8 @@ export const otherIncomePs = {
   filterByDate: "د نیټې له مخې فلټر",
   clearFilters: "فلټرونه پاکول",
   noIncomeFound: "هیڅ درېدنه ونه موندل شوه",
-  tryAdjustingSearch: "د لټون شرایط سم کړئ",
   addFirstIncome: "د پیل لپاره خپل لومړی درېدنه زيات کړئ",
   loadingIncome: "درېدې لوډیږي...",
-  allCategories: "ټول وېشنيزې",
   
   // Summary
   dailySummary: "د درېدې ټولنیز خلاصه",

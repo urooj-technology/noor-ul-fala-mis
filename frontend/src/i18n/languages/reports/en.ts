@@ -42,7 +42,6 @@ export const reportsEn = {
   otherIncome: 'Other Income',
   
   // Expense Categories
-  expenses: 'Expenses',
   totalExpenses: 'Total Expenses',
   generalExpenses: 'General Expenses',
   payrollExpenses: 'Payroll',

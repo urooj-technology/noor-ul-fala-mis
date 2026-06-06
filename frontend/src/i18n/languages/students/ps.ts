@@ -77,7 +77,6 @@ export const studentsPs = {
   parentTazkiraCopy: "د والدینو تذکره کاپي",
   previousResultCard: "پخوانۍ نتیجه کارت",
   paymentReceipt: "د تادیې رسید",
-  phone: "تلیفون",
   selectStudent: "زده کونکی وټاکئ",
   documentPreview: "د مدرک مخکتنه",
   viewDetails: "تفصیلات وګورئ",

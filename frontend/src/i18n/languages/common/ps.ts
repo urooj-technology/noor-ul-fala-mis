@@ -111,13 +111,6 @@ export const commonPs = {
     superuserAnalytics: "د سوپر یوزر تحلیل",
     search: "لټون...",
     collapseAll: "ټول ځمکه کول",
-    
-    // Additional navigation items
-    employees: "کارمندان",
-    payroll: "معاشونه",
-    advance: "مخکې تادیه",
-    expenses: "لګښتونه",
-    expenseCategories: "د لګښت کټګورۍ",
     accounts: "حسابونه",
     accountCategories: "د حساب وېشنيزې",
     transactions: "معاملې",
@@ -131,15 +124,13 @@ export const commonPs = {
     shopRentalPayments: "د فروشگاه کرایه تادیات",
     otherIncomeList: "نوره درېدنه",
     incomeCategoryList: "د درېدې وېشنيزې",
-    activityLogs: "د فعالیتونو راپورونه",
     backups: "بیک اپونه"
   },
   app: {
     title: "ERP سیسټم",
-    subtitle: "د سازماني سرچینو پلان",
+    subtitle: "د مدیریت معلوماتو سیسټم",
     version: "نسخه",
-    companyName: "نورالفلح",
-    subtitle: "د مدیریت معلوماتو سیسټم"
+    companyName: "نورالفلح"
   },
   sections: {
     main: "اصلی",
@@ -159,7 +150,6 @@ export const commonPs = {
   import: "وارول",
   download: "ډاونلوډ",
   upload: "اپلوډ",
-  print: "",
   share: "شریکول",
   copy: "کاپي",
   paste: "پیسټ",
@@ -239,7 +229,7 @@ export const commonPs = {
   items: "توکي",
   searchSales: "د پلورنې لټون...",
   searchPurchases: "د پیرودنې لټون...",
-  filters: "فلٹرونه",
+  filters: "فلټرونه",
   all: "ټول",
   dateFrom: "د نیټې نه",
   dateTo: "تر نیټې",
@@ -298,7 +288,7 @@ export const commonPs = {
   header: "سرلیک",
   body: "بدن",
   footer: "پښلیک",
-  styling: "سٹایل",
+  styling: "سټایل",
   generalSettings: "عمومي تنظیمات",
   selectCompany: "شرکت وټاکئ",
   usingYourCompany: "ستاسو شرکت کارول",
@@ -386,12 +376,8 @@ export const commonPs = {
   afn: "AFN - افغانۍ",
   usd: "USD - US ډالر",
   
-  // Status
   // Additional UI
-  date: "نیټه",
-  account: "حساب",
   transaction: "مامله",
-  entries: "ورودي",
   totalDebit: "ټول بدهکار",
   totalCredit: "ټول بستانکار",
   isBalanced: "متوازن دی",
@@ -401,7 +387,6 @@ export const commonPs = {
   // Messages
   addSuccess: "حساب په بریالیتوب سره زيات شو",
   editSuccess: "حساب په بریالیتوب سره سم شو",
-  deleteSuccess: "حساب په بریالیتوب سره حذف شو",
   transactionCreated: "مامله په بریالیتوب سره جوړه شوه",
   transactionUpdated: "مامله په بریالیتوب سره تازه شوه",
   
@@ -452,16 +437,9 @@ export const commonPs = {
   
   // Additional missing common keys
   paid: "تادیه شوی",
-  confirmDelete: "ایا تاسو ډاډه یاست چې غواړئ دا توکی حذف کړئ؟",
-  
-  // Validation module
-  validation: {
-    required: "دا ساحه اړینه ده",
-    positive: "ارزښت باید مثبت وي"
-  },
   
   // Date translations
-  date: {
+  months: {
     january: "جنوري",
     february: "فبروري",
     march: "مارچ",

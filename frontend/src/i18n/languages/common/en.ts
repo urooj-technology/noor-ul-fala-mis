@@ -92,7 +92,6 @@ export const commonEn = {
     customers: "Customers",
     vendors: "Vendors",
     users: "Users",
-
     returns: "Returns",
     orders: "Orders",
     hr: "HR",
@@ -121,13 +120,6 @@ export const commonEn = {
     superuserAnalytics: "Superuser Analytics",
     search: "Search...",
     collapseAll: "Collapse All",
-    
-    // Additional navigation items
-    employees: "Employees",
-    payroll: "Payroll",
-    advance: "Advance",
-    expenses: "Expenses",
-    expenseCategories: "Expense Categories",
     accounts: "Accounts",
     accountCategories: "Account Categories",
     transactions: "Transactions",
@@ -141,7 +133,6 @@ export const commonEn = {
     shopRentalPayments: "Shop Rental Payments",
     otherIncomeList: "Other Income",
     incomeCategoryList: "Income Categories",
-    activityLogs: "Activity Logs",
     backups: "Backups"
   },
   sections: {
@@ -158,10 +149,9 @@ export const commonEn = {
   },
   app: {
     title: "ERP System",
-    subtitle: "Enterprise Resource Planning",
+    subtitle: "Management Information System",
     version: "Version",
-    companyName: "Noor Ul-Falah",
-    subtitle: "Management Information System"
+    companyName: "Noor Ul-Falah"
   },
   notUploaded: "Not Uploaded",
   print: "Print",
@@ -379,9 +369,6 @@ export const commonEn = {
   updated: "Updated",
   journalEntries: "Journal Entries",
   journal: "Journal",
-  yes: "Yes",
-  no: "No",
-  none: "None",
   currentAssets: "Current Assets",
   fixedAssets: "Fixed Assets",
   totalLiabilitiesAndEquity: "Total Liabilities & Equity",
@@ -391,14 +378,8 @@ export const commonEn = {
   afn: "AFN - Afghan Afghani",
   usd: "USD - US Dollar",
   
-  // Status
-  filterByStatus: "Filter by status",
-  
   // Additional UI
-  date: "Date",
-  account: "Account",
   transaction: "Transaction",
-  entries: "Entries",
   totalDebit: "Total Debit",
   totalCredit: "Total Credit",
   isBalanced: "Is Balanced",
@@ -408,7 +389,6 @@ export const commonEn = {
   // Messages
   addSuccess: "Account added successfully",
   editSuccess: "Account updated successfully",
-  deleteSuccess: "Account deleted successfully",
   transactionCreated: "Transaction created successfully",
   transactionUpdated: "Transaction updated successfully",
   
@@ -459,16 +439,9 @@ export const commonEn = {
   
   // Additional missing common keys
   paid: "Paid",
-  confirmDelete: "Are you sure you want to delete this item?",
-  
-  // Validation module (referenced in some pages)
-  validation: {
-    required: "This field is required",
-    positive: "Value must be positive"
-  },
   
   // Date translations
-  date: {
+  months: {
     january: "January",
     february: "February",
     march: "March",

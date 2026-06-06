@@ -42,7 +42,6 @@ export const otherIncomeEn = {
   noCategoriesFound: "No categories found",
   addFirstCategory: "Add your first category to get started",
   loadingCategories: "Loading categories...",
-  tryAdjustingSearch: "Try adjusting your search terms",
   status: "Status",
   active: "Active",
   inactive: "Inactive",
@@ -60,10 +59,8 @@ export const otherIncomeEn = {
   filterByDate: "Filter by date",
   clearFilters: "Clear Filters",
   noIncomeFound: "No income found",
-  tryAdjustingSearch: "Try adjusting your search terms",
   addFirstIncome: "Add your first income to get started",
   loadingIncome: "Loading income...",
-  allCategories: "All Categories",
   
   // Summary
   dailySummary: "Daily Income Summary",

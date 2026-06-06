@@ -82,7 +82,6 @@ export const commonFa = {
     customers: "مشتریان",
     vendors: "فروشندگان",
     users: "کاربران",
-
     returns: "برگشتها",
     orders: "سفارشات",
     hr: "منابع انسانی",
@@ -111,13 +110,6 @@ export const commonFa = {
     superuserAnalytics: "تحلیلات مدیر کل",
     search: "جستجو...",
     collapseAll: "جمع کردن همه",
-    
-    // Additional navigation items
-    employees: "کارمندان",
-    payroll: "حقوق و دستمزد",
-    advance: "پیشپرداخت",
-    expenses: "هزینه ها",
-    expenseCategories: "دستههای هزینه",
     accounts: "حسابها",
     accountCategories: "دسته بندی حساب",
     transactions: "تراکنشها",
@@ -131,7 +123,6 @@ export const commonFa = {
     shopRentalPayments: "پرداخت های کرایه فروشگاه",
     otherIncomeList: "درآمد دیگر",
     incomeCategoryList: "دسته بندی درآمد",
-    activityLogs: "گزارش فعالیتها",
     backups: "پشتیبانها"
   },
   sections: {
@@ -148,10 +139,9 @@ export const commonFa = {
   },
   app: {
     title: "سیستم ERP",
-    subtitle: "برنامهریزی منابع سازمانی",
+    subtitle: "سیستم اطلاعات مدیریت",
     version: "نسخه",
-    companyName: "نورالفلح",
-    subtitle: "سیستم اطلاعات مدیریت"
+    companyName: "نورالفلح"
   },
   notUploaded: "آپلود نشده",
   print: "چاپ",
@@ -159,7 +149,6 @@ export const commonFa = {
   import: "واردات",
   download: "دانلود",
   upload: "آپلود",
-  print: "",
   share: "اشتراک",
   copy: "کپی",
   paste: "چسباندن",
@@ -386,22 +375,6 @@ export const commonFa = {
   afn: "AFN - افغانی",
   usd: "USD - دلار آمریکا",
   
-  // Additional UI
-  transaction: "تراکنش",
-  entries: "ورودیها",
-  totalDebit: "مجموع بدهکار",
-  totalCredit: "مجموع بستانکار",
-  isBalanced: "متوازن است",
-  isPosted: "ثبت شده",
-  isDetail: "حساب جزئی است",
-  
-  // Messages
-  addSuccess: "حساب با موفقیت اضافه شد",
-  editSuccess: "حساب با موفقیت ویرایش شد",
-  deleteSuccess: "حساب با موفقیت حذف شد",
-  transactionCreated: "تراکنش با موفقیت ایجاد شد",
-  transactionUpdated: "تراکنش با موفقیت بهروزرسانی شد",
-  
   // UI Components
   deleteAccount: "حذف حساب",
   deleteAccountCategory: "حذف کتگوری حساب",
@@ -431,14 +404,6 @@ export const commonFa = {
   // Double Entry Bookkeeping
   doubleEntryBookkeeping: "سیستم حسابداری دو طرفه",
   
-  // Financial Reports
-  financialReports: "گزارشهای مالی",
-  reportDate: "تاریخ گزارش",
-  netIncome: "فایده خالص",
-  totalAssets: "مجموع داراییها",
-  totalLiabilities: "مجموع بدهیها",
-  totalEquity: "مجموع سرمایه",
-  
   // Transaction Types
   studentPayment: "پرداخت شاگرد",
   payroll: "حقوق",
@@ -449,16 +414,9 @@ export const commonFa = {
   
   // Additional missing common keys
   paid: "پرداخت شده",
-  confirmDelete: "آیا مطمئن هستید که میخواهید این مورد را حذف کنید؟",
-  
-  // Validation module (referenced in some pages)
-  validation: {
-    required: "این فیلد الزامی است",
-    positive: "مقدار باید مثبت باشد"
-  },
   
   // Date translations
-  date: {
+  months: {
     january: "ژانویه",
     february: "فوریه",
     march: "مارس",

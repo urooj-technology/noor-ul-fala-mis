@@ -40,7 +40,6 @@ export const shopRentalPs = {
   },
   
   // Tenant Information
-  tenant: "کرایه کونکی",
   tenantDetails: "د کرایه کونکي معلومات",
   tenantInformation: "د کرایه کونکي معلومات",
   addTenant: "کرایه کونکی زياتول",
@@ -93,7 +92,6 @@ export const shopRentalPs = {
   loadingShops: "فروشگاهونه لوډیږي...",
   loadingTenants: "کرایه کونکي لوډیږي...",
   loadingRentals: "اجارې لوډیږي...",
-  allStatuses: "ټول حالتونه",
   
   // Summary
   shopStatistics: "د فروشگاهونو آمار",

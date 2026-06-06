@@ -42,7 +42,6 @@ export const otherIncomeFa = {
   noCategoriesFound: "هیچ کتگوری یافت نشد",
   addFirstCategory: "برای شروع اولین کتگوری را اضافه کنید",
   loadingCategories: "بارگذاری کتگوریها...",
-  tryAdjustingSearch: "لطفاً عبارت جستجو خود را تغییر دهید",
   status: "وضعیت",
   active: "فعال",
   inactive: "غیرفعال",
@@ -60,10 +59,8 @@ export const otherIncomeFa = {
   filterByDate: "فیلتر بر اساس تاریخ",
   clearFilters: "پاک کردن فیلترها",
   noIncomeFound: "هیچ درآمدی یافت نشد",
-  tryAdjustingSearch: "لطفاً عبارت جستجو خود را تغییر دهید",
   addFirstIncome: "برای شروع اولین درآمد خود را اضافه کنید",
   loadingIncome: "در حال بارگذاری درآمدها...",
-  allCategories: "همه کتگوریها",
   
   // Summary
   dailySummary: "خلاصه روزانه درآمد",

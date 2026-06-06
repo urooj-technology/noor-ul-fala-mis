@@ -40,7 +40,6 @@ export const shopRentalFa = {
   },
   
   // Tenant Information
-  tenant: "مستأجر",
   tenantDetails: "جزئیات مستأجر",
   tenantInformation: "اطلاعات مستأجر",
   addTenant: "افزودن مستأجر",
@@ -93,7 +92,6 @@ export const shopRentalFa = {
   loadingShops: "در حال بارگذاری فروشگاهها...",
   loadingTenants: "در حال بارگذاری مستأجرین...",
   loadingRentals: "در حال بارگذاری کرایهها...",
-  allStatuses: "همه وضعیتها",
   
   // Summary
   shopStatistics: "آمار فروشگاهها",

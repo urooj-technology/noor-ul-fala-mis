@@ -13,7 +13,7 @@ export const reportsFa = {
   studentPayments: 'پرداخت شاگردان',
   payroll: 'حقوق و دستمزد',
   rental: 'درآمد کرایه',
-  expenses: 'هزینه‌ها',
+  expenses: 'هزینهها',
   dailyReport: 'گزارش روزانه',
   
   // Period
@@ -42,11 +42,10 @@ export const reportsFa = {
   otherIncome: 'درآمد سایر',
   
   // Expense Categories
-  expenses: 'هزینه‌ها',
-  totalExpenses: 'کل هزینه‌ها',
-  generalExpenses: 'هزینه‌های عمومی',
+  totalExpenses: 'کل هزینهها',
+  generalExpenses: 'هزینههای عمومی',
   payrollExpenses: 'حقوق و دستمزد',
-  advanceExpenses: 'پیش‌پرداخت‌ها',
+  advanceExpenses: 'پیشپرداختها',
   
   // Financial Results
   profit: 'فایده',
@@ -67,7 +66,7 @@ export const reportsFa = {
   notBalanced: 'نامتوازن',
   
   // Table Headers
-  category: 'دسته‌بندی',
+  category: 'دستهبندی',
   accountCode: 'کد',
   accountName: 'نام حساب',
   debit: 'بدهکار',
@@ -77,18 +76,18 @@ export const reportsFa = {
   
   // Messages
   loading: 'در حال بارگذاری...',
-  noData: 'داده‌ای موجود نیست',
+  noData: 'دادهای موجود نیست',
   reportGenerated: 'گزارش با موفقیت ایجاد شد',
   
   // Financial Summary
   financialSummary: 'خلاصه مالی',
   incomeSummary: 'خلاصه درآمد',
   expenseSummary: 'خلاصه هزینه',
-  assets: 'دارایی‌ها',
-  liabilities: 'بدهی‌ها',
+  assets: 'داراییها',
+  liabilities: 'بدهیها',
   equity: 'سرمایه',
-  totalAssets: 'مجموع دارایی‌ها',
-  totalLiabilities: 'مجموع بدهی‌ها',
+  totalAssets: 'مجموع داراییها',
+  totalLiabilities: 'مجموع بدهیها',
   totalEquity: 'مجموع سرمایه',
   totalLiabilitiesAndEquity: 'مجموع بدهیها و سرمایه',
   

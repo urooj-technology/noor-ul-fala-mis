@@ -19,7 +19,7 @@ export const studentsFa = {
   // Additional
   age: "سن",
   financialSummary: "خلاصه مالی",
-  totalPayments: "کل پرداخت‌ها",
+  totalPayments: "کل پرداختها",
   remainingBalance: "مانده حساب",
   
   // Gender
@@ -77,7 +77,6 @@ export const studentsFa = {
   parentTazkiraCopy: "کپی تذکره والدین",
   previousResultCard: "کارت نتیجه قبلی",
   paymentReceipt: "رسید پرداخت",
-  phone: "تلفن",
   selectStudent: "انتخاب شاگرد",
   documentPreview: "پیشنمایش مدرک",
   viewDetails: "مشاهده جزئیات",
@@ -111,7 +110,6 @@ export const studentsFa = {
   bulkChangeClassLevel: "تغییر گروهی صنف",
   selectNewClassLevel: "صنف جدید",
   moveToClass: "انتقال شاگردان به",
-  selectClassLevel: "انتخاب صنف",
   changeSummary: "خلاصه تغییرات",
   totalSelected: "کل انتخاب شده",
   willChange: "تغییر خواهد کرد",
