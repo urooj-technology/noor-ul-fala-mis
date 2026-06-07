@@ -18,6 +18,9 @@ export const ExpenseList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+
   const { data: expensesData, isLoading } = useFetchObjects<{
     results: any[];
     count: number;

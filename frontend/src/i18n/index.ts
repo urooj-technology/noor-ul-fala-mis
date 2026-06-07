@@ -105,9 +105,7 @@ export interface ReportsTranslations {
     rentalIncome: string;
     otherIncome: string;
     generalExpenses: string;
-    payroll: string;
     payrollExpenses: string;
-    advances: string;
     advanceExpenses: string;
     loadingReport: string;
     noData: string;
@@ -116,7 +114,6 @@ export interface ReportsTranslations {
     summary: string;
     financial: string;
     studentPayments: string;
-    payroll: string;
     rental: string;
     trialBalance: string;
     incomeStatement: string;

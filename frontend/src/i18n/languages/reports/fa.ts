@@ -28,10 +28,8 @@ export const reportsFa = {
   
   // Expense types
   generalExpenses: "مصارف های عمومی",
-  payroll: "حقوق و دستمزد",
-  payrollExpenses: "مصارف حقوق",
-  advances: "پیش پرداخت ها",
-  advanceExpenses: "مصارف پیش پرداخت",
+  payrollExpenses: "هزینه های حقوق",
+  advanceExpenses: "هزینه های پیش پرداخت",
   
   // Loading states
   loadingReport: "در حال بارگذاری گزارش...",
@@ -45,7 +43,6 @@ export const reportsFa = {
   summary: "خلاصه",
   financial: "مالی",
   studentPayments: "پرداخت های شاگردان",
-  payroll: "حقوق و دستمزد",
   rental: "کرایه",
   trialBalance: "تراز آزمایشی",
   incomeStatement: "صورت فایده و زیان",
@@ -88,6 +85,8 @@ export const reportsFa = {
   totalLiabilities: "مجموع بدهی ها",
   totalEquity: "مجموع سرمایه",
   totalLiabilitiesAndEquity: "مجموع بدهی ها و سرمایه",
+  totalAFN: "مجموع AFN",
+  totalUSD: "مجموع USD",
   assets: "دارایی ها",
   liabilities: "بدهی ها",
   equity: "سرمایه",
@@ -102,12 +101,13 @@ export const reportsFa = {
   
   // Messages
   noDataFound: "هیچ داده ای یافت نشد",
-  loadingReport: "در حال بارگذاری گزارش...",
   
   // Additional
   period: "دوره",
   reportType: "نوع گزارش",
   export: "صادرات",
+  income: "درآمد",
+  advances: "پیش پرداخت ها",
   
   // Report tabs
   students: "شاگردان"

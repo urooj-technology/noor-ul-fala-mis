@@ -28,9 +28,7 @@ export const reportsPs = {
   
   // Expense types
   generalExpenses: "ټولې مصارف",
-  payroll: "د کارمندانو پیسې",
   payrollExpenses: "د کارمندانو پیسې",
-  advances: "مخکې تادیات",
   advanceExpenses: "د مخکې تادیاتو مصارف",
   
   // Loading states
@@ -45,7 +43,6 @@ export const reportsPs = {
   summary: "خلاصه",
   financial: "مالي",
   studentPayments: "د زده کونکو پیسې",
-  payroll: "معاشونه",
   rental: "کرایه",
   trialBalance: "د محاسبې ترکیب",
   incomeStatement: "د درېدو او مصارف راپور",
@@ -88,6 +85,8 @@ export const reportsPs = {
   totalLiabilities: "ټول بدهکاري",
   totalEquity: "ټول سرپل",
   totalLiabilitiesAndEquity: "ټول بدهکاري او سرپل",
+  totalAFN: "ټول AFN",
+  totalUSD: "ټول USD",
   assets: "شياوې",
   liabilities: "بدهکاري",
   equity: "سرپل",
@@ -102,12 +101,13 @@ export const reportsPs = {
   
   // Messages
   noDataFound: "هیڅ معلومات ونه موندل شول",
-  loadingReport: "د راپور بارول...",
   
   // Additional
   period: "دوره",
   reportType: "د راپور ډول",
   export: "صادرول",
+  income: "درېدنه",
+  advances: "مخکې تادیات",
   
   // Report tabs
   students: "زده کونکي"

@@ -28,9 +28,7 @@ export const reportsEn = {
   
   // Expense types
   generalExpenses: "General Expenses",
-  payroll: "Payroll",
   payrollExpenses: "Payroll Expenses",
-  advances: "Advances",
   advanceExpenses: "Advance Expenses",
   
   // Loading states
@@ -45,7 +43,6 @@ export const reportsEn = {
   summary: "Summary",
   financial: "Financial",
   studentPayments: "Student Payments",
-  payroll: "Payroll",
   rental: "Rental",
   trialBalance: "Trial Balance",
   incomeStatement: "Income Statement",
@@ -88,6 +85,8 @@ export const reportsEn = {
   totalLiabilities: "Total Liabilities",
   totalEquity: "Total Equity",
   totalLiabilitiesAndEquity: "Total Liabilities & Equity",
+  totalAFN: "Total AFN",
+  totalUSD: "Total USD",
   assets: "Assets",
   liabilities: "Liabilities",
   equity: "Equity",
@@ -102,12 +101,13 @@ export const reportsEn = {
   
   // Messages
   noDataFound: "No data found",
-  loadingReport: "Loading report...",
   
   // Additional
   period: "Period",
   reportType: "Report Type",
   export: "Export",
+  income: "Income",
+  advances: "Advances",
   
   // Report tabs
   students: "Students"

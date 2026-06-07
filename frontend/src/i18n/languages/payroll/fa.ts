@@ -92,7 +92,5 @@ export const payrollFa = {
   monthShamsi: 'ماه',
   yearShamsi: 'سال',
   monthQamari: 'ماه',
-  yearQamari: 'سال',
-  month: 'Month',
-  year: 'Year'
+  yearQamari: 'سال'
 };
