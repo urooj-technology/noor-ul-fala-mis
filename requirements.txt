@@ -40,3 +40,7 @@ django-ratelimit==4.1.0
 # Additional utilities
 python-dateutil==2.8.2
 pytz==2024.1
+
+# Calendar conversion (Afghanistan Shamsi & Qamari)
+jdatetime==5.0.0
+hijri-converter==2.3.1

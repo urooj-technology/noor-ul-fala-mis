@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Autocomplete } from '@/components/ui/autocomplete';
+import DatePicker from '@/components/ui/date-picker-calendar';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { RotateCw, ArrowLeft, DollarSign, Tag, Calendar, FileText, Building2 } from 'lucide-react';
+import { RotateCw, ArrowLeft, DollarSign, Tag, FileText, Building2 } from 'lucide-react';
 import useAdd from '@/api/useAdd';
 
 interface OtherIncomeFormData {
@@ -51,9 +52,19 @@ const AddOtherIncome = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!validateForm()) return;
-    handleAdd(formData);
+
+    const submitData = new FormData();
+    submitData.append('income_category', formData.income_category);
+    submitData.append('amount', formData.amount);
+    submitData.append('income_date', formData.income_date);
+    submitData.append('currency', formData.currency);
+    submitData.append('source', formData.source);
+    if (formData.description?.trim()) submitData.append('description', formData.description.trim());
+
+    handleAdd(submitData);
   };
 
   return (
@@ -74,7 +85,7 @@ const AddOtherIncome = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-primary" />
-            {t('other-income.incomeDetails', 'Income Details')}
+            {t('other-income.addIncome')}
           </CardTitle>
           <CardDescription>{t('other-income.incomeDetailsDesc', 'Record a new income entry')}</CardDescription>
         </CardHeader>
@@ -104,9 +115,16 @@ const AddOtherIncome = () => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="income_date" className="font-semibold flex items-center gap-2"><Calendar className="h-4 w-4" />{t("other-income.incomeDate")} <span className="text-destructive">*</span></Label>
-              <Input id="income_date" type="date" value={formData.income_date} onChange={(e) => { setFormData((prev) => ({ ...prev, income_date: e.target.value })); if (errors.income_date) setErrors((prev) => ({ ...prev, income_date: "" })); }} className="h-10" />
-              {errors.income_date && <p className="text-xs text-destructive">{errors.income_date}</p>}
+              <DatePicker
+                value={formData.income_date}
+                onChange={(date) => {
+                  setFormData((prev) => ({ ...prev, income_date: date }));
+                  if (errors.income_date) setErrors((prev) => ({ ...prev, income_date: "" }));
+                }}
+                label={t("other-income.incomeDate")}
+                placeholder={t("other-income.incomeDate", "تاریخ درآمد")}
+                required
+              />
             </div>
           </div>
 

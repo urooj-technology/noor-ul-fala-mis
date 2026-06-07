@@ -83,4 +83,16 @@ export const payrollFa = {
   // Additional terms for generic List component
   status: 'وضعیت',
   searchByEmployee: 'جستجو بر اساس نام کارمند...',
+  
+  // Calendar
+  calendarType: 'نوع تاریخ',
+  shamsi: 'شمسی',
+  qamari: 'قمری',
+  gregorian: 'میلادی',
+  monthShamsi: 'ماه',
+  yearShamsi: 'سال',
+  monthQamari: 'ماه',
+  yearQamari: 'سال',
+  month: 'Month',
+  year: 'Year'
 };

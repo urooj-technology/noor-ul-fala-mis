@@ -5,11 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import DataTable, { TableColumn, TableAction, FilterOption } from '@/components/ui/data-table';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
+import { formatDateByCalendarType } from '@/utils/calendar';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 
 export const FiscalYearList = () => {
   const { t } = useLanguage();
+  const { calendarType } = useCalendar();
+  const lang = t('language.code') as 'fa' | 'ps';
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -70,12 +74,20 @@ export const FiscalYearList = () => {
     {
       key: 'start_date',
       title: t('accounting.fiscalYearStartDate'),
-      render: (value) => <span className="text-xs">{value || 'N/A'}</span>
+      render: (value) => (
+        <span className="text-xs">
+          {formatDateByCalendarType(value, calendarType, lang)}
+        </span>
+      )
     },
     {
       key: 'end_date',
       title: t('accounting.fiscalYearEndDate'),
-      render: (value) => <span className="text-xs">{value || 'N/A'}</span>
+      render: (value) => (
+        <span className="text-xs">
+          {formatDateByCalendarType(value, calendarType, lang)}
+        </span>
+      )
     },
     {
       key: 'is_closed',
@@ -147,7 +159,8 @@ export const FiscalYearList = () => {
 
   return (
     <div className="space-y-6 p-6">
-      <DataTable
+      <CalendarProvider>
+        <DataTable
         data={fiscalYears}
         columns={columns}
         loading={isLoading}
@@ -190,6 +203,7 @@ export const FiscalYearList = () => {
         maxHeight="75vh"
         stickyHeader={true}
       />
+      </CalendarProvider>
 
       <ConfirmDialog />
     </div>

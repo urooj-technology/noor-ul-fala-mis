@@ -11,6 +11,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { RotateCw, ArrowLeft, User, CreditCard, Calendar as CalendarIcon, DollarSign, Info } from 'lucide-react';
 import useAdd from '@/api/useAdd';
 import useFetchObject from '@/api/useFetchObject';
+import DatePicker from '@/components/ui/date-picker-calendar';
 
 interface StudentPaymentFormData {
   student: string;
@@ -390,12 +391,10 @@ const AddStudentPayment = () => {
               <Label htmlFor="payment_date" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 {t('student-payments.paymentDate')} <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="payment_date"
-                type="date"
+              <DatePicker
                 value={formData.payment_date}
-                onChange={(e) => {
-                  setFormData((prev) => ({ ...prev, payment_date: e.target.value }));
+                onChange={(date) => {
+                  setFormData((prev) => ({ ...prev, payment_date: date?.toISOString().slice(0, 10) || '' }));
                   if (errors.payment_date) setErrors((prev) => ({ ...prev, payment_date: '' }));
                 }}
                 className="h-10"

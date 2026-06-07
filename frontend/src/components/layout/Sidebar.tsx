@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCalendar, CalendarType } from '@/contexts/CalendarContext';
 import { PermissionGuard } from '@/components/ui/permission-guard';
 import { 
   LayoutDashboard, 
@@ -122,6 +123,7 @@ const navigationItems = [
     isExpandable: true,
     section: 'system',
     subItems: [
+      { key: 'calendarSettings', icon: Calendar, path: '/settings/calendar' },
       { key: 'activityLogs', icon: Activity, path: '/activity-logs' },
       { key: 'backups', icon: Database, path: '/backups' }
     ]
@@ -140,6 +142,7 @@ const sections = {
 export const Sidebar: React.FC = () => {
   const { t, direction } = useLanguage();
   const { user } = useAuth();
+  const { calendarType, setCalendarType } = useCalendar();
   const location = useLocation();
   const navRef = useRef<HTMLElement>(null);
   const [expandedSections, setExpandedSections] = useState<string[]>(() => {
@@ -174,7 +177,7 @@ export const Sidebar: React.FC = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      const activeElement = navRef.current?.querySelector('.bg-primary, .bg-primary\\\\/20');
+      const activeElement = navRef.current?.querySelector('[class*="bg-primary"]');
       if (activeElement) {
         activeElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
@@ -231,6 +234,11 @@ export const Sidebar: React.FC = () => {
   const isSettingsRoute = (path: string) => {
     return path.startsWith('/settings') || path.startsWith('/activity-logs') || path.startsWith('/backups');
   };
+
+  const calendarOptions: { value: CalendarType; label: string; icon: any }[] = [
+    { value: 'shamsi', label: t('common.calendar.shamsi', 'شمسی'), icon: Calendar },
+    { value: 'qamari', label: t('common.calendar.qamari', 'قمری'), icon: Calendar },
+  ];
 
   const groupedItems = navigationItems.reduce((acc, item) => {
     const section = item.section || 'main';
@@ -306,6 +314,8 @@ export const Sidebar: React.FC = () => {
           )}
         </div>
       </div>
+
+
 
       {/* Navigation */}
       <nav ref={navRef} className="flex-1 p-3 space-y-2 overflow-y-auto custom-scrollbar">

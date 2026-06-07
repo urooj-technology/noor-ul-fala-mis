@@ -6,6 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import DataTable, { TableColumn, TableAction } from '@/components/ui/data-table';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCalendar } from '@/contexts/CalendarContext';
+import { formatDateByCalendarType } from '@/utils/calendar';
+import { CalendarProvider } from '@/contexts/CalendarContext';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 
@@ -141,7 +144,8 @@ export const ShopRentalList = () => {
 
   return (
     <div className="space-y-6 p-6">
-      <DataTable
+      <CalendarProvider>
+        <DataTable
         data={shops}
         columns={columns}
         loading={isLoading}
@@ -181,6 +185,7 @@ export const ShopRentalList = () => {
         maxHeight="75vh"
         stickyHeader={true}
       />
+      </CalendarProvider>
 
       <ConfirmDialog />
     </div>

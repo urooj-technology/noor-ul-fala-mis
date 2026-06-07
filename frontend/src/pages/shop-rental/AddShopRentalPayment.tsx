@@ -8,9 +8,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCalendar } from '@/contexts/CalendarContext';
+import { formatDateByCalendarType, dateToShamsi, dateToQamari, getCurrentShamsi, getCurrentQamari, getYearsArray } from '@/utils/calendar';
 import useAdd from '@/api/useAdd';
 import useFetchObject from '@/api/useFetchObject';
 import { formatNumber } from '@/lib/formatNumber';
+import DatePicker from '@/components/ui/date-picker-calendar';
 
 interface RentalFinancialInfo {
   shop: { shop_number: string; name: string };
@@ -32,8 +35,12 @@ interface RentalFinancialInfo {
 
 const AddShopRentalPayment = () => {
   const { t } = useLanguage();
+  const { calendarType } = useCalendar();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  
+  // Get current year based on calendar type
+  const currentCalendarYear = calendarType === 'shamsi' ? 1403 : new Date().getFullYear();
   
   const [formData, setFormData] = useState({
     rental: searchParams.get('rental_id') || '',
@@ -41,7 +48,7 @@ const AddShopRentalPayment = () => {
     payment_date: new Date().toISOString().slice(0, 10),
     payment_status: 'completed',
     period_month: (new Date().getMonth() + 1).toString().padStart(2, '0'),
-    period_year: new Date().getFullYear().toString(),
+    period_year: currentCalendarYear.toString(),
     description: '',
     receipt: null as File | null
   });
@@ -117,23 +124,41 @@ const AddShopRentalPayment = () => {
     handleAdd(submitData);
   };
 
-  const months = [
-    { value: 1, label: t('common.date.january') },
-    { value: 2, label: t('common.date.february') },
-    { value: 3, label: t('common.date.march') },
-    { value: 4, label: t('common.date.april') },
-    { value: 5, label: t('common.date.may') },
-    { value: 6, label: t('common.date.june') },
-    { value: 7, label: t('common.date.july') },
-    { value: 8, label: t('common.date.august') },
-    { value: 9, label: t('common.date.september') },
-    { value: 10, label: t('common.date.october') },
-    { value: 11, label: t('common.date.november') },
-    { value: 12, label: t('common.date.december') }
+  // Get months based on calendar type
+  const shamsiMonths = [
+    { value: 1, label: t('calendar.shamsiMonth1', 'حمل') },
+    { value: 2, label: t('calendar.shamsiMonth2', 'ثور') },
+    { value: 3, label: t('calendar.shamsiMonth3', 'جوزا') },
+    { value: 4, label: t('calendar.shamsiMonth4', 'سرطان') },
+    { value: 5, label: t('calendar.shamsiMonth5', 'اسد') },
+    { value: 6, label: t('calendar.shamsiMonth6', 'سنبله') },
+    { value: 7, label: t('calendar.shamsiMonth7', 'میزان') },
+    { value: 8, label: t('calendar.shamsiMonth8', 'عقرب') },
+    { value: 9, label: t('calendar.shamsiMonth9', 'قوس') },
+    { value: 10, label: t('calendar.shamsiMonth10', 'جدی') },
+    { value: 11, label: t('calendar.shamsiMonth11', 'دلو') },
+    { value: 12, label: t('calendar.shamsiMonth12', 'حوت') }
   ];
 
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+  const qamariMonths = [
+    { value: 1, label: t('calendar.qamariMonth1', 'محرم الحرام') },
+    { value: 2, label: t('calendar.qamariMonth2', 'صفر المظفر') },
+    { value: 3, label: t('calendar.qamariMonth3', 'ربيع الاول') },
+    { value: 4, label: t('calendar.qamariMonth4', 'ربيع الثاني') },
+    { value: 5, label: t('calendar.qamariMonth5', 'جمادی الاول') },
+    { value: 6, label: t('calendar.qamariMonth6', 'جمادی الثاني') },
+    { value: 7, label: t('calendar.qamariMonth7', 'رجب المرجب') },
+    { value: 8, label: t('calendar.qamariMonth8', 'شعبان المعظم') },
+    { value: 9, label: t('calendar.qamariMonth9', 'رمضان المبارک') },
+    { value: 10, label: t('calendar.qamariMonth10', 'شوال المکرم') },
+    { value: 11, label: t('calendar.qamariMonth11', 'ذی القعده') },
+    { value: 12, label: t('calendar.qamariMonth12', 'ذی الحجه') }
+  ];
+
+  const months = calendarType === 'shamsi' ? shamsiMonths : qamariMonths;
+
+  // Get years based on calendar type
+  const years = getYearsArray(calendarType, 10);
 
   return (
     <div className="container mx-auto py-6 max-w-4xl">
@@ -272,12 +297,10 @@ const AddShopRentalPayment = () => {
 
               <div>
                 <Label htmlFor="payment_date">{t('shop-rental.paymentDate')} *</Label>
-                <Input
-                  id="payment_date"
-                  type="date"
+                <DatePicker
                   value={formData.payment_date}
-                  onChange={(e) => {
-                    setFormData(prev => ({ ...prev, payment_date: e.target.value }));
+                  onChange={(date) => {
+                    setFormData(prev => ({ ...prev, payment_date: date?.toISOString().slice(0, 10) || '' }));
                     if (errors.payment_date) setErrors(prev => ({ ...prev, payment_date: '' }));
                   }}
                 />

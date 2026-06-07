@@ -8,9 +8,6 @@ import { commonPs } from "./languages/common/ps";
 import { customersEn } from "./languages/customer/en";
 import { customerPs } from "./languages/customer/ps";
 import { customerFa } from "./languages/customer/fa";
-import { projectsEn } from "./languages/projects/en";
-import { projectsPs } from "./languages/projects/ps";
-import { projectsFa } from "./languages/projects/fa";
 import { employeeEn } from "./languages/employees/en";
 import { employeePs } from "./languages/employees/ps";
 import { employeeFa } from "./languages/employees/fa";
@@ -41,10 +38,6 @@ import { activityLogsEn } from "./languages/activityLogs/en";
 import { activityLogsFa } from "./languages/activityLogs/fa";
 import { activityLogsPs } from "./languages/activityLogs/ps";
 
-import { reportsEn } from "./languages/reports/en";
-import { reportsFa } from "./languages/reports/fa";
-import { reportsPs } from "./languages/reports/ps";
-
 import { studentsEn } from "./languages/students/en";
 import { studentsFa } from "./languages/students/fa";
 import { studentsPs } from "./languages/students/ps";
@@ -64,6 +57,10 @@ import { otherIncomePs } from "./languages/other-income/ps";
 import { accountingEn } from "./languages/accounting/en";
 import { accountingFa } from "./languages/accounting/fa";
 import { accountingPs } from "./languages/accounting/ps";
+
+import { reportsEn } from "./languages/reports/en";
+import { reportsFa } from "./languages/reports/fa";
+import { reportsPs } from "./languages/reports/ps";
 
 
 export type Language = "en" | "ps" | "fa";
@@ -88,8 +85,95 @@ export interface CustomerTranslations {
   };
 }
 
+export interface ReportsTranslations {
+  reports: {
+    financialDashboard: string;
+    comprehensiveFinancialOverview: string;
+    today: string;
+    thisWeek: string;
+    thisMonth: string;
+    thisYear: string;
+    totalIncome: string;
+    expenses: string;
+    profit: string;
+    incomeBreakdown: string;
+    byCurrency: string;
+    financialOverview: string;
+    expenseBreakdown: string;
+    expenseByCategory: string;
+    studentPaymentsIncome: string;
+    rentalIncome: string;
+    otherIncome: string;
+    generalExpenses: string;
+    payroll: string;
+    payrollExpenses: string;
+    advances: string;
+    advanceExpenses: string;
+    loadingReport: string;
+    noData: string;
+    comprehensiveReports: string;
+    refresh: string;
+    summary: string;
+    financial: string;
+    studentPayments: string;
+    payroll: string;
+    rental: string;
+    trialBalance: string;
+    incomeStatement: string;
+    balanceSheet: string;
+    daily: string;
+    weekly: string;
+    monthly: string;
+    yearly: string;
+    custom: string;
+    startDate: string;
+    endDate: string;
+    loading: string;
+    totalExpenses: string;
+    netProfit: string;
+    netLoss: string;
+    incomeSummary: string;
+    expenseSummary: string;
+    category: string;
+    afn: string;
+    usd: string;
+    status: string;
+    currency: string;
+    count: string;
+    total: string;
+    debit: string;
+    credit: string;
+    accountCode: string;
+    accountName: string;
+    balance: string;
+    notBalanced: string;
+    balanced: string;
+    grandTotal: string;
+    totalAssets: string;
+    totalLiabilities: string;
+    totalEquity: string;
+    totalLiabilitiesAndEquity: string;
+    assets: string;
+    liabilities: string;
+    equity: string;
+    netIncome: string;
+    employee: string;
+    shopNumber: string;
+    shopName: string;
+    monthlyRent: string;
+    activeRentals: string;
+    expiringSoon: string;
+    paymentCount: string;
+    noDataFound: string;
+    period: string;
+    reportType: string;
+    export: string;
+    students: string;
+  };
+}
+
 // Combined translation type
-export type Translations = CoreTranslations & {
+export type Translations = CoreTranslations & ReportsTranslations & {
   [module: string]: any; // Allow module-specific translations
 };
 
@@ -97,7 +181,6 @@ export type Translations = CoreTranslations & {
 const en = {
   common: commonEn,
   customers: customersEn,
-  projects: projectsEn,
   settings: settingsEn,
   expenses: expensesEn,
   advance: advanceEn,
@@ -107,18 +190,17 @@ const en = {
   user: userEn,
   api: apiEn,
   activityLogs: activityLogsEn,
-  reports: reportsEn,
   students: studentsEn,
   studentPayments: studentPaymentsEn,
   shopRental: shopRentalEn,
   otherIncome: otherIncomeEn,
   accounting: accountingEn,
+  reports: reportsEn,
 };
 
 const fa = {
   common: commonFa,
   customers: customerFa,
-  projects: projectsFa,
   settings: settingsFa,
   expenses: expensesFa,
   advance: advanceFa,
@@ -128,18 +210,17 @@ const fa = {
   user: userFa,
   api: apiFa,
   activityLogs: activityLogsFa,
-  reports: reportsFa,
   students: studentsFa,
   studentPayments: studentPaymentsFa,
   shopRental: shopRentalFa,
   otherIncome: otherIncomeFa,
   accounting: accountingFa,
+  reports: reportsFa,
 };
 
 const ps = {
   common: commonPs,
   customers: customerPs,
-  projects: projectsPs,
   settings: settingsPs,
   expenses: expensesPs,
   advance: advancePs,
@@ -149,12 +230,12 @@ const ps = {
   user: userPs,
   api: apiPs,
   activityLogs: activityLogsPs,
-  reports: reportsPs,
   students: studentsPs,
   studentPayments: studentPaymentsPs,
   shopRental: shopRentalPs,
   otherIncome: otherIncomePs,
   accounting: accountingPs,
+  reports: reportsPs,
 };
 
 export const languages = {

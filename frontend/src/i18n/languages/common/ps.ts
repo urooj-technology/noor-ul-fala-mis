@@ -118,13 +118,14 @@ export const commonPs = {
     journalEntries: "د ډیری کتاب مخونه",
     students: "زده کونکي",
     studentPayments: "د زده کونکو پیسې",
-    shops: "فروشگاهونه",
+    shops: "دکانونه",
     tenants: "مستاجرونه",
-    shopRentalList: "د فروشگاه کرایه",
-    shopRentalPayments: "د فروشگاه کرایه تادیات",
+    shopRentalList: "د دکان کرایه",
+    shopRentalPayments: "د دکان کرایه تادیات",
     otherIncomeList: "نوره درېدنه",
     incomeCategoryList: "د درېدې وېشنيزې",
-    backups: "بیک اپونه"
+    backups: "بیک اپونه",
+    calendarSettings: "د نیټې تنظیمات"
   },
   app: {
     title: "ERP سیسټم",
@@ -437,6 +438,49 @@ export const commonPs = {
   
   // Additional missing common keys
   paid: "تادیه شوی",
+  
+  // Calendar types
+  calendar: {
+    calendarType: "د نیټې ډول",
+    calendarSettings: "د نیټې تنظیمات",
+    selectCalendarType: "د نیټې ډول ټاکل",
+    calendarTypeDescription: "د نیټې سیسټم خپل مطلوب غوره کړئ چې د برنامې په برخه کې نیټې ښودل کیږي.",
+    shamsi: "شمسی",
+    shamsiDescription: "د افغانستان شمسی (جلالی) نیټه - د افغانستان خورشیدي نیټه د دري او پښتو میانوند نومونو سره",
+    qamari: "قمری",
+    qamariDescription: "د قمری (هجری قمری) نیټه - د اسلامي قمری نیټه د عربی میانوند نومونو سره",
+    gregorian: "میلادی",
+    monthShamsi: "ماه",
+    yearShamsi: "کال",
+    monthQamari: "ماه",
+    yearQamari: "کال",
+    month: "Month",
+    year: "Year",
+    shamsiMonth1: "حمل",
+    shamsiMonth2: "ثور",
+    shamsiMonth3: "جوزا",
+    shamsiMonth4: "سرطان",
+    shamsiMonth5: "اسد",
+    shamsiMonth6: "سنبله",
+    shamsiMonth7: "میزان",
+    shamsiMonth8: "عقرب",
+    shamsiMonth9: "قوس",
+    shamsiMonth10: "جدی",
+    shamsiMonth11: "دلو",
+    shamsiMonth12: "حوت",
+    qamariMonth1: "محرم الحرام",
+    qamariMonth2: "صفر المظفر",
+    qamariMonth3: "ربيع الاول",
+    qamariMonth4: "ربيع الثاني",
+    qamariMonth5: "جمادی الاول",
+    qamariMonth6: "جمادی الثاني",
+    qamariMonth7: "رجب المرجب",
+    qamariMonth8: "شعبان المعظم",
+    qamariMonth9: "رمضان المبارک",
+    qamariMonth10: "شوال المکرم",
+    qamariMonth11: "ذی القعده",
+    qamariMonth12: "ذی الحجه"
+  },
   
   // Date translations
   months: {

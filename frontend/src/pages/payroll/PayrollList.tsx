@@ -6,13 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import DataTable, { TableColumn, TableAction, FilterOption } from '@/components/ui/data-table';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
+import { formatDateByCalendarType } from '@/utils/calendar';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 
 export const PayrollList = () => {
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { calendarType } = useCalendar();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [employeeFilter, setEmployeeFilter] = useState('');
@@ -27,36 +28,35 @@ export const PayrollList = () => {
     next: string | null;
     previous: string | null;
   }>({
-    queryKey: ['payrolls', currentPage.toString(), pageSize.toString(), searchTerm, employeeFilter, yearFilter, monthFilter],
+    queryKey: ['payrolls', currentPage.toString(), pageSize.toString(), searchTerm, employeeFilter, monthFilter, yearFilter],
     endpoint: 'payrolls',
     params: {
       page: currentPage,
       page_size: pageSize,
       search: searchTerm,
       ...(employeeFilter && { employee: employeeFilter }),
-      ...(yearFilter !== 'all' && { year: yearFilter }),
-      ...(monthFilter !== 'all' && { month: monthFilter })
+      ...(monthFilter !== 'all' && { month: monthFilter }),
+      ...(yearFilter !== 'all' && { year: yearFilter })
     }
   });
 
-    const { handleDelete, ConfirmDialog } = useDelete({
+  const { data: employeesData } = useFetchObjects({
+    queryKey: ['employees-all'],
+    endpoint: 'employees/'
+  });
+
+  const { handleDelete, ConfirmDialog } = useDelete({
     queryKey: ['payrolls'],
     endpoint: 'payrolls'
   });
 
-  const payrolls = payrollsData?.results || [];
   const totalItems = payrollsData?.count || 0;
-
-  const { data: employeesData } = useFetchObjects({ queryKey: ['employees-all'], endpoint: 'employees/' });
+  const payrolls = payrollsData?.results || [];
   const employees = Array.isArray(employeesData) ? employeesData : employeesData?.results || [];
 
-  const handleEdit = (payroll: any) => {
-    navigate(`/payroll/${payroll.id}/edit`);
-  };
-
-  const handleDetails = (payroll: any) => {
-    navigate(`/payroll/${payroll.id}`);
-  };
+  // Get year labels based on calendar type
+  const currentYear = calendarType === 'shamsi' ? 1403 : new Date().getFullYear();
+  const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
 
   const months = [
     { value: 'january', label: t('advance.months.january') },
@@ -73,8 +73,29 @@ export const PayrollList = () => {
     { value: 'december', label: t('advance.months.december') },
   ];
 
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
+  const calendarLabels = {
+    shamsi: { year: t('payroll.yearShamsi', 'سال'), month: t('payroll.monthShamsi', 'ماه') },
+    qamari: { year: t('payroll.yearQamari', 'سال'), month: t('payroll.monthQamari', 'ماه') },
+  };
+
+  const handleEdit = (payroll: any) => {
+    navigate(`/payroll/${payroll.id}/edit`);
+  };
+
+  const handleDetails = (payroll: any) => {
+    navigate(`/payroll/${payroll.id}`);
+  };
+
+  // Format payment date based on selected calendar type
+  const formatPaymentDate = (record: any) => {
+    if (calendarType === 'shamsi' && record.payment_date_shamsi) {
+      return record.payment_date_shamsi.formatted;
+    }
+    if (calendarType === 'qamari' && record.payment_date_qamari) {
+      return record.payment_date_qamari.formatted;
+    }
+    return record.payment_date || '-';
+  };
 
   const columns: TableColumn[] = [
     {
@@ -115,12 +136,10 @@ export const PayrollList = () => {
     {
       key: 'payment_date',
       title: t('payroll.paymentDate'),
-      render: (value) => {
-        const date = new Date(value);
+      render: (value, record) => {
         return (
-          <div className="text-base">
-            <div className="font-medium">{date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</div>
-            <div className="text-gray-500">{date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</div>
+          <div className="text-sm">
+            {formatPaymentDate(record)}
           </div>
         );
       }
@@ -159,14 +178,14 @@ export const PayrollList = () => {
   const filters: FilterOption[] = [
     {
       key: 'year',
-      label: t('payroll.year'),
+      label: calendarLabels[calendarType].year,
       placeholder: t('payroll.filterByYear'),
       width: 'sm:w-32',
       options: years.map(y => ({ value: y.toString(), label: y.toString() }))
     },
     {
       key: 'month',
-      label: t('payroll.month'),
+      label: calendarLabels[calendarType].month,
       placeholder: t('payroll.filterByMonth'),
       width: 'sm:w-40',
       options: months

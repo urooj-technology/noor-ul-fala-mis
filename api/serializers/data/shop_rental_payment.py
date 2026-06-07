@@ -1,12 +1,16 @@
 from rest_framework import serializers
 from api.models.data.shop_rental_payment import ShopRentalPayment
 from api.serializers.data.base import DataRootSerializer
+from api.utils.calendar import get_calendar_info
 
 
 class ShopRentalPaymentSerializer(DataRootSerializer):
     rental_details = serializers.SerializerMethodField()
     currency_details = serializers.SerializerMethodField()
     transaction_details = serializers.SerializerMethodField()
+    # Calendar date fields
+    payment_date_shamsi = serializers.SerializerMethodField(read_only=True)
+    payment_date_qamari = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = ShopRentalPayment
@@ -15,9 +19,10 @@ class ShopRentalPaymentSerializer(DataRootSerializer):
             'payment_status', 'period_month', 'period_year',
             'reference_number', 'description', 'receipt', 'transaction',
             'rental_details', 'currency_details', 'transaction_details',
+            'payment_date_shamsi', 'payment_date_qamari',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['reference_number', 'currency_details', 'transaction_details']
+        read_only_fields = ['reference_number', 'currency_details', 'transaction_details', 'payment_date_shamsi', 'payment_date_qamari']
 
     def get_rental_details(self, obj):
         if obj.rental:
@@ -49,6 +54,14 @@ class ShopRentalPaymentSerializer(DataRootSerializer):
                 'is_balanced': obj.transaction.is_balanced()
             }
         return None
+
+    def get_payment_date_shamsi(self, obj):
+        """Get payment date in Afghanistan Shamsi calendar"""
+        return get_calendar_info(obj.payment_date).get('shamsi')
+
+    def get_payment_date_qamari(self, obj):
+        """Get payment date in Hijri Qamari calendar"""
+        return get_calendar_info(obj.payment_date).get('qamari')
 
     def validate(self, attrs):
         amount = attrs.get('amount')

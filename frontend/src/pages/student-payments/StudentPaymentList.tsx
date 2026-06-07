@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import DataTable, { TableColumn, TableAction } from '@/components/ui/data-table';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
+import { formatDateByCalendarType } from '@/utils/calendar';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 
@@ -37,6 +39,8 @@ interface PaginatedResponse {
 
 export const StudentPaymentList = () => {
   const { t } = useLanguage();
+  const { calendarType } = useCalendar();
+  const lang = t('language.code') as 'fa' | 'ps';
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -132,7 +136,17 @@ export const StudentPaymentList = () => {
     {
       key: 'payment_date',
       title: t('student-payments.paymentDate'),
-      render: (value) => <span className="text-xs">{value || t('common.notAvailable')}</span>
+      render: (value) => {
+        if (!value) return t('common.notAvailable');
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <span className="text-xs">
+              {formatDateByCalendarType(value, calendarType, lang)}
+            </span>
+          </div>
+        );
+      }
     },
     {
       key: 'payment_status',
@@ -227,7 +241,8 @@ export const StudentPaymentList = () => {
 
   return (
     <div className="space-y-6 p-6">
-      <DataTable
+      <CalendarProvider>
+        <DataTable
         data={payments}
         columns={columns}
         loading={isLoading}
@@ -278,6 +293,7 @@ export const StudentPaymentList = () => {
         maxHeight="75vh"
         stickyHeader={true}
       />
+      </CalendarProvider>
 
       <ConfirmDialog />
     </div>

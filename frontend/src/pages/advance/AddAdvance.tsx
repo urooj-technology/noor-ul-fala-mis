@@ -9,12 +9,15 @@ import { Autocomplete } from '@/components/ui/autocomplete';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCalendar } from '@/contexts/CalendarContext';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { ArrowLeft, DollarSign, User } from 'lucide-react';
+import DatePicker from '@/components/ui/date-picker-calendar';
 import useAdd from '@/api/useAdd';
 import useFetchObjects from '@/api/useFetchObjects';
 import { AdvanceFormData, Employee } from '@/types/advance';
 import { Currency } from '@/types/common';
+import { getYearsArray } from '@/utils/calendar';
 
 interface EmployeeFinancialSummary {
   total_salary: number;
@@ -46,8 +49,13 @@ const defaultForm: AdvanceFormData = {
 
 const AddAdvance = () => {
   const { t } = useLanguage();
+  const { calendarType } = useCalendar();
   const navigate = useNavigate();
   const { user } = useAuth();
+  
+  // Get current year based on calendar type
+  const currentCalendarYear = calendarType === 'shamsi' ? 1403 : new Date().getFullYear();
+
   const [formData, setFormData] = useState<AdvanceFormData>(defaultForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
@@ -276,12 +284,9 @@ const AddAdvance = () => {
 
               <div>
                 <Label htmlFor="payment_date">{t('advance.paymentDate')} *</Label>
-                <Input
-                  id="payment_date"
-                  type="date"
+                <DatePicker
                   value={formData.payment_date}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, payment_date: e.target.value }))}
-                  required
+                  onChange={(date) => setFormData((prev) => ({ ...prev, payment_date: date?.toISOString().slice(0, 10) || '' }))}
                 />
               </div>
             </div>

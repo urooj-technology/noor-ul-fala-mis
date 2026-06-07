@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import DataTable, { TableColumn, TableAction } from '@/components/ui/data-table';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
+import { formatDateByCalendarType } from '@/utils/calendar';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 
@@ -30,6 +32,8 @@ interface PaginatedResponse {
 
 export const StudentList = () => {
   const { t } = useLanguage();
+  const { calendarType } = useCalendar();
+  const lang = t('language.code') as 'fa' | 'ps';
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -262,6 +266,7 @@ export const StudentList = () => {
 
   return (
     <div className="space-y-6 p-6">
+      <CalendarProvider>
       {/* Bulk Actions Bar - Shows when students are selected */}
       {selectedStudentIds.size > 0 && (
         <div className="flex items-center gap-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
@@ -330,6 +335,7 @@ export const StudentList = () => {
       />
 
       <ConfirmDialog />
+      </CalendarProvider>
     </div>
   );
 };

@@ -454,5 +454,40 @@ export const commonEn = {
     october: "October",
     november: "November",
     december: "December"
+  },
+  
+  // Calendar month translations for Shamsi and Qamari calendars
+  calendar: {
+    shamsi: "Shamsi",
+    shamsiDescription: "Afghanistan Shamsi (Jalali) Calendar - Afghanistan solar calendar with Dari/Pashto month names",
+    qamari: "Qamari",
+    qamariDescription: "Qamari (Hijri Lunar) Calendar - Islamic lunar calendar with Arabic month names",
+    calendarType: "Calendar Type",
+    calendarSettings: "Calendar Settings",
+    calendarTypeDescription: "Choose your preferred calendar system for displaying dates throughout the application.",
+    shamsiMonth1: "حمل",
+    shamsiMonth2: "ثور",
+    shamsiMonth3: "جوزا",
+    shamsiMonth4: "سرطان",
+    shamsiMonth5: "اسد",
+    shamsiMonth6: "سنبله",
+    shamsiMonth7: "میزان",
+    shamsiMonth8: "عقرب",
+    shamsiMonth9: "قوس",
+    shamsiMonth10: "جدی",
+    shamsiMonth11: "دلو",
+    shamsiMonth12: "حوت",
+    qamariMonth1: "محرم الحرام",
+    qamariMonth2: "صفر المظفر",
+    qamariMonth3: "ربيع الاول",
+    qamariMonth4: "ربيع الثاني",
+    qamariMonth5: "جمادی الاول",
+    qamariMonth6: "جمادی الثاني",
+    qamariMonth7: "رجب المرجب",
+    qamariMonth8: "شعبان المعظم",
+    qamariMonth9: "رمضان المبارک",
+    qamariMonth10: "شوال المکرم",
+    qamariMonth11: "ذی القعده",
+    qamariMonth12: "ذی الحجه"
   }
 };

@@ -11,6 +11,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { ArrowLeft, DollarSign, User } from 'lucide-react';
+import DatePicker from '@/components/ui/date-picker-calendar';
 import useUpdate from '@/api/useUpdate';
 import useFetchObjects from '@/api/useFetchObjects';
 import { AdvanceFormData, Employee } from '@/types/advance';
@@ -307,12 +308,9 @@ const EditAdvance = () => {
 
               <div>
                 <Label htmlFor="payment_date">{t('advance.paymentDate')} *</Label>
-                <Input
-                  id="payment_date"
-                  type="date"
+                <DatePicker
                   value={formData.payment_date}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, payment_date: e.target.value }))}
-                  required
+                  onChange={(date) => setFormData((prev) => ({ ...prev, payment_date: date?.toISOString().slice(0, 10) || '' }))}
                 />
               </div>
             </div>

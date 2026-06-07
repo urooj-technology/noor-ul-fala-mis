@@ -4,11 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCalendar } from '@/contexts/CalendarContext';
+import { formatDateByCalendarType } from '@/utils/calendar';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import useFetchObject from '@/api/useFetchObject';
 
 const TransactionDetails = () => {
   const { t } = useLanguage();
+  const { calendarType } = useCalendar();
+  const lang = t('language.code') as 'fa' | 'ps';
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -97,7 +101,9 @@ const TransactionDetails = () => {
               </div>
               <div>
                 <p className="text-sm opacity-75">{t('accounting.transactionDate')}</p>
-                <p className="text-lg font-bold">{transaction.date}</p>
+                <p className="text-lg font-bold">
+                  {transaction.date ? formatDateByCalendarType(transaction.date, calendarType, lang) : transaction.date}
+                </p>
               </div>
               <div>
                 <p className="text-sm opacity-75">{t('accounting.transactionType')}</p>

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from api.models.data.expenses import Expense, ExpenseCategory
 from api.serializers.data.base import DataRootSerializer
+from api.utils.calendar import get_calendar_info
 
 class ExpenseCategorySerializer(DataRootSerializer):
     class Meta:
@@ -12,6 +13,9 @@ class ExpenseSerializer(DataRootSerializer):
 
     user_details = serializers.SerializerMethodField()
     currency_details = serializers.SerializerMethodField()
+    # Calendar date fields
+    expense_date_shamsi = serializers.SerializerMethodField(read_only=True)
+    expense_date_qamari = serializers.SerializerMethodField(read_only=True)
     
     class Meta:
         model = Expense
@@ -46,3 +50,11 @@ class ExpenseSerializer(DataRootSerializer):
                 "name": currency_name
             }
         return None
+
+    def get_expense_date_shamsi(self, obj):
+        """Get expense date in Afghanistan Shamsi calendar"""
+        return get_calendar_info(obj.expense_date).get('shamsi')
+
+    def get_expense_date_qamari(self, obj):
+        """Get expense date in Hijri Qamari calendar"""
+        return get_calendar_info(obj.expense_date).get('qamari')

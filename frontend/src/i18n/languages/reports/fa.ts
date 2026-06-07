@@ -1,122 +1,114 @@
 export const reportsFa = {
-  // Page Title
-  reports: 'گزارشات',
-  comprehensiveReports: 'گزارشات جامع',
-  financialReports: 'گزارشات مالی',
+  // Dashboard
+  financialDashboard: "داشبورد مالی",
+  comprehensiveFinancialOverview: "بررسی جامع مالی",
   
-  // Report Types
-  reportType: 'نوع گزارش',
-  summary: 'خلاصه',
-  trialBalance: 'تراز آزمایشی',
-  incomeStatement: 'صورت فایده و زیان',
-  balanceSheet: 'ترازنامه',
-  studentPayments: 'پرداخت شاگردان',
-  payroll: 'حقوق و دستمزد',
-  rental: 'درآمد کرایه',
-  expenses: 'هزینهها',
-  dailyReport: 'گزارش روزانه',
+  // Time periods
+  today: "امروز",
+  thisWeek: "این هفته",
+  thisMonth: "این ماه",
+  thisYear: "این سال",
   
-  // Period
-  period: 'دوره',
-  daily: 'روزانه',
-  weekly: 'هفتگی',
-  monthly: 'ماهانه',
-  yearly: 'سالانه',
-  custom: 'سفارشی',
-  startDate: 'تاریخ شروع',
-  endDate: 'تاریخ پایان',
+  // Summary cards
+  totalIncome: "مجموع درآمد",
+  expenses: "مصارف ها",
+  profit: "فایده",
+  incomeBreakdown: "تجزیه و تحلیل درآمد",
   
-  // Actions
-  refresh: 'بروزرسانی',
-  export: 'خروجی',
-  exportExcel: 'خروجی اکسل',
-  exportPDF: 'خروجی PDF',
-  print: 'چاپ',
+  // Chart sections
+  byCurrency: "بر اساس ارز",
+  financialOverview: "بررسی مالی",
+  expenseBreakdown: "تجزیه و تحلیل مصرف",
+  expenseByCategory: "مصرف بر اساس دسته بندی",
   
-  // Income Categories
-  income: 'درآمد',
-  totalIncome: 'کل درآمد',
-  projectIncome: 'درآمد پروژه',
-  studentPaymentsIncome: 'پرداخت شاگردان',
-  rentalIncome: 'درآمد کرایه',
-  otherIncome: 'درآمد سایر',
+  // Income types
+  studentPaymentsIncome: "پرداخت های شاگردان",
+  rentalIncome: "درآمد کرایه",
+  otherIncome: "درآمدهای دیگر",
   
-  // Expense Categories
-  totalExpenses: 'کل هزینهها',
-  generalExpenses: 'هزینههای عمومی',
-  payrollExpenses: 'حقوق و دستمزد',
-  advanceExpenses: 'پیشپرداختها',
+  // Expense types
+  generalExpenses: "مصارف های عمومی",
+  payroll: "حقوق و دستمزد",
+  payrollExpenses: "مصارف حقوق",
+  advances: "پیش پرداخت ها",
+  advanceExpenses: "مصارف پیش پرداخت",
   
-  // Financial Results
-  profit: 'فایده',
-  netProfit: 'فایده خالص',
-  netLoss: 'زیان خالص',
-  netIncome: 'درآمد خالص',
+  // Loading states
+  loadingReport: "در حال بارگذاری گزارش...",
   
-  // Currency
-  currency: 'ارز',
-  afn: 'افغانی',
-  usd: 'دلار',
-  total: 'مجموع',
-  grandTotal: 'مجموع کل',
+  // No data
+  noData: "هیچ داده ای در دسترس نیست",
   
-  // Status
-  status: 'وضعیت',
-  balanced: 'متوازن',
-  notBalanced: 'نامتوازن',
+  // Comprehensive Reports
+  comprehensiveReports: "گزارش های جامع",
+  refresh: "بهروزرسانی",
+  summary: "خلاصه",
+  financial: "مالی",
+  studentPayments: "پرداخت های شاگردان",
+  payroll: "حقوق و دستمزد",
+  rental: "کرایه",
+  trialBalance: "تراز آزمایشی",
+  incomeStatement: "صورت فایده و زیان",
+  balanceSheet: "ترازنامه",
   
-  // Table Headers
-  category: 'دستهبندی',
-  accountCode: 'کد',
-  accountName: 'نام حساب',
-  debit: 'بدهکار',
-  credit: 'بستانکار',
-  amount: 'مبلغ',
-  count: 'تعداد',
+  // Report filters
+  daily: "روزانه",
+  weekly: "هفتگی",
+  monthly: "ماهانه",
+  yearly: "سالانه",
+  custom: "سفارشی",
+  startDate: "تاریخ شروع",
+  endDate: "تاریخ پایان",
+  loading: "در حال بارگذاری...",
+  
+  // Summary report
+  totalExpenses: "مجموع مصارف ها",
+  netProfit: "فایده خالص",
+  netLoss: "زیان خالص",
+  incomeSummary: "خلاصه درآمد",
+  expenseSummary: "خلاصه مصرف",
+  
+  // Tables
+  category: "دسته بندی",
+  afn: "AFN",
+  usd: "USD",
+  status: "وضعیت",
+  currency: "ارز",
+  count: "تعداد",
+  total: "مجموع",
+  debit: "بدهکار",
+  credit: "بستانکار",
+  accountCode: "کد حساب",
+  accountName: "نام حساب",
+  balance: "مانده",
+  notBalanced: "نامتوازن",
+  balanced: "متوازن",
+  grandTotal: "مجموع کل",
+  totalAssets: "مجموع دارایی ها",
+  totalLiabilities: "مجموع بدهی ها",
+  totalEquity: "مجموع سرمایه",
+  totalLiabilitiesAndEquity: "مجموع بدهی ها و سرمایه",
+  assets: "دارایی ها",
+  liabilities: "بدهی ها",
+  equity: "سرمایه",
+  netIncome: "درآمد خالص",
+  employee: "کارمند",
+  shopNumber: "شماره دکان",
+  shopName: "نام دکان",
+  monthlyRent: "اجاره ماهانه",
+  activeRentals: "کرایه های فعال",
+  expiringSoon: "به زودی منقضی می شود",
+  paymentCount: "تعداد پرداخت",
   
   // Messages
-  loading: 'در حال بارگذاری...',
-  noData: 'دادهای موجود نیست',
-  reportGenerated: 'گزارش با موفقیت ایجاد شد',
+  noDataFound: "هیچ داده ای یافت نشد",
+  loadingReport: "در حال بارگذاری گزارش...",
   
-  // Financial Summary
-  financialSummary: 'خلاصه مالی',
-  incomeSummary: 'خلاصه درآمد',
-  expenseSummary: 'خلاصه هزینه',
-  assets: 'داراییها',
-  liabilities: 'بدهیها',
-  equity: 'سرمایه',
-  totalAssets: 'مجموع داراییها',
-  totalLiabilities: 'مجموع بدهیها',
-  totalEquity: 'مجموع سرمایه',
-  totalLiabilitiesAndEquity: 'مجموع بدهیها و سرمایه',
+  // Additional
+  period: "دوره",
+  reportType: "نوع گزارش",
+  export: "صادرات",
   
-  // Tabs
-  overview: 'نمای کلی',
-  details: 'جزئیات',
-  all: 'همه',
-  
-  // Date
-  date: 'تاریخ',
-  today: 'امروز',
-  thisWeek: 'این هفته',
-  thisMonth: 'این ماه',
-  thisYear: 'امسال',
-  customRange: 'بازه سفارشی',
-  
-  // Dashboard
-  financialDashboard: 'داشبورد مالی',
-  comprehensiveFinancialOverview: 'نمای کلی جامع مالی',
-  byCurrency: 'بر اساس ارز',
-  financialOverview: 'نمای کلی مالی',
-  expenseDetails: 'جزئیات هزینهها',
-  incomeBreakdown: 'تفکیک درآمد',
-  expenseBreakdown: 'تفکیک هزینهها',
-  expenseByCategory: 'هزینهها بر اساس کتگوری',
-  advances: 'پیشپرداختها',
-  loadingReport: 'در حال بارگذاری گزارش...',
-  
-  // Export
-  exportReport: 'خروجی گزارش',
-  download: 'دانلود',
+  // Report tabs
+  students: "شاگردان"
 };

@@ -6,6 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import DataTable, { TableColumn, TableAction } from '@/components/ui/data-table';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCalendar } from '@/contexts/CalendarContext';
+import { formatDateByCalendarType } from '@/utils/calendar';
+import { CalendarProvider } from '@/contexts/CalendarContext';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 import { formatNumber } from '@/lib/formatNumber';
@@ -65,6 +68,9 @@ export const ShopRentalPaymentList = () => {
     );
   };
 
+  const { calendarType } = useCalendar();
+  const lang = t('language.code') as 'fa' | 'ps';
+
   const columns: TableColumn[] = [
     {
       key: 'reference_number',
@@ -95,12 +101,19 @@ export const ShopRentalPaymentList = () => {
     {
       key: 'payment_date',
       title: t('shop-rental.paymentDate'),
-      render: (value) => (
-        <div>
-          <div>{new Date(value).toLocaleDateString()}</div>
-          <div className="text-muted-foreground text-xs">{new Date(value).toLocaleTimeString()}</div>
-        </div>
-      )
+      render: (value, record) => {
+        if (!value) return 'N/A';
+        return (
+          <div>
+            <div>
+              {formatDateByCalendarType(value, calendarType, lang)}
+            </div>
+            <div className="text-muted-foreground text-xs">
+              {new Date(value).toLocaleTimeString()}
+            </div>
+          </div>
+        );
+      }
     },
     {
       key: 'period',
@@ -213,7 +226,8 @@ export const ShopRentalPaymentList = () => {
 
   return (
     <div className="space-y-6 p-6">
-      <DataTable
+      <CalendarProvider>
+        <DataTable
         data={payments}
         columns={columns}
         loading={isLoading}
@@ -257,6 +271,7 @@ export const ShopRentalPaymentList = () => {
         maxHeight="75vh"
         stickyHeader={true}
       />
+      </CalendarProvider>
 
       <ConfirmDialog />
     </div>

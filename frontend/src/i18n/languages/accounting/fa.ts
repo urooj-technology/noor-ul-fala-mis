@@ -113,7 +113,7 @@ export const accountingFa = {
   liability: "بدهی",
   equity: "سرمایه",
   income: "درآمد",
-  expense: "هزینه",
+  expense: "مصرف",
   
   // Currency
   currency: "ارز",
@@ -183,6 +183,6 @@ export const accountingFa = {
   amount: "مبلغ",
   total: "مجموع",
   totalIncome: "مجموع درآمد",
-  totalExpenses: "مجموع هزینه ها",
-  expenses: "هزینه ها"
+  totalExpenses: "مجموع مصارف ها",
+  expenses: "مصارف ها"
 };

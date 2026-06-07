@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.db.models import Sum
 from api.models.data.shop_rental import Shop, Tenant, ShopRental
 from api.serializers.data.base import DataRootSerializer
+from api.utils.calendar import get_calendar_info
 
 
 class ShopSerializer(DataRootSerializer):
@@ -25,17 +26,23 @@ class ShopRentalSerializer(DataRootSerializer):
     currency_details = serializers.SerializerMethodField()
     paid_amount = serializers.SerializerMethodField()
     remaining_amount = serializers.SerializerMethodField()
+    # Calendar date fields
+    start_date_shamsi = serializers.SerializerMethodField(read_only=True)
+    start_date_qamari = serializers.SerializerMethodField(read_only=True)
+    end_date_shamsi = serializers.SerializerMethodField(read_only=True)
+    end_date_qamari = serializers.SerializerMethodField(read_only=True)
     
     class Meta:
         model = ShopRental
         fields = [
-            'id', 'shop', 'tenant', 'start_date', 'end_date', 'monthly_rent', 
+            'id', 'shop', 'tenant', 'start_date', 'start_date_shamsi', 'start_date_qamari', 
+            'end_date', 'end_date_shamsi', 'end_date_qamari', 'monthly_rent', 
             'currency', 'rental_status', 'security_deposit', 'description',
             'shop_details', 'tenant_details', 'currency_details', 'is_active', 'is_expired',
             'paid_amount', 'remaining_amount',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['is_active', 'is_expired', 'currency_details', 'paid_amount', 'remaining_amount']
+        read_only_fields = ['is_active', 'is_expired', 'currency_details', 'paid_amount', 'remaining_amount', 'start_date_shamsi', 'start_date_qamari', 'end_date_shamsi', 'end_date_qamari']
     
     def get_shop_details(self, obj):
         if obj.shop:
@@ -91,6 +98,22 @@ class ShopRentalSerializer(DataRootSerializer):
     def get_remaining_amount(self, obj):
         paid = self.get_paid_amount(obj)
         return float(obj.monthly_rent) - paid
+
+    def get_start_date_shamsi(self, obj):
+        """Get start date in Afghanistan Shamsi calendar"""
+        return get_calendar_info(obj.start_date).get('shamsi')
+
+    def get_start_date_qamari(self, obj):
+        """Get start date in Hijri Qamari calendar"""
+        return get_calendar_info(obj.start_date).get('qamari')
+
+    def get_end_date_shamsi(self, obj):
+        """Get end date in Afghanistan Shamsi calendar"""
+        return get_calendar_info(obj.end_date).get('shamsi')
+
+    def get_end_date_qamari(self, obj):
+        """Get end date in Hijri Qamari calendar"""
+        return get_calendar_info(obj.end_date).get('qamari')
     
     def to_representation(self, instance):
         data = super().to_representation(instance)

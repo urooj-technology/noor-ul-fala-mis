@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import DataTable, { TableColumn, TableAction } from '@/components/ui/data-table';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
+import { formatDateByCalendarType } from '@/utils/calendar';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 
@@ -58,6 +60,9 @@ export const ShopRentalListPage = () => {
     );
   };
 
+  const { calendarType } = useCalendar();
+  const lang = t('language.code') as 'fa' | 'ps';
+
   const columns: TableColumn[] = [
     {
       key: 'shop_details',
@@ -106,12 +111,20 @@ export const ShopRentalListPage = () => {
     {
       key: 'start_date',
       title: t('shop-rental.startDate'),
-      render: (value) => <span className="text-xs">{value || 'N/A'}</span>
+      render: (value) => (
+        <span className="text-xs">
+          {formatDateByCalendarType(value, calendarType, lang)}
+        </span>
+      )
     },
     {
       key: 'end_date',
       title: t('shop-rental.endDate'),
-      render: (value) => <span className="text-xs">{value || 'N/A'}</span>
+      render: (value) => (
+        <span className="text-xs">
+          {formatDateByCalendarType(value, calendarType, lang)}
+        </span>
+      )
     },
     {
       key: 'rental_status',
@@ -195,6 +208,7 @@ export const ShopRentalListPage = () => {
 
   return (
     <div className="space-y-6 p-6">
+      <CalendarProvider>
       <DataTable
         data={rentals}
         columns={columns}
@@ -234,6 +248,7 @@ export const ShopRentalListPage = () => {
         stickyHeader={true}
       />
       <ConfirmDialog />
+      </CalendarProvider>
     </div>
   );
 };

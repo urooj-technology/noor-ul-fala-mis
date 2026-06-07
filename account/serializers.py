@@ -107,7 +107,8 @@ class ProfileUpdateSerializer(DataRootSerializer):
             "email",
             "phone",
             "address",
-            "profile_picture"
+            "profile_picture",
+            "preferred_calendar"
         ]
         extra_kwargs = {
             "profile_picture": {"required": False},

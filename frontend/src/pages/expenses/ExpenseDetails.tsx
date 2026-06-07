@@ -4,10 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCalendar } from '@/contexts/CalendarContext';
+import { formatDateByCalendarType } from '@/utils/calendar';
 import useFetchObjects from '@/api/useFetchObjects';
 
 const ExpenseDetails = () => {
   const { t } = useLanguage();
+  const { calendarType } = useCalendar();
+  const lang = t('language.code') as 'fa' | 'ps';
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -67,12 +71,18 @@ const ExpenseDetails = () => {
             </div>
             <div>
               <p className="text-base text-muted-foregroundtext-xs">{t('expenses.expenseDate')}</p>
-              <p className="font-mediumtext-xs">
-                {new Date(expense.expense_date).toLocaleDateString()}
-                <span className="text-base text-muted-foreground ml-2text-xs">
-                  {new Date(expense.expense_date).toLocaleTimeString()}
-                </span>
-              </p>
+              <div className="space-y-1">
+                {calendarType === 'shamsi' && expense.expense_date_shamsi && (
+                  <p className="font-medium text-sm">
+                    {formatDateByCalendarType(expense.expense_date, calendarType, lang)}
+                  </p>
+                )}
+                {calendarType === 'qamari' && expense.expense_date_qamari && (
+                  <p className="font-medium text-sm">
+                    {formatDateByCalendarType(expense.expense_date, calendarType, lang)}
+                  </p>
+                )}
+              </div>
             </div>
             <div>
               <p className="text-base text-muted-foregroundtext-xs">{t('expenses.user')}</p>

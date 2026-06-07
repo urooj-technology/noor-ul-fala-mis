@@ -5,11 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import DataTable, { TableColumn, TableAction, FilterOption } from '@/components/ui/data-table';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
+import { formatDateByCalendarType } from '@/utils/calendar';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 
 export const TransactionList = () => {
   const { t } = useLanguage();
+  const { calendarType } = useCalendar();
+  const lang = t('language.code') as 'fa' | 'ps';
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -80,7 +84,11 @@ export const TransactionList = () => {
     {
       key: 'date',
       title: t('accounting.transactionDate'),
-      render: (value) => <span className="text-xs">{value || 'N/A'}</span>
+      render: (value) => (
+        <span className="text-xs">
+          {formatDateByCalendarType(value, calendarType, lang)}
+        </span>
+      )
     },
     {
       key: 'transaction_type',
@@ -189,7 +197,8 @@ export const TransactionList = () => {
 
   return (
     <div className="space-y-6 p-6">
-      <DataTable
+      <CalendarProvider>
+        <DataTable
         data={transactions}
         columns={columns}
         loading={isLoading}
@@ -232,6 +241,7 @@ export const TransactionList = () => {
         maxHeight="75vh"
         stickyHeader={true}
       />
+      </CalendarProvider>
 
       <ConfirmDialog />
     </div>

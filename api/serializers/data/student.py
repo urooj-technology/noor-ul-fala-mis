@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from api.models.data.student import Student, ClassLevel
 from api.serializers.data.base import DataRootSerializer
+from api.utils.calendar import get_calendar_info
 
 
 class ClassLevelSerializer(DataRootSerializer):
@@ -13,21 +14,32 @@ class StudentSerializer(DataRootSerializer):
     class_level_details = serializers.SerializerMethodField(read_only=True)
     financial_summary = serializers.SerializerMethodField(read_only=True)
     phone = serializers.CharField(source='parent_phone', read_only=True)
+    # Calendar date fields
+    date_of_birth_shamsi = serializers.SerializerMethodField(read_only=True)
+    date_of_birth_qamari = serializers.SerializerMethodField(read_only=True)
+    registration_date_shamsi = serializers.SerializerMethodField(read_only=True)
+    registration_date_qamari = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Student
         fields = [
             'id', 'full_name', 'father_name', 'grandfather_name', 'date_of_birth',
+            'date_of_birth_shamsi', 'date_of_birth_qamari',
             'gender', 'tazkira_number', 'permanent_address', 'current_address',
             'province', 'district', 'area', 'parent_phone', 'student_phone',
             'alternative_phone', 'email', 'registration_number', 'registration_date',
+            'registration_date_shamsi', 'registration_date_qamari',
             'status', 'transportation', 'photo', 'tazkira_copy',
             'parent_tazkira_copy', 'previous_result_card', 'payment_receipt',
             'class_level', 'payment_cycle', 'monthly_fee', 'yearly_fee', 'currency',
             'age', 'class_level_details', 'financial_summary', 'phone',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['age', 'class_level_details', 'financial_summary', 'phone']
+        read_only_fields = [
+            'age', 'class_level_details', 'financial_summary', 'phone',
+            'date_of_birth_shamsi', 'date_of_birth_qamari',
+            'registration_date_shamsi', 'registration_date_qamari'
+        ]
 
     def get_class_level_details(self, obj):
         if obj.class_level:
@@ -51,6 +63,22 @@ class StudentSerializer(DataRootSerializer):
             'status': summary.get('status'),
             'class_level': summary.get('class_level'),
         }
+
+    def get_date_of_birth_shamsi(self, obj):
+        """Get date of birth in Afghanistan Shamsi calendar"""
+        return get_calendar_info(obj.date_of_birth).get('shamsi')
+
+    def get_date_of_birth_qamari(self, obj):
+        """Get date of birth in Hijri Qamari calendar"""
+        return get_calendar_info(obj.date_of_birth).get('qamari')
+
+    def get_registration_date_shamsi(self, obj):
+        """Get registration date in Afghanistan Shamsi calendar"""
+        return get_calendar_info(obj.registration_date).get('shamsi')
+
+    def get_registration_date_qamari(self, obj):
+        """Get registration date in Hijri Qamari calendar"""
+        return get_calendar_info(obj.registration_date).get('qamari')
 
     def validate(self, attrs):
         # Validate registration number uniqueness

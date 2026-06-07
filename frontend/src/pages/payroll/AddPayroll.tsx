@@ -5,9 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Autocomplete } from '@/components/ui/autocomplete';
+import DatePicker from '@/components/ui/date-picker-calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCalendar, CalendarType } from '@/contexts/CalendarContext';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { ArrowLeft, DollarSign, User } from 'lucide-react';
 import useAdd from '@/api/useAdd';
@@ -34,13 +36,18 @@ interface EmployeeFinancialSummary {
 }
 
 const AddPayroll = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { calendarType } = useCalendar();
   const navigate = useNavigate();
   const { user } = useAuth();
+  
+  // Get current year based on calendar type
+  const currentCalendarYear = calendarType === 'shamsi' ? 1403 : new Date().getFullYear();
+
   const [formData, setFormData] = useState<PayrollFormData>({
     employee: '',
-    month: new Date().toLocaleString('default', { month: 'long' }).toLowerCase(),
-    year: new Date().getFullYear(),
+    month: 'january',
+    year: currentCalendarYear,
     salary: 0,
     currency: '',
     payment_date: new Date().toISOString().slice(0, 10),
@@ -54,20 +61,53 @@ const AddPayroll = () => {
     customSuccessMessage: t('payroll.addSuccess'),
   });
 
-  const months = [
-    { value: 'january', label: t('advance.months.january') },
-    { value: 'february', label: t('advance.months.february') },
-    { value: 'march', label: t('advance.months.march') },
-    { value: 'april', label: t('advance.months.april') },
-    { value: 'may', label: t('advance.months.may') },
-    { value: 'june', label: t('advance.months.june') },
-    { value: 'july', label: t('advance.months.july') },
-    { value: 'august', label: t('advance.months.august') },
-    { value: 'september', label: t('advance.months.september') },
-    { value: 'october', label: t('advance.months.october') },
-    { value: 'november', label: t('advance.months.november') },
-    { value: 'december', label: t('advance.months.december') },
+  // Get months based on calendar type
+  const shamsiMonths = [
+    { value: 1, label: t('calendar.shamsiMonth1', 'حمل') },
+    { value: 2, label: t('calendar.shamsiMonth2', 'ثور') },
+    { value: 3, label: t('calendar.shamsiMonth3', 'جوزا') },
+    { value: 4, label: t('calendar.shamsiMonth4', 'سرطان') },
+    { value: 5, label: t('calendar.shamsiMonth5', 'اسد') },
+    { value: 6, label: t('calendar.shamsiMonth6', 'سنبله') },
+    { value: 7, label: t('calendar.shamsiMonth7', 'میزان') },
+    { value: 8, label: t('calendar.shamsiMonth8', 'عقرب') },
+    { value: 9, label: t('calendar.shamsiMonth9', 'قوس') },
+    { value: 10, label: t('calendar.shamsiMonth10', 'جدی') },
+    { value: 11, label: t('calendar.shamsiMonth11', 'دلو') },
+    { value: 12, label: t('calendar.shamsiMonth12', 'حوت') }
   ];
+
+  const qamariMonths = [
+    { value: 1, label: t('calendar.qamariMonth1', 'محرم الحرام') },
+    { value: 2, label: t('calendar.qamariMonth2', 'صفر المظفر') },
+    { value: 3, label: t('calendar.qamariMonth3', 'ربيع الاول') },
+    { value: 4, label: t('calendar.qamariMonth4', 'ربيع الثاني') },
+    { value: 5, label: t('calendar.qamariMonth5', 'جمادی الاول') },
+    { value: 6, label: t('calendar.qamariMonth6', 'جمادی الثاني') },
+    { value: 7, label: t('calendar.qamariMonth7', 'رجب المرجب') },
+    { value: 8, label: t('calendar.qamariMonth8', 'شعبان المعظم') },
+    { value: 9, label: t('calendar.qamariMonth9', 'رمضان المبارک') },
+    { value: 10, label: t('calendar.qamariMonth10', 'شوال المکرم') },
+    { value: 11, label: t('calendar.qamariMonth11', 'ذی القعده') },
+    { value: 12, label: t('calendar.qamariMonth12', 'ذی الحجه') }
+  ];
+
+  const months = calendarType === 'shamsi' ? shamsiMonths : qamariMonths;
+  
+  // Helper to convert numeric month to month name for backend
+  const getMonthName = (monthNum: number) => {
+    const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+    return monthNames[monthNum - 1] || 'january';
+  };
+
+  // Years based on calendar type
+  const years = Array.from({ length: 10 }, (_, i) => currentCalendarYear - 5 + i);
+
+  // Calendar type labels
+  const calendarLabels = {
+    shamsi: { month: t('calendar.monthShamsi', 'ماه'), year: t('calendar.yearShamsi', 'سال') },
+    qamari: { month: t('calendar.monthQamari', 'ماه'), year: t('calendar.yearQamari', 'سال') },
+  };
 
   useEffect(() => {
     if (formData.employee && formData.month && formData.year) {
@@ -126,8 +166,8 @@ const AddPayroll = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.employee) newErrors.employee = t('payroll.validation.employee');
     if (!formData.month) newErrors.month = t('payroll.validation.month');
-    if (!formData.year || formData.year < 2000) newErrors.year = 'Year must be 2000 or later';
-    if (!formData.salary || formData.salary <= 0) newErrors.salary = 'Salary must be greater than 0';
+    if (!formData.year || (calendarType === 'shamsi' ? formData.year < 1350 : formData.year < 2000)) newErrors.year = t('payroll.validation.year');
+    if (!formData.salary || formData.salary <= 0) newErrors.salary = t('payroll.validation.salary');
     if (!formData.currency) newErrors.currency = t('payroll.validation.currency');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -139,7 +179,7 @@ const AddPayroll = () => {
     
     const payload = {
       employee: formData.employee,
-      month: formData.month,
+      month: getMonthName(formData.month),
       year: formData.year,
       salary: formData.salary || 0,
       currency: formData.currency,
@@ -179,9 +219,9 @@ const AddPayroll = () => {
                 {errors.employee && <p className="text-base text-destructivetext-xs">{errors.employee}</p>}
               </div>
               <div>
-                <Label>{t('payroll.month')} *</Label>
-                <Select value={formData.month} onValueChange={val => {
-                  setFormData(prev => ({ ...prev, month: val }));
+                <Label>{calendarLabels[calendarType].month} *</Label>
+                <Select value={formData.month.toString()} onValueChange={val => {
+                  setFormData(prev => ({ ...prev, month: parseInt(val) }));
                   if (errors.month) setErrors(prev => ({ ...prev, month: '' }));
                 }}>
                   <SelectTrigger>
@@ -189,23 +229,27 @@ const AddPayroll = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {months.map((month) => (
-                      <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
+                      <SelectItem key={month.value} value={month.value.toString()}>{month.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 {errors.month && <p className="text-base text-destructivetext-xs">{errors.month}</p>}
               </div>
               <div>
-                <Label>{t('payroll.year')} *</Label>
-                <Input 
-                  type="number"
-                  value={formData.year || ''} 
-                  onChange={e => {
-                    setFormData(prev => ({ ...prev, year: e.target.value === '' ? new Date().getFullYear() : parseInt(e.target.value) }));
-                    if (errors.year) setErrors(prev => ({ ...prev, year: '' }));
-                  }}
-                  placeholder={t('payroll.enterYear')} 
-                />
+                <Label>{calendarLabels[calendarType].year} *</Label>
+                <Select value={formData.year.toString()} onValueChange={val => {
+                  setFormData(prev => ({ ...prev, year: parseInt(val) }));
+                  if (errors.year) setErrors(prev => ({ ...prev, year: '' }));
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={calendarLabels[calendarType].year} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map((year) => (
+                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {errors.year && <p className="text-base text-destructivetext-xs">{errors.year}</p>}
               </div>
             </div>
@@ -282,11 +326,10 @@ const AddPayroll = () => {
                 {errors.currency && <p className="text-base text-destructivetext-xs">{errors.currency}</p>}
               </div>
               <div>
-                <Label>{t('payroll.paymentDate')}</Label>
-                <Input 
-                  type="date"
-                  value={formData.payment_date} 
-                  onChange={e => setFormData(prev => ({ ...prev, payment_date: e.target.value }))}
+                <DatePicker
+                  value={formData.payment_date}
+                  onChange={(date) => setFormData(prev => ({ ...prev, payment_date: date }))}
+                  label={t('payroll.paymentDate')}
                 />
               </div>
             </div>

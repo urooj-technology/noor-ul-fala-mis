@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import useFetchObject from '@/api/useFetchObject';
+import { useCalendar } from '@/contexts/CalendarContext';
 import {
   ArrowLeft,
   Edit,
@@ -43,6 +44,23 @@ interface Student {
   father_name: string;
   grandfather_name?: string;
   date_of_birth: string;
+  date_of_birth_shamsi?: {
+    year: number;
+    month: number;
+    day: number;
+    formatted: string;
+    formatted_long: string;
+    month_name_dari: string;
+    month_name_pashto: string;
+  } | null;
+  date_of_birth_qamari?: {
+    year: number;
+    month: number;
+    day: number;
+    formatted: string;
+    formatted_long: string;
+    month_name: string;
+  } | null;
   gender: string;
   tazkira_number: string;
   permanent_address: string;
@@ -56,6 +74,23 @@ interface Student {
   email?: string;
   registration_number: string;
   registration_date: string;
+  registration_date_shamsi?: {
+    year: number;
+    month: number;
+    day: number;
+    formatted: string;
+    formatted_long: string;
+    month_name_dari: string;
+    month_name_pashto: string;
+  } | null;
+  registration_date_qamari?: {
+    year: number;
+    month: number;
+    day: number;
+    formatted: string;
+    formatted_long: string;
+    month_name: string;
+  } | null;
   status: string;
   transportation: string;
   class_level?: {
@@ -114,6 +149,8 @@ const StudentDetails = () => {
     queryKey: ['student', id],
     endpoint: `students/${id}/`,
   });
+
+  const { calendarType } = useCalendar();
 
   const handlePrint = () => {
     window.print();
@@ -394,7 +431,16 @@ const StudentDetails = () => {
                 )}
                 <InfoRow
                   label={t('students.dateOfBirth')}
-                  value={formatDate(student.date_of_birth)}
+                  value={
+                    <div className="space-y-0.5">
+                      {calendarType === 'shamsi' && student.date_of_birth_shamsi && (
+                        <span className="text-sm">{student.date_of_birth_shamsi.formatted}</span>
+                      )}
+                      {calendarType === 'qamari' && student.date_of_birth_qamari && (
+                        <span className="text-sm">{student.date_of_birth_qamari.formatted}</span>
+                      )}
+                    </div>
+                  }
                   accentDot="bg-indigo-400"
                 />
                 {student.age && (
@@ -572,7 +618,16 @@ const StudentDetails = () => {
                 />
                 <InfoRow
                   label={t('students.registrationDate')}
-                  value={formatDate(student.registration_date)}
+                  value={
+                    <div className="space-y-0.5">
+                      {calendarType === 'shamsi' && student.registration_date_shamsi && (
+                        <span className="text-sm">{student.registration_date_shamsi.formatted}</span>
+                      )}
+                      {calendarType === 'qamari' && student.registration_date_qamari && (
+                        <span className="text-sm">{student.registration_date_qamari.formatted}</span>
+                      )}
+                    </div>
+                  }
                   accentDot="bg-rose-400"
                 />
                 <InfoRow

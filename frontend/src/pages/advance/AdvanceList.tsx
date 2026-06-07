@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import DataTable, { TableColumn, TableAction, FilterOption } from '@/components/ui/data-table';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
+import { formatDateByCalendarType } from '@/utils/calendar';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 
@@ -69,6 +71,9 @@ export const AdvanceList = () => {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 10 }, (_, i) => ({ value: (currentYear - 5 + i).toString(), label: (currentYear - 5 + i).toString() }));
 
+  const { calendarType } = useCalendar();
+  const lang = t('language.code') as 'fa' | 'ps';
+
   const columns: TableColumn[] = [
     {
       key: 'employee_details',
@@ -111,13 +116,16 @@ export const AdvanceList = () => {
       title: t('advance.paymentDate'),
       render: (value) => {
         if (!value) return 'N/A';
-        const date = new Date(value);
         return (
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-gray-400" />
             <div className="text-base">
-              <div className="font-medium">{date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</div>
-              <div className="text-gray-500">{date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</div>
+              <div className="font-medium">
+                {formatDateByCalendarType(value, calendarType, lang)}
+              </div>
+              <div className="text-gray-500">
+                {new Date(value).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              </div>
             </div>
           </div>
         );
@@ -224,7 +232,8 @@ export const AdvanceList = () => {
 
   return (
     <div className="space-y-6 p-6">
-      <DataTable
+      <CalendarProvider>
+        <DataTable
         data={advances}
         columns={columns}
         loading={isLoading}
@@ -267,6 +276,7 @@ export const AdvanceList = () => {
         maxHeight="75vh"
         stickyHeader={true}
       />
+      </CalendarProvider>
 
       <ConfirmDialog />
     </div>

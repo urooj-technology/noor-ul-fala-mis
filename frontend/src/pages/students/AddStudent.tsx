@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import DatePicker from '@/components/ui/date-picker-calendar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { RotateCw, ArrowLeft, Upload, X, Eye, FileText, Image as ImageIcon, User, MapPin, Phone, File, GraduationCap, CreditCard, Info } from 'lucide-react';
 import useAdd from '@/api/useAdd';
@@ -380,18 +381,12 @@ const AddStudent = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="date_of_birth" className="font-semibold">
-                    {t("students.dateOfBirth")} <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="date_of_birth"
-                    type="date"
-                    value={formData.date_of_birth}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, date_of_birth: e.target.value }))}
-                    className="h-10"
-                  />
-                </div>
+                <DatePicker
+                  value={formData.date_of_birth}
+                  onChange={(date) => setFormData((prev) => ({ ...prev, date_of_birth: date }))}
+                  label={t("students.dateOfBirth")}
+                  placeholder={t('students.dateOfBirth', 'تاریخ تولد')}
+                />
 
                 <div className="space-y-2">
                   <Label htmlFor="gender" className="font-semibold">
@@ -674,22 +669,15 @@ const AddStudent = () => {
                   {errors.registration_number && <p className="text-xs text-destructive">{errors.registration_number}</p>}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="registration_date" className="font-semibold">
-                    {t("students.registrationDate")} <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="registration_date"
-                    type="date"
-                    value={formData.registration_date}
-                    onChange={(e) => {
-                      setFormData((prev) => ({ ...prev, registration_date: e.target.value }));
-                      if (errors.registration_date) setErrors((prev) => ({ ...prev, registration_date: "" }));
-                    }}
-                    className="h-10"
-                  />
-                  {errors.registration_date && <p className="text-xs text-destructive">{errors.registration_date}</p>}
-                </div>
+                <DatePicker
+                  value={formData.registration_date}
+                  onChange={(date) => {
+                    setFormData((prev) => ({ ...prev, registration_date: date }));
+                    if (errors.registration_date) setErrors((prev) => ({ ...prev, registration_date: "" }));
+                  }}
+                  label={t("students.registrationDate")}
+                  placeholder={t('students.registrationDate', 'تاریخ ثبت نام')}
+                />
 
                 <div className="space-y-2">
                   <Label htmlFor="status" className="font-semibold">

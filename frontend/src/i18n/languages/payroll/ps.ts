@@ -83,4 +83,16 @@ export const payrollPs = {
   // Additional terms for generic List component
   status: 'حالت',
   searchByEmployee: 'د کارمند د نوم له مخې لټول...',
+  
+  // Calendar
+  calendarType: 'د نیټې ډول',
+  shamsi: 'شمسی',
+  qamari: 'قمری',
+  gregorian: 'میلادی',
+  monthShamsi: 'ماه',
+  yearShamsi: 'کال',
+  monthQamari: 'ماه',
+  yearQamari: 'کال',
+  month: 'Month',
+  year: 'Year'
 };

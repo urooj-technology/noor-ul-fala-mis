@@ -3,12 +3,15 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
-import useFetchObjects from '@/api/useFetchObjects';
+import { useCalendar } from '@/contexts/CalendarContext';
+import { formatDateByCalendarType } from '@/utils/calendar';
 import { DollarSign, User, Calendar, FileText, ArrowLeft } from 'lucide-react';
 import { ReloadIcon } from '@radix-ui/react-icons';
 
 const AdvanceDetails = () => {
   const { t } = useLanguage();
+  const { calendarType } = useCalendar();
+  const lang = t('language.code') as 'fa' | 'ps';
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -138,7 +141,7 @@ const AdvanceDetails = () => {
               <div>
                 <p className="text-base text-gray-600 dark:text-gray-400text-xs">{t('advance.paymentDate')}</p>
                 <p className="font-mediumtext-xs">
-                  {advance.payment_date ? new Date(advance.payment_date).toLocaleString() : 'N/A'}
+                  {advance.payment_date ? formatDateByCalendarType(advance.payment_date, calendarType, lang) : 'N/A'}
                 </p>
               </div>
             </div>

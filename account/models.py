@@ -58,6 +58,12 @@ class User(AbstractBaseUser):
         ('vendor', 'Vendor'),
     ]
     
+    CALENDAR_CHOICES = [
+        ('gregorian', 'Gregorian (میلادی)'),
+        ('shamsi', 'Shamsi (شمسی)'),
+        ('qamari', 'Qamari (قمری)'),
+    ]
+    
     username = models.CharField(verbose_name="username", max_length=255, unique=True)
     email = models.EmailField(verbose_name="email address", max_length=255, unique=True)
     phone = models.CharField(max_length=15, blank=True, null=True)
@@ -66,6 +72,12 @@ class User(AbstractBaseUser):
     profile_picture = models.ImageField(upload_to="authors/", blank=True, null=True)
 
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='staff')
+    preferred_calendar = models.CharField(
+        max_length=20, 
+        choices=CALENDAR_CHOICES, 
+        default='shamsi',
+        verbose_name='Preferred Calendar'
+    )
     address = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)

@@ -6,14 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import DataTable, { TableColumn, TableAction } from '@/components/ui/data-table';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
+import { formatDateByCalendarType } from '@/utils/calendar';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 
 export const ExpenseList = () => {
-  const { t } = useLanguage();
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [userFilter, setUserFilter] = useState('');
@@ -42,6 +40,7 @@ export const ExpenseList = () => {
 
   const expenses = expensesData?.results || [];
   const totalItems = expensesData?.count || 0;
+
   const handleDetails = (expense: any) => {
     navigate(`/expenses/${expense.id}`);
   };
@@ -50,7 +49,10 @@ export const ExpenseList = () => {
     navigate(`/expenses/${expense.id}/edit`);
   };
 
-  const expenseColumns: TableColumn[] = [
+  const { calendarType } = useCalendar();
+  const lang = t('language.code') as 'fa' | 'ps';
+
+  const columns: TableColumn[] = [
     {
       key: 'category_details',
       title: t('expenses.category'),
@@ -79,12 +81,14 @@ export const ExpenseList = () => {
     {
       key: 'expense_date',
       title: t('expenses.expenseDate'),
-      render: (value) => (
-        <div>
-          <div>{new Date(value).toLocaleDateString()}</div>
-          <div className="text-base text-muted-foreground">{new Date(value).toLocaleTimeString()}</div>
-        </div>
-      )
+      render: (value, record) => {
+        const date = calendarType === 'shamsi' ? record.expense_date_shamsi : record.expense_date_qamari;
+        return (
+          <div className="text-sm">
+            {date ? formatDateByCalendarType(value, calendarType, lang) : '-'}
+          </div>
+        );
+      }
     },
     {
       key: 'user_details',
@@ -195,9 +199,10 @@ export const ExpenseList = () => {
 
   return (
     <div className="space-y-6 p-6">
-      <DataTable
+      <CalendarProvider>
+        <DataTable
         data={expenses}
-        columns={expenseColumns}
+        columns={columns}
         loading={isLoading}
         title={t('expenses.expenses')}
         subtitle={t('expenses.manageExpenseRecords')}
@@ -239,6 +244,7 @@ export const ExpenseList = () => {
         maxHeight="75vh"
         stickyHeader={true}
       />
+      </CalendarProvider>
 
       <ConfirmDialog />
     </div>

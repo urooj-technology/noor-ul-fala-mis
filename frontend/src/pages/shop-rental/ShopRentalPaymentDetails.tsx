@@ -6,11 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCalendar } from '@/contexts/CalendarContext';
+import { formatDateByCalendarType } from '@/utils/calendar';
 import useFetchObject from '@/api/useFetchObject';
 import { formatNumber } from '@/lib/formatNumber';
 
 const ShopRentalPaymentDetails = () => {
   const { t } = useLanguage();
+  const { calendarType } = useCalendar();
   const navigate = useNavigate();
   const { id } = useParams();
   const [deleteMode, setDeleteMode] = useState(false);
@@ -56,6 +59,8 @@ const ShopRentalPaymentDetails = () => {
       </div>
     );
   }
+
+  const lang = t('language.code') as 'fa' | 'ps';
 
   return (
     <div className="container mx-auto py-6 max-w-4xl">
@@ -137,7 +142,9 @@ const ShopRentalPaymentDetails = () => {
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">{t('shop-rental.paymentDate')}</span>
                 </div>
-                <p className="font-semibold">{new Date(payment.payment_date).toLocaleDateString()}</p>
+                <p className="font-semibold">
+                  {formatDateByCalendarType(payment.payment_date, calendarType, lang)}
+                </p>
               </div>
               <div className="p-4 bg-muted/50 rounded-lg space-y-2">
                 <div className="flex items-center gap-2">

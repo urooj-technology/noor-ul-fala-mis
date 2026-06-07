@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Autocomplete } from '@/components/ui/autocomplete';
+import DatePicker from '@/components/ui/date-picker-calendar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { RotateCw, ArrowLeft, Receipt, DollarSign, Calendar, Tag, User, FileText } from 'lucide-react';
@@ -158,15 +159,14 @@ const EditExpense = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="expense_date" className="font-semibold flex items-center gap-2"><Calendar className="h-4 w-4" />{t('expenses.expenseDate')} <span className="text-destructive">*</span></Label>
-                <Input
-                  id="expense_date"
-                  type="date"
+                <DatePicker
                   value={formData.expense_date}
-                  onChange={(e) => {
-                    setFormData(prev => ({ ...prev, expense_date: e.target.value }));
+                  onChange={(date) => {
+                    setFormData(prev => ({ ...prev, expense_date: date }));
                     if (errors.expense_date) setErrors(prev => ({ ...prev, expense_date: '' }));
                   }}
-                  className="h-10"
+                  label={t('expenses.expenseDate')}
+                  placeholder={t('expenses.expenseDate', 'تاریخ مصرف')}
                 />
                 {errors.expense_date && <p className="text-xs text-destructive">{errors.expense_date}</p>}
               </div>

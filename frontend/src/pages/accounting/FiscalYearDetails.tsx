@@ -4,11 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCalendar } from '@/contexts/CalendarContext';
+import { formatDateByCalendarType } from '@/utils/calendar';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import useFetchObject from '@/api/useFetchObject';
 
 const FiscalYearDetails = () => {
   const { t } = useLanguage();
+  const { calendarType } = useCalendar();
+  const lang = t('language.code') as 'fa' | 'ps';
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -83,11 +87,15 @@ const FiscalYearDetails = () => {
               </div>
               <div>
                 <p className="text-sm opacity-75">{t('accounting.fiscalYearStartDate')}</p>
-                <p className="text-lg font-bold">{fiscalYear.start_date}</p>
+                <p className="text-lg font-bold">
+                  {fiscalYear.start_date ? formatDateByCalendarType(fiscalYear.start_date, calendarType, lang) : fiscalYear.start_date}
+                </p>
               </div>
               <div>
                 <p className="text-sm opacity-75">{t('accounting.fiscalYearEndDate')}</p>
-                <p className="text-lg font-bold">{fiscalYear.end_date}</p>
+                <p className="text-lg font-bold">
+                  {fiscalYear.end_date ? formatDateByCalendarType(fiscalYear.end_date, calendarType, lang) : fiscalYear.end_date}
+                </p>
               </div>
             </div>
 

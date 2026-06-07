@@ -3,12 +3,15 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
-import useFetchObjects from '@/api/useFetchObjects';
+import { useCalendar } from '@/contexts/CalendarContext';
+import { formatDateByCalendarType } from '@/utils/calendar';
 import { DollarSign, User, Calendar, FileText, ArrowLeft } from 'lucide-react';
 import { ReloadIcon } from '@radix-ui/react-icons';
 
 const PayrollDetails = () => {
   const { t } = useLanguage();
+  const { calendarType } = useCalendar();
+  const lang = t('language.code') as 'fa' | 'ps';
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -181,9 +184,18 @@ const PayrollDetails = () => {
               <Calendar className="h-4 w-4 text-gray-500" />
               <div>
                 <p className="text-base text-gray-600 dark:text-gray-400text-xs">{t('payroll.paymentDate')}</p>
-                <p className="font-mediumtext-xs">
-                  {payroll.payment_date ? new Date(payroll.payment_date).toLocaleString() : 'N/A'}
-                </p>
+                <div className="space-y-1">
+                  {calendarType === 'shamsi' && (
+                    <p className="font-medium text-sm">
+                      {formatDateByCalendarType(payroll.payment_date, calendarType, lang)}
+                    </p>
+                  )}
+                  {calendarType === 'qamari' && (
+                    <p className="font-medium text-sm">
+                      {formatDateByCalendarType(payroll.payment_date, calendarType, lang)}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>

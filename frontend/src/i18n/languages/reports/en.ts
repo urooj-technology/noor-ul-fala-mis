@@ -1,122 +1,114 @@
 export const reportsEn = {
-  // Page Title
-  reports: 'Reports',
-  comprehensiveReports: 'Comprehensive Reports',
-  financialReports: 'Financial Reports',
+  // Dashboard
+  financialDashboard: "Financial Dashboard",
+  comprehensiveFinancialOverview: "Comprehensive Financial Overview",
   
-  // Report Types
-  reportType: 'Report Type',
-  summary: 'Summary',
-  trialBalance: 'Trial Balance',
-  incomeStatement: 'Income Statement',
-  balanceSheet: 'Balance Sheet',
-  studentPayments: 'Student Payments',
-  payroll: 'Payroll',
-  rental: 'Rental Income',
-  expenses: 'Expenses',
-  dailyReport: 'Daily Report',
+  // Time periods
+  today: "Today",
+  thisWeek: "This Week",
+  thisMonth: "This Month",
+  thisYear: "This Year",
   
-  // Period
-  period: 'Period',
-  daily: 'Daily',
-  weekly: 'Weekly',
-  monthly: 'Monthly',
-  yearly: 'Yearly',
-  custom: 'Custom',
-  startDate: 'Start Date',
-  endDate: 'End Date',
+  // Summary cards
+  totalIncome: "Total Income",
+  expenses: "Expenses",
+  profit: "Profit",
+  incomeBreakdown: "Income Breakdown",
   
-  // Actions
-  refresh: 'Refresh',
-  export: 'Export',
-  exportExcel: 'Export to Excel',
-  exportPDF: 'Export to PDF',
-  print: 'Print',
+  // Chart sections
+  byCurrency: "By Currency",
+  financialOverview: "Financial Overview",
+  expenseBreakdown: "Expense Breakdown",
+  expenseByCategory: "Expense by Category",
   
-  // Income Categories
-  income: 'Income',
-  totalIncome: 'Total Income',
-  projectIncome: 'Project Income',
-  studentPaymentsIncome: 'Student Payments',
-  rentalIncome: 'Rental Income',
-  otherIncome: 'Other Income',
+  // Income types
+  studentPaymentsIncome: "Student Payments",
+  rentalIncome: "Rental Income",
+  otherIncome: "Other Income",
   
-  // Expense Categories
-  totalExpenses: 'Total Expenses',
-  generalExpenses: 'General Expenses',
-  payrollExpenses: 'Payroll',
-  advanceExpenses: 'Advances',
+  // Expense types
+  generalExpenses: "General Expenses",
+  payroll: "Payroll",
+  payrollExpenses: "Payroll Expenses",
+  advances: "Advances",
+  advanceExpenses: "Advance Expenses",
   
-  // Financial Results
-  profit: 'Profit',
-  netProfit: 'Net Profit',
-  netLoss: 'Net Loss',
-  netIncome: 'Net Income',
+  // Loading states
+  loadingReport: "Loading report...",
   
-  // Currency
-  currency: 'Currency',
-  afn: 'AFN',
-  usd: 'USD',
-  total: 'Total',
-  grandTotal: 'Grand Total',
+  // No data
+  noData: "No data available",
   
-  // Status
-  status: 'Status',
-  balanced: 'Balanced',
-  notBalanced: 'Not Balanced',
+  // Comprehensive Reports
+  comprehensiveReports: "Comprehensive Reports",
+  refresh: "Refresh",
+  summary: "Summary",
+  financial: "Financial",
+  studentPayments: "Student Payments",
+  payroll: "Payroll",
+  rental: "Rental",
+  trialBalance: "Trial Balance",
+  incomeStatement: "Income Statement",
+  balanceSheet: "Balance Sheet",
   
-  // Table Headers
-  category: 'Category',
-  accountCode: 'Code',
-  accountName: 'Account Name',
-  debit: 'Debit',
-  credit: 'Credit',
-  amount: 'Amount',
-  count: 'Count',
+  // Report filters
+  daily: "Daily",
+  weekly: "Weekly",
+  monthly: "Monthly",
+  yearly: "Yearly",
+  custom: "Custom",
+  startDate: "Start Date",
+  endDate: "End Date",
+  loading: "Loading...",
+  
+  // Summary report
+  totalExpenses: "Total Expenses",
+  netProfit: "Net Profit",
+  netLoss: "Net Loss",
+  incomeSummary: "Income Summary",
+  expenseSummary: "Expense Summary",
+  
+  // Tables
+  category: "Category",
+  afn: "AFN",
+  usd: "USD",
+  status: "Status",
+  currency: "Currency",
+  count: "Count",
+  total: "Total",
+  debit: "Debit",
+  credit: "Credit",
+  accountCode: "Account Code",
+  accountName: "Account Name",
+  balance: "Balance",
+  notBalanced: "Not Balanced",
+  balanced: "Balanced",
+  grandTotal: "Grand Total",
+  totalAssets: "Total Assets",
+  totalLiabilities: "Total Liabilities",
+  totalEquity: "Total Equity",
+  totalLiabilitiesAndEquity: "Total Liabilities & Equity",
+  assets: "Assets",
+  liabilities: "Liabilities",
+  equity: "Equity",
+  netIncome: "Net Income",
+  employee: "Employee",
+  shopNumber: "Shop Number",
+  shopName: "Shop Name",
+  monthlyRent: "Monthly Rent",
+  activeRentals: "Active Rentals",
+  expiringSoon: "Expiring Soon",
+  paymentCount: "Payment Count",
   
   // Messages
-  loading: 'Loading...',
-  noData: 'No data available',
-  reportGenerated: 'Report generated successfully',
+  noDataFound: "No data found",
+  loadingReport: "Loading report...",
   
-  // Financial Summary
-  financialSummary: 'Financial Summary',
-  incomeSummary: 'Income Summary',
-  expenseSummary: 'Expense Summary',
-  assets: 'Assets',
-  liabilities: 'Liabilities',
-  equity: 'Equity',
-  totalAssets: 'Total Assets',
-  totalLiabilities: 'Total Liabilities',
-  totalEquity: 'Total Equity',
-  totalLiabilitiesAndEquity: 'Total Liabilities & Equity',
+  // Additional
+  period: "Period",
+  reportType: "Report Type",
+  export: "Export",
   
-  // Tabs
-  overview: 'Overview',
-  details: 'Details',
-  all: 'All',
-  
-  // Date
-  date: 'Date',
-  today: 'Today',
-  thisWeek: 'This Week',
-  thisMonth: 'This Month',
-  thisYear: 'This Year',
-  customRange: 'Custom Range',
-  
-  // Dashboard
-  financialDashboard: 'Financial Dashboard',
-  comprehensiveFinancialOverview: 'Comprehensive financial overview',
-  byCurrency: 'By Currency',
-  financialOverview: 'Financial Overview',
-  expenseDetails: 'Expense Details',
-  incomeBreakdown: 'Income Breakdown',
-  expenseBreakdown: 'Expense Breakdown',
-  expenseByCategory: 'Expenses by Category',
-  advances: 'Advances',
-  loadingReport: 'Loading report...',
-  
-  // Export
-  exportReport: 'Export Report',
-  download: 'Download',
+  // Report tabs
+  students: "Students"
 };

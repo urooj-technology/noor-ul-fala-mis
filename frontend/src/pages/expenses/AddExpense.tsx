@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Autocomplete } from '@/components/ui/autocomplete';
+import DatePicker from '@/components/ui/date-picker-calendar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { RotateCw, ArrowLeft, Receipt, DollarSign, Calendar, Tag, User, FileText } from 'lucide-react';
@@ -139,20 +140,15 @@ const AddExpense = () => {
                 {errors.currency && <p className="text-xs text-destructive">{errors.currency}</p>}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="expense_date" className="font-semibold flex items-center gap-2"><Calendar className="h-4 w-4" />{t('expenses.expenseDate')} <span className="text-destructive">*</span></Label>
-                <Input
-                  id="expense_date"
-                  type="date"
-                  value={formData.expense_date}
-                  onChange={(e) => {
-                    setFormData(prev => ({ ...prev, expense_date: e.target.value }));
-                    if (errors.expense_date) setErrors(prev => ({ ...prev, expense_date: '' }));
-                  }}
-                  className="h-10"
-                />
-                {errors.expense_date && <p className="text-xs text-destructive">{errors.expense_date}</p>}
-              </div>
+              <DatePicker
+                value={formData.expense_date}
+                onChange={(date) => {
+                  setFormData(prev => ({ ...prev, expense_date: date }));
+                  if (errors.expense_date) setErrors(prev => ({ ...prev, expense_date: '' }));
+                }}
+                label={t('expenses.expenseDate')}
+                placeholder={t('expenses.expenseDate', 'تاریخ مصرف')}
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

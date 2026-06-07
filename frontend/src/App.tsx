@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { PermissionProvider } from "@/contexts/PermissionContext";
+import { CalendarProvider } from "@/contexts/CalendarContext";
 import { Layout } from "@/components/layout/Layout";
 import Login from "@/pages/auth/Login";
 
@@ -39,19 +40,21 @@ const AppContent = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <PermissionProvider>
-        <LanguageProvider>
-          <TooltipProvider>
-            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-              <Toaster />
-              <Sonner />
-              <AppContent />
-            </BrowserRouter>
-          </TooltipProvider>
-        </LanguageProvider>
-      </PermissionProvider>
-    </AuthProvider>
+    <CalendarProvider>
+      <AuthProvider>
+        <PermissionProvider>
+          <LanguageProvider>
+            <TooltipProvider>
+              <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                <Toaster />
+                <Sonner />
+                <AppContent />
+              </BrowserRouter>
+            </TooltipProvider>
+          </LanguageProvider>
+        </PermissionProvider>
+      </AuthProvider>
+    </CalendarProvider>
   </QueryClientProvider>
 );
 
