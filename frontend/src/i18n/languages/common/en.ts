@@ -251,6 +251,10 @@ export const commonEn = {
   show: "Show",
   prev: "Prev",
   next: "Next",
+  totals: "Totals",
+  selectInvoices: "Select Invoices",
+  processing: "Processing...",
+  deselectAll: "Deselect All",
   units: {
     unit: "Unit",
   },
@@ -439,6 +443,8 @@ export const commonEn = {
   
   // Additional missing common keys
   paid: "Paid",
+  unpaid: "Unpaid",
+  partial: "Partial",
   
   // Date translations
   months: {

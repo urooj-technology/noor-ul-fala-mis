@@ -9,7 +9,14 @@ from api.views.data.advance import AdvanceViewSet
 
 # ====================== STUDENT MANAGEMENT ======================
 from api.views.data.student import StudentViewSet, ClassLevelViewSet
-from api.views.data.student_payment import StudentPaymentViewSet
+
+# ====================== STUDENT FINANCE (FEE) ======================
+from api.views.data.student_finance import (
+    FeeTypeViewSet,
+    StudentFeeAssignmentViewSet,
+    StudentPaymentViewSet,
+    FinanceLedgerViewSet
+)
 
 # ====================== SHOP RENTAL ======================
 from api.views.data.shop_rental import ShopViewSet, TenantViewSet, ShopRentalViewSet
@@ -57,6 +64,11 @@ router.register(r'advances', AdvanceViewSet, basename='advance')
 router.register(r'class-levels', ClassLevelViewSet, basename='class-level')
 router.register(r'students', StudentViewSet, basename='student')
 router.register(r'student-payments', StudentPaymentViewSet, basename='student-payment')
+
+# Student Finance (Fee)
+router.register(r'fee-types', FeeTypeViewSet, basename='fee-type')
+router.register(r'student-fee-assignments', StudentFeeAssignmentViewSet, basename='student-fee-assignment')
+router.register(r'finance-ledgers', FinanceLedgerViewSet, basename='finance-ledger')
 
 # Shop Rental
 router.register(r'shops', ShopViewSet, basename='shop')

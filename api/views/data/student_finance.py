@@ -1,0 +1,1349 @@
+"""
+Student Finance Views - All fee and payment-related views
+ویوهای مالی شاگرد - همه ویوهای مربوط به فیس و پرداخت
+
+Views included:
+- FeeTypeViewSet
+- ClassFeeViewSet (removed: ClassFee model deleted)
+- StudentFeeAssignmentViewSet
+- PaymentPlanViewSet (removed: PaymentPlan model deleted)
+- StudentPaymentViewSet
+- FinanceLedgerViewSet
+"""
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.db.models import Sum, Count, Q
+from django.utils import timezone
+from django.db import transaction
+from decimal import Decimal
+from rest_framework import status as drf_status
+
+from api.models.data.student_finance import (
+    FeeType, StudentFeeAssignment, StudentPayment, FinanceLedger
+)
+from api.models.data.student import Student
+from api.serializers.data.student_finance import (
+    FeeTypeSerializer, FeeTypeMinimalSerializer,
+    StudentFeeAssignmentSerializer, StudentPaymentSerializer, FinanceLedgerSerializer
+)
+from api.views.data.base import DataRootViewSet
+
+
+class FeeTypeViewSet(DataRootViewSet):
+    """API endpoint for FeeType management | مدیریت انواع فیس"""
+    queryset = FeeType.objects.all().order_by('name')
+    serializer_class = FeeTypeSerializer
+    filterset_fields = ['is_active', 'is_mandatory', 'category']
+    search_fields = ['name', 'name_fa', 'name_ps', 'code', 'description']
+
+
+# Class-level default fees removed: ClassFee endpoints intentionally omitted
+
+
+class StudentFeeAssignmentViewSet(DataRootViewSet):
+    """API endpoint for StudentFeeAssignment management | مدیریت تخصیص فیس شاگردان"""
+    queryset = StudentFeeAssignment.objects.all().select_related('student', 'fee_type', 'class_level')
+    serializer_class = StudentFeeAssignmentSerializer
+    filterset_fields = ['student', 'fee_type', 'is_active', 'is_mandatory', 'class_level']
+    search_fields = ['student__full_name', 'student__registration_number', 'fee_type__name']
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        class_level = self.request.query_params.get('class_level')
+        if class_level:
+            queryset = queryset.filter(class_level_id=class_level)
+        return queryset
+    
+    @action(detail=False, methods=['get'])
+    def by_student(self, request):
+        """Get all fee assignments for a specific student | فیسهای یک شاگرد"""
+        student_id = request.query_params.get('student')
+        if not student_id:
+            return Response({'error': 'student parameter is required'}, status=drf_status.HTTP_400_BAD_REQUEST)
+        assignments = self.queryset.filter(student_id=student_id, is_active=True)
+        serializer = self.get_serializer(assignments, many=True)
+        return Response(serializer.data)
+    
+    # Class-based auto-assignment removed. Create assignments via student-fee-assignments API.
+
+
+# StudentInvoice endpoints removed — invoices and ledger are deprecated. Use StudentFeeAssignment and StudentPayment instead.
+
+
+class StudentPaymentViewSet(DataRootViewSet):
+    """API endpoint for StudentPayment management | مدیریت پرداخت شاگردان"""
+    queryset = StudentPayment.objects.all().order_by('-payment_date')
+    serializer_class = StudentPaymentSerializer
+    filterset_fields = ['assignment', 'payment_status', 'payment_date']
+    search_fields = [
+        'assignment__student__full_name', 'assignment__student__registration_number',
+        'reference_number', 'description'
+    ]
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        student = self.request.query_params.get('student')
+        if student:
+            queryset = queryset.filter(assignment__student_id=student)
+        
+        # REMOVED: payment_cycle filter - using payment_interval_months instead
+        
+        status = self.request.query_params.get('payment_status')
+        if status:
+            queryset = queryset.filter(payment_status=status)
+        
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+        if start_date:
+            queryset = queryset.filter(payment_date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(payment_date__lte=end_date)
+        
+        return queryset
+    
+    def create(self, request, *args, **kwargs):
+        """Create payments for selected period months with flexible allocation modes.
+
+        Supported request payloads:
+        - allocation_mode: 'all' (default) or 'per_fee'
+        - period_months: list of month numbers (strings or ints)
+        - period_year: year string
+        - amount: total amount (for 'all') or ignored when 'per_fee' and allocations provided
+        - allocations: JSON string or dict mapping fee_type_id -> amount (used when allocation_mode='per_fee' or to override split)
+        - fee_type: legacy single fee_type selector (still supported)
+
+        Behavior:
+        - When allocation_mode='per_fee' and allocations provided, creates payments per fee type per selected month using provided amounts.
+        - When allocation_mode='all', splits the provided total amount proportionally across active assignments amounts, then creates per-fee payments per month.
+        - Enforces each assignment.payment_plan: selected months count must not exceed the assignment's payment_plan.
+        """
+        import json
+
+        # Prefer explicit assignment id; fallback to student+fee_type filtering
+        assignment_id = request.data.get('assignment')
+        fee_type_id = request.data.get('fee_type')  # optional single fee_type
+
+        student = None
+        assignment_obj = None
+        if assignment_id:
+            try:
+                assignment_obj = StudentFeeAssignment.objects.select_related('student', 'fee_type').get(id=assignment_id, is_active=True)
+                student = assignment_obj.student
+            except StudentFeeAssignment.DoesNotExist:
+                return Response({'error': 'Assignment not found'}, status=drf_status.HTTP_404_NOT_FOUND)
+        else:
+            student_id = request.data.get('student')
+            if not student_id:
+                return Response({'error': 'Either assignment or student is required'}, status=drf_status.HTTP_400_BAD_REQUEST)
+            try:
+                student = Student.objects.get(id=student_id)
+            except Student.DoesNotExist:
+                return Response({'error': 'Student not found'}, status=drf_status.HTTP_404_NOT_FOUND)
+
+        # Normalize fee_type
+        if fee_type_id == '' or fee_type_id == 'null' or fee_type_id == 'undefined':
+            fee_type_id = None
+
+        # Parse period_months
+        period_months = request.data.get('period_months') or []
+        if isinstance(period_months, str):
+            try:
+                period_months = json.loads(period_months)
+            except Exception:
+                period_months = [period_months]
+
+        # if empty, default to current month
+        if not period_months:
+            period_months = [str(timezone.now().month).zfill(2)]
+
+        # Normalize months to zfilled strings
+        norm_months = []
+        for m in period_months:
+            try:
+                mi = int(m)
+                if mi < 1 or mi > 12:
+                    raise ValueError()
+                norm_months.append(str(mi).zfill(2))
+            except Exception:
+                continue
+        if not norm_months:
+            return Response({'error': 'No valid period_months provided (1-12 expected).'}, status=drf_status.HTTP_400_BAD_REQUEST)
+
+        # Load allocation mode and allocations
+        allocation_mode = request.data.get('allocation_mode', 'all')
+        allocations_raw = request.data.get('allocations')
+        allocations = None
+        if allocations_raw:
+            if isinstance(allocations_raw, str):
+                try:
+                    allocations = json.loads(allocations_raw)
+                except Exception:
+                    allocations = None
+            elif isinstance(allocations_raw, dict):
+                allocations = allocations_raw
+
+        # Validate using serializer for common fields (currency, payment_date, payment_status, reference, description)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        period_year = request.data.get('period_year', str(timezone.now().year))
+
+        # Retrieve assignments for this student (or use provided assignment)
+        class_level = request.data.get('class_level')
+        if assignment_obj:
+            assignments = [assignment_obj]
+        else:
+            assignments_qs = StudentFeeAssignment.objects.filter(student=student, is_active=True)
+            if class_level and class_level != 'all':
+                try:
+                    assignments_qs = assignments_qs.filter(class_level_id=int(class_level))
+                except Exception:
+                    pass
+            assignments = list(assignments_qs.select_related('fee_type'))
+
+        # Helper: check payment_plan limits per assignment for the selected months
+        months_count = len(norm_months)
+        for assignment in assignments:
+            if assignment.payment_plan and months_count > assignment.payment_plan:
+                return Response({'error': f'Assignment for fee {assignment.fee_type.name} allows at most {assignment.payment_plan} month(s). You selected {months_count}.'}, status=drf_status.HTTP_400_BAD_REQUEST)
+
+        created_payments = []
+
+        # If allocation_mode == 'per_fee' and allocations provided, use those amounts
+        if allocation_mode == 'per_fee' and allocations:
+            # allocations expected as { fee_type_id: amount }
+            for ft_id_str, amt in allocations.items():
+                try:
+                    ft_id = int(ft_id_str)
+                    amt_dec = Decimal(str(amt))
+                except Exception:
+                    continue
+
+                # Verify assignment exists for this fee_type
+                # match by fee_type or by assignment id
+                assignment = next((a for a in assignments if a.fee_type_id == ft_id or str(a.id) == str(ft_id)), None)
+                if not assignment:
+                    return Response({'error': f'No active assignment for fee_type {ft_id} for this student.'}, status=drf_status.HTTP_400_BAD_REQUEST)
+
+                # For each month create a payment entry for this fee_type
+                for month_str in norm_months:
+                    payment = StudentPayment.objects.create(
+                        assignment=assignment,
+                        amount=amt_dec,
+                        currency=serializer.validated_data.get('currency', student.currency if student else assignment.currency),
+                        payment_date=serializer.validated_data.get('payment_date', timezone.now().date()),
+                        payment_status=serializer.validated_data.get('payment_status', 'completed'),
+                        period_year=str(period_year),
+                        period_month=month_str,
+                        fee_type_id=ft_id,
+                        reference_number=serializer.validated_data.get('reference_number', ''),
+                        description=serializer.validated_data.get('description', ''),
+                    )
+                    created_payments.append(payment)
+
+        else:
+            # allocation_mode == 'all' (default) or no allocations provided: split total amount across assignments
+            total_amount = serializer.validated_data.get('amount', Decimal('0'))
+            if total_amount <= 0:
+                return Response({'error': 'amount must be provided and greater than zero when using allocation_mode=all'}, status=drf_status.HTTP_400_BAD_REQUEST)
+
+            # Compute weights based on assignment.amount (fallback to 1 if zero)
+            weights = [a.amount if a.amount and a.amount > 0 else Decimal('1') for a in assignments]
+            weight_sum = sum(weights) if weights else Decimal('0')
+            if weight_sum == 0:
+                # fallback: divide equally
+                weights = [Decimal('1') for _ in assignments]
+                weight_sum = Decimal(len(assignments))
+
+            # Calculate per-assignment allocation (rounded to 2 decimals), distribute remainder to first
+            per_assignment_alloc = []
+            accumulated = Decimal('0')
+            for idx, a in enumerate(assignments):
+                alloc = (total_amount * (weights[idx] / weight_sum)).quantize(Decimal('0.01'))
+                per_assignment_alloc.append((a, alloc))
+                accumulated += alloc
+
+            # Fix rounding remainder
+            remainder = total_amount - accumulated
+            if remainder != 0 and per_assignment_alloc:
+                a0, v0 = per_assignment_alloc[0]
+                per_assignment_alloc[0] = (a0, (v0 + remainder).quantize(Decimal('0.01')))
+
+            # Create payments per assignment per month
+            for a, alloc_amt in per_assignment_alloc:
+                for month_str in norm_months:
+                    payment = StudentPayment.objects.create(
+                        assignment=a,
+                        amount=alloc_amt,
+                        currency=serializer.validated_data.get('currency', student.currency if student else a.currency),
+                        payment_date=serializer.validated_data.get('payment_date', timezone.now().date()),
+                        payment_status=serializer.validated_data.get('payment_status', 'completed'),
+                        period_year=str(period_year),
+                        period_month=month_str,
+                        fee_type_id=a.fee_type_id,
+                        reference_number=serializer.validated_data.get('reference_number', ''),
+                        description=serializer.validated_data.get('description', ''),
+                    )
+                    created_payments.append(payment)
+
+        # Return the first created payment for response
+        response_serializer = self.get_serializer(created_payments[0] if created_payments else None)
+        return Response(response_serializer.data, status=drf_status.HTTP_201_CREATED)
+    
+    # perform_create removed: ledger entries are deprecated with new assignment-based payments
+    
+    def update(self, request, *args, **kwargs):
+        """Override update to handle fee_type properly"""
+        # FIXED: Convert empty fee_type string to None
+        fee_type = request.data.get('fee_type')
+        if fee_type == '' or fee_type == 'null' or fee_type == 'undefined':
+            request.data['fee_type'] = None
+        
+        return super().update(request, *args, **kwargs)
+    
+    def perform_update(self, serializer):
+        """Update student payment and update invoice status"""
+        # Get old fee_type before save
+        old_fee_type_id = None
+        if serializer.instance:
+            old_fee_type_id = serializer.instance.fee_type_id
+        
+        # FIXED: Convert empty fee_type string to None before save
+        fee_type = serializer.validated_data.get('fee_type')
+        if fee_type == '' or fee_type == 'null' or fee_type == 'undefined':
+            fee_type = None
+        
+        payment = serializer.save()
+        
+        # No ledger or invoice allocation performed here under the new model
+    
+    @action(detail=False, methods=['get'])
+    def daily_summary(self, request):
+        """Get daily payment summary | خلاصه روزانه پرداختها"""
+        date = request.query_params.get('date', timezone.now().date().isoformat())
+        summary = StudentPayment.objects.filter(payment_date=date).aggregate(
+            total_amount=Sum('amount'), count=Count('id')
+        )
+        return Response({
+            'date': date,
+            'total_amount': str(summary['total_amount'] or Decimal('0')),
+            'payment_count': summary['count'] or 0
+        })
+    
+    @action(detail=False, methods=['get'])
+    def monthly_summary(self, request):
+        """Get monthly payment summary | خلاصه ماهانه پرداختها"""
+        year = request.query_params.get('year', timezone.now().year)
+        month = self.request.query_params.get('month')
+        queryset = StudentPayment.objects.filter(payment_date__year=year)
+        if month:
+            queryset = queryset.filter(payment_date__month=month)
+        summary = queryset.aggregate(total_amount=Sum('amount'), count=Count('id'))
+        return Response({
+            'year': year,
+            'month': month,
+            'total_amount': str(summary['total_amount'] or Decimal('0')),
+            'payment_count': summary['count'] or 0
+        })
+    
+    @action(detail=True, methods=['post'])
+    def mark_as_paid(self, request, pk=None):
+        """Mark payment as completed with ledger entry | علامتگذاری به عنوان پرداخت شده"""
+        payment = self.get_object()
+        with transaction.atomic():
+            payment.payment_status = 'completed'
+            payment.save()
+        return Response({'message': 'Payment marked as completed', 'payment_status': payment.payment_status})
+    
+    @action(detail=True, methods=['post'])
+    def mark_as_refunded(self, request, pk=None):
+        """Mark payment as refunded with ledger entry | علامتگذاری به عنوان بازپرداخت شده"""
+        payment = self.get_object()
+        with transaction.atomic():
+            payment.payment_status = 'refunded'
+            payment.save()
+        return Response({'message': 'Payment marked as refunded', 'payment_status': payment.payment_status})
+    
+    @action(detail=False, methods=['post'])
+    def create_payments_for_assignments(self, request):
+        """
+        Create payments for selected fee assignments and months.
+        
+        Workflow:
+        1. Select student by level
+        2. Get fee assignments for that student
+        3. Select specific assignments and months
+        4. Create payments for selected combinations
+        
+        Request body:
+        {
+            "student": "student_id",
+            "class_level": "level_id (optional, 'all' for all levels)",
+            "assignment_ids": ["assignment1_id", "assignment2_id", ...],
+            "period_year": "2026",
+            "period_months": ["01", "02", ...],
+            "amount": "1000" (optional, auto-calculated from remaining if not provided),
+            "payment_date": "2026-01-15",
+            "payment_status": "completed",
+            "currency": "AFN"
+        }
+        """
+        import json
+        
+        student_id = request.data.get('student')
+        class_level = request.data.get('class_level')
+        assignment_ids = request.data.get('assignment_ids')
+        period_year = request.data.get('period_year', str(timezone.now().year))
+        period_months = request.data.get('period_months')
+        amount = request.data.get('amount')
+        payment_date = request.data.get('payment_date', timezone.now().date().isoformat())
+        payment_status = request.data.get('payment_status', 'completed')
+        currency = request.data.get('currency', 'AFN')
+        
+        if not student_id:
+            return Response({'error': 'student parameter is required'}, status=drf_status.HTTP_400_BAD_REQUEST)
+        
+        if not assignment_ids or not isinstance(assignment_ids, list) or len(assignment_ids) == 0:
+            return Response({'error': 'assignment_ids must be a non-empty list'}, status=drf_status.HTTP_400_BAD_REQUEST)
+        
+        if not period_months or not isinstance(period_months, list) or len(period_months) == 0:
+            return Response({'error': 'period_months must be a non-empty list'}, status=drf_status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response({'error': 'Student not found'}, status=drf_status.HTTP_404_NOT_FOUND)
+        
+        # Get assignments for this student
+        assignments_qs = StudentFeeAssignment.objects.filter(
+            student=student,
+            id__in=assignment_ids,
+            is_active=True
+        ).select_related('fee_type', 'class_level')
+        
+        if class_level and class_level != 'all':
+            try:
+                assignments_qs = assignments_qs.filter(class_level_id=int(class_level))
+            except (ValueError, TypeError):
+                pass
+        
+        assignments = list(assignments_qs)
+        
+        if len(assignments) != len(assignment_ids):
+            return Response({'error': 'Some assignments not found or not active'}, status=drf_status.HTTP_404_NOT_FOUND)
+        
+        # Validate months
+        norm_months = []
+        for m in period_months:
+            try:
+                mi = int(m)
+                if mi < 1 or mi > 12:
+                    raise ValueError()
+                norm_months.append(str(mi).zfill(2))
+            except (ValueError, TypeError):
+                continue
+        
+        if not norm_months:
+            return Response({'error': 'No valid period_months provided (1-12 expected)'}, status=drf_status.HTTP_400_BAD_REQUEST)
+        
+        # Normalize amount to Decimal
+        if amount:
+            try:
+                total_amount = Decimal(str(amount))
+            except:
+                total_amount = None
+        else:
+            total_amount = None
+        
+        # Validate payment_plan constraints
+        months_count = len(norm_months)
+        for assignment in assignments:
+            if assignment.payment_plan and months_count > assignment.payment_plan:
+                return Response({
+                    'error': f'Assignment for {assignment.fee_type.name} allows at most {assignment.payment_plan} month(s). You selected {months_count}.'
+                }, status=drf_status.HTTP_400_BAD_REQUEST)
+        
+        # Validate amounts if provided
+        if total_amount:
+            # Calculate total remaining across selected assignments
+            total_remaining = Decimal('0')
+            for assignment in assignments:
+                paid = StudentPayment.objects.filter(
+                    assignment=assignment,
+                    payment_status='completed'
+                ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+                remaining = (assignment.amount or Decimal('0')) - paid
+                if remaining < 0:
+                    remaining = Decimal('0')
+                total_remaining += remaining
+            
+            if total_amount > total_remaining:
+                return Response({
+                    'error': f'Payment amount ({total_amount}) exceeds total remaining balance ({total_remaining})'
+                }, status=drf_status.HTTP_400_BAD_REQUEST)
+        
+        # Process payments
+        created_payments = []
+        
+        with transaction.atomic():
+            if total_amount and len(assignments) > 1:
+                # Multiple assignments - split amount proportionally
+                weights = [a.amount if a.amount and a.amount > 0 else Decimal('1') for a in assignments]
+                weight_sum = sum(weights)
+                
+                if weight_sum == 0:
+                    weights = [Decimal('1') for _ in assignments]
+                    weight_sum = Decimal(len(assignments))
+                
+                # Calculate allocation per assignment
+                allocations = []
+                accumulated = Decimal('0')
+                for idx, a in enumerate(assignments):
+                    alloc = (total_amount * (weights[idx] / weight_sum)).quantize(Decimal('0.01'))
+                    allocations.append((a, alloc))
+                    accumulated += alloc
+                
+                # Fix rounding remainder
+                remainder = total_amount - accumulated
+                if remainder != 0 and allocations:
+                    a0, v0 = allocations[0]
+                    allocations[0] = (a0, (v0 + remainder).quantize(Decimal('0.01')))
+                
+                # Create payments
+                for assignment, alloc_amt in allocations:
+                    for month_str in norm_months:
+                        # Check remaining for this assignment
+                        paid_for_assignment = StudentPayment.objects.filter(
+                            assignment=assignment,
+                            payment_status='completed'
+                        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+                        remaining_for_assignment = (assignment.amount or Decimal('0')) - paid_for_assignment
+                        
+                        # Don't overpay
+                        pay_amount = min(alloc_amt, remaining_for_assignment)
+                        if pay_amount > 0:
+                            payment = StudentPayment.objects.create(
+                                assignment=assignment,
+                                amount=pay_amount,
+                                currency=currency,
+                                payment_date=payment_date,
+                                payment_status=payment_status,
+                                period_year=str(period_year),
+                                period_month=month_str,
+                                fee_type=assignment.fee_type,
+                            )
+                            created_payments.append(payment)
+            else:
+                # Single assignment or no amount specified - pay full remaining
+                for assignment in assignments:
+                    for month_str in norm_months:
+                        # Check remaining for this assignment
+                        paid_for_assignment = StudentPayment.objects.filter(
+                            assignment=assignment,
+                            payment_status='completed'
+                        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+                        remaining_for_assignment = (assignment.amount or Decimal('0')) - paid_for_assignment
+                        
+                        pay_amount = remaining_for_assignment if not total_amount else min(
+                            (total_amount / len(assignments) / len(norm_months)).quantize(Decimal('0.01')),
+                            remaining_for_assignment
+                        )
+                        
+                        if pay_amount > 0:
+                            payment = StudentPayment.objects.create(
+                                assignment=assignment,
+                                amount=pay_amount,
+                                currency=currency,
+                                payment_date=payment_date,
+                                payment_status=payment_status,
+                                period_year=str(period_year),
+                                period_month=month_str,
+                                fee_type=assignment.fee_type,
+                            )
+                            created_payments.append(payment)
+        
+        # Return success response with created payments
+        return Response({
+            'success': True,
+            'message': f'{len(created_payments)} payments created successfully',
+            'payments': StudentPaymentSerializer(created_payments, many=True).data,
+            'created_count': len(created_payments)
+        }, status=drf_status.HTTP_201_CREATED)
+    
+    @action(detail=False, methods=['get'])
+    def financial_info(self, request):
+        """Get comprehensive financial info for a student.
+        Shows total fees, total paid, remaining balance, and payment history."""
+        student_id = request.query_params.get('student')
+        
+        if not student_id:
+            return Response({'error': 'student parameter is required'}, status=400)
+        
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response({'error': 'Student not found'}, status=404)
+        
+        # Get the specific month/year if provided (for period-specific info)
+        month = request.query_params.get('month')
+        year = request.query_params.get('year')
+        
+        # Optionally filter by class_level when provided (so breakdown is per selected level)
+        class_level = request.query_params.get('class_level')
+        assignments_qs = StudentFeeAssignment.objects.filter(student=student, is_active=True)
+        if class_level and class_level != 'all':
+            assignments_qs = assignments_qs.filter(class_level_id=class_level)
+        assignments = assignments_qs.select_related('fee_type')
+        total_fee = assignments.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        # Calculate total completed payments (assignment-based)
+        total_paid = StudentPayment.objects.filter(
+            assignment__student=student,
+            payment_status='completed'
+        ).aggregate(total_paid=Sum('amount'))['total_paid'] or Decimal('0')
+        
+        # Calculate remaining balance
+        remaining = total_fee - total_paid
+        if remaining < 0:
+            remaining = Decimal('0')
+        
+        # Get payment count
+        total_payment_count = StudentPayment.objects.filter(
+            assignment__student=student,
+            payment_status='completed'
+        ).count()
+        
+        # Build fee breakdown by type
+        fee_breakdown = []
+        payments_by_fee_type = []  # NEW: Track payments by fee type
+        
+        # Get unique fee types from assignments AND from payments with fee_type set
+        all_fee_types = {}  # Use dict to avoid duplicates
+        for assignment in assignments:
+            if assignment.fee_type:
+                all_fee_types[assignment.fee_type.id] = assignment.fee_type
+        
+        # Also include fee_types from payments that have fee_type set
+        # Payment fee types (only include those relevant to the filtered assignments)
+        payment_fee_types = StudentPayment.objects.filter(
+            assignment__student=student,
+            payment_status='completed',
+            fee_type__isnull=False
+        ).values_list('fee_type', flat=True).distinct()
+        for fee_type_id in payment_fee_types:
+            if fee_type_id not in all_fee_types:
+                try:
+                    fee_type = FeeType.objects.get(id=fee_type_id)
+                    all_fee_types[fee_type_id] = fee_type
+                except FeeType.DoesNotExist:
+                    pass
+        
+        # Process each fee type
+        for fee_type in all_fee_types.values():
+            # Find the assignment for this fee type (if exists)
+            assignment = next((a for a in assignments if a.fee_type_id == fee_type.id), None)
+            
+            # Calculate how much has been paid for this fee type
+            paid_for_fee = StudentPayment.objects.filter(
+                student=student,
+                payment_status='completed'
+            )
+            
+            if fee_type:
+                # Include payments that are either associated to assignments for this fee type
+                # or explicitly tagged with this fee_type
+                q_filter = (
+                    Q(assignment__fee_type=fee_type) |
+                    Q(fee_type=fee_type)
+                )
+                paid_for_fee = StudentPayment.objects.filter(
+                    assignment__student=student,
+                    payment_status='completed'
+                ).filter(q_filter).aggregate(total_paid=Sum('amount'))['total_paid'] or Decimal('0')
+
+                # Get detailed payment breakdown for this fee type
+                fee_type_payments = StudentPayment.objects.filter(
+                    assignment__student=student,
+                    payment_status='completed'
+                ).filter(q_filter).values(
+                    'id', 'amount', 'payment_date', 'period_month', 'period_year',
+                    'fee_type__name', 'reference_number'
+                ).distinct()
+                payments_by_fee_type.append({
+                    'fee_type_id': fee_type.id,
+                    'fee_type_name': fee_type.name,
+                    'fee_type_category': fee_type.category,
+                    'payments': list(fee_type_payments),
+                })
+            else:
+                paid_for_fee = paid_for_fee.aggregate(total_paid=Sum('amount'))['total_paid'] or Decimal('0')
+            
+            fee_breakdown.append({
+                'fee_type': fee_type.name,
+                'fee_category': fee_type.category,
+                'amount': str(assignment.amount if assignment else '0'),
+                'currency': assignment.currency if assignment else student.currency,
+                'is_mandatory': assignment.is_mandatory if assignment else True,
+                'paid_amount': str(paid_for_fee),
+                'remaining_amount': str(max(Decimal('0'), Decimal(assignment.amount if assignment else '0') - paid_for_fee)),
+            })
+        
+        # If specific month/year provided, calculate period-specific info
+        period_info = None
+        if month and year:
+            month_str = str(month).zfill(2)
+            year_str = str(year)
+            
+            # Calculate period paid from payments in this period
+            period_paid = StudentPayment.objects.filter(
+                student=student,
+                payment_status='completed',
+                period_year=year_str,
+                period_month=month_str
+            ).aggregate(total_paid=Sum('amount'))['total_paid'] or Decimal('0')
+            
+            # Calculate period fees for this month
+            period_fees = Decimal('0')
+            for assignment in assignments:
+                # Under the new model, period fees are derived from assignment amounts
+                period_fees += assignment.amount or Decimal('0')
+            
+            period_info = {
+                'month': int(month),
+                'year': int(year),
+                'period_fees': str(period_fees),
+                'period_paid': str(period_paid),
+                'period_remaining': str(max(period_fees - period_paid, Decimal('0'))),
+            }
+        
+        return Response({
+            'student_id': student.id,
+            'student_name': student.full_name,
+            'currency': student.currency,
+            'payment_interval_months': student.payment_interval_months,
+            'payment_interval_display': student.payment_interval_display,
+            # Overall financial status
+            'total_amount': str(total_fee),
+            'paid_amount': str(total_paid),
+            'remaining_amount': str(remaining),
+            'is_paid': total_paid >= total_fee and total_fee > 0,
+            'payment_percentage': float((total_paid / total_fee * 100) if total_fee > 0 else 0),
+            'total_payment_count': total_payment_count,
+            # Fee breakdown by type
+            'fee_breakdown': fee_breakdown,
+            # NEW: Detailed payment breakdown by fee type
+            'payments_by_fee_type': payments_by_fee_type,
+            # Period-specific info (if requested)
+            'period_info': period_info,
+        })
+    
+    @action(detail=False, methods=['get'])
+    def student_fee_assignments(self, request):
+        """
+        Get fee assignments for a student, optionally filtered by class level.
+        This endpoint is used for payment processing to show available fees.
+        """
+        student_id = request.query_params.get('student')
+        class_level = request.query_params.get('class_level')
+        
+        if not student_id:
+            return Response({'error': 'student parameter is required'}, status=400)
+        
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response({'error': 'Student not found'}, status=404)
+        
+        assignments_qs = StudentFeeAssignment.objects.filter(
+            student=student,
+            is_active=True
+        ).select_related('fee_type', 'class_level')
+        
+        if class_level and class_level != 'all':
+            try:
+                assignments_qs = assignments_qs.filter(class_level_id=int(class_level))
+            except (ValueError, TypeError):
+                pass
+        
+        serializer = StudentFeeAssignmentSerializer(assignments_qs, many=True, context={'request': request})
+        
+        return Response({
+            'student_id': student.id,
+            'student_name': student.full_name,
+            'class_level': class_level,
+            'student': {
+                'id': student.id,
+                'full_name': student.full_name,
+                'registration_number': student.registration_number,
+                'class_level': student.class_level.name if student.class_level else None,
+                'total_paid': student.get_total_payments(),
+                'remaining_balance': student.get_remaining_balance(),
+            },
+            'total_assignments': serializer.data,
+        })
+
+    @action(detail=False, methods=['get'])
+    def student_fee_assignments_with_months(self, request):
+        """
+        Get fee assignments for a student with per-month payment tracking.
+        Returns each assignment with paid_months showing which months have been paid.
+        """
+        student_id = request.query_params.get('student')
+        class_level = request.query_params.get('class_level')
+        year = request.query_params.get('year', str(timezone.now().year))
+
+        if not student_id:
+            return Response(
+                {'error': 'student parameter is required'},
+                status=drf_status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response(
+                {'error': 'Student not found'},
+                status=drf_status.HTTP_404_NOT_FOUND
+            )
+
+        assignments_qs = StudentFeeAssignment.objects.filter(
+            student=student,
+            is_active=True
+        ).select_related('fee_type', 'class_level')
+
+        if class_level and class_level != 'all':
+            try:
+                assignments_qs = assignments_qs.filter(class_level_id=int(class_level))
+            except (ValueError, TypeError):
+                pass
+
+        assignments = list(assignments_qs)
+        result = []
+
+        for assignment in assignments:
+            assignment_data = StudentFeeAssignmentSerializer(
+                assignment, context={'request': request}
+            ).data
+
+            # Get paid months for this assignment and year
+            paid_payments = StudentPayment.objects.filter(
+                assignment=assignment,
+                payment_status='completed',
+                period_year=year,
+            ).values('period_month', 'amount', 'id', 'payment_date').order_by('period_month')
+
+            paid_months = []
+            paid_total = Decimal('0')
+            for p in paid_payments:
+                if p['period_month']:
+                    paid_months.append({
+                        'month': p['period_month'],
+                        'amount': str(p['amount']),
+                        'payment_id': p['id'],
+                        'payment_date': str(p['payment_date']),
+                    })
+                    paid_total += p['amount'] or Decimal('0')
+
+            # Also include payments without period_month (older payments)
+            paid_without_month = StudentPayment.objects.filter(
+                assignment=assignment,
+                payment_status='completed',
+            ).exclude(period_month__isnull=False).aggregate(
+                total=Sum('amount')
+            )['total'] or Decimal('0')
+
+            total_paid = paid_total + paid_without_month
+            remaining = (assignment.amount or Decimal('0')) - total_paid
+            if remaining < 0:
+                remaining = Decimal('0')
+
+            assignment_data['paid_months'] = paid_months
+            assignment_data['paid_month_values'] = [p['month'] for p in paid_months]
+            assignment_data['total_paid'] = str(total_paid)
+            assignment_data['remaining_amount'] = str(remaining)
+            assignment_data['is_fully_paid'] = remaining <= 0
+
+            result.append(assignment_data)
+
+        # Student financial summary
+        total_expected = sum(a.amount for a in assignments if a.amount) or Decimal('0')
+        total_paid_all = StudentPayment.objects.filter(
+            assignment__student=student,
+            payment_status='completed',
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        total_remaining = max(total_expected - total_paid_all, Decimal('0'))
+
+        return Response({
+            'student_id': student.id,
+            'student_name': student.full_name,
+            'student_registration': student.registration_number,
+            'class_level': class_level,
+            'year': year,
+            'currency': student.currency,
+            'total_expected': str(total_expected),
+            'total_paid': str(total_paid_all),
+            'total_remaining': str(total_remaining),
+            'payment_interval_months': student.payment_interval_months,
+            'assignments': result,
+        })
+
+    @action(detail=False, methods=['get'])
+    def fee_assignment_data(self, request):
+        """
+        Get all data needed for fee assignment in one request.
+        Returns: fee types, class level assigned fees, and student's existing assignments.
+        """
+        class_level_id = request.query_params.get('class_level')
+        student_id = request.query_params.get('student')
+        
+        if not class_level_id:
+            return Response(
+                {'error': 'class_level parameter is required'},
+                status=drf_status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get all active fee types
+        fee_types_qs = FeeType.objects.filter(is_active=True).order_by('name')
+        fee_types = []
+        for ft in fee_types_qs:
+            fee_types.append({
+                'id': ft.id,
+                'name': ft.name,
+                'code': ft.code,
+                'category': ft.category,
+                'is_mandatory': ft.is_mandatory,
+            })
+        
+        # Get all active fee assignments for this class level
+        class_assignments_qs = StudentFeeAssignment.objects.filter(
+            class_level_id=class_level_id,
+            is_active=True
+        ).select_related('fee_type', 'student')
+        
+        # Group by fee_type with assignment count and amounts
+        from collections import Counter
+        fee_type_map = {}
+        for a in class_assignments_qs:
+            if a.fee_type_id not in fee_type_map:
+                fee_type_map[a.fee_type_id] = {
+                    'fee_type_id': a.fee_type_id,
+                    'assignment_count': 0,
+                    'amounts': [],
+                }
+            fee_type_map[a.fee_type_id]['assignment_count'] += 1
+            fee_type_map[a.fee_type_id]['amounts'].append(a.amount)
+        
+        # Calculate most common amount for each fee type
+        class_level_fees = {}
+        for ft_id, data in fee_type_map.items():
+            amount_counts = Counter(data['amounts'])
+            most_common_amount = amount_counts.most_common(1)[0][0] if amount_counts else Decimal('0')
+            class_level_fees[ft_id] = {
+                'assignment_count': data['assignment_count'],
+                'suggested_amount': str(most_common_amount),
+            }
+        
+        # Get student's existing assignments if student_id provided
+        student_assignments = []
+        if student_id:
+            try:
+                student = Student.objects.get(id=student_id)
+                student_assignments_qs = StudentFeeAssignment.objects.filter(
+                    student=student,
+                    is_active=True
+                ).select_related('fee_type')
+                
+                for a in student_assignments_qs:
+                    student_assignments.append({
+                        'id': a.id,
+                        'fee_type_id': a.fee_type_id,
+                        'amount': str(a.amount),
+                        'currency': a.currency,
+                        'payment_plan': a.payment_plan,
+                    })
+            except Student.DoesNotExist:
+                pass
+        
+        return Response({
+            'fee_types': fee_types,
+            'class_level_fees': class_level_fees,
+            'student_assignments': student_assignments,
+        })
+
+    @action(detail=False, methods=['post'])
+    def bulk_assign_fees(self, request):
+        """
+        Bulk create fee assignments for a student.
+        Request body:
+        {
+            "student": student_id,
+            "class_level": class_level_id,
+            "currency": "AFN",
+            "payment_plan": 1,
+            "assignments": [
+                {"fee_type": 1, "amount": "1000"},
+                {"fee_type": 2, "amount": "500"},
+                ...
+            ]
+        }
+        """
+        student_id = request.data.get('student')
+        class_level_id = request.data.get('class_level')
+        currency = request.data.get('currency', 'AFN')
+        payment_plan = request.data.get('payment_plan', 1)
+        assignments_data = request.data.get('assignments', [])
+
+        if not student_id:
+            return Response(
+                {'error': 'student is required'},
+                status=drf_status.HTTP_400_BAD_REQUEST
+            )
+
+        if not assignments_data:
+            return Response(
+                {'error': 'assignments must be a non-empty list'},
+                status=drf_status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response(
+                {'error': 'Student not found'},
+                status=drf_status.HTTP_404_NOT_FOUND
+            )
+
+        created_assignments = []
+        errors = []
+
+        with transaction.atomic():
+            for idx, item in enumerate(assignments_data):
+                fee_type_id = item.get('fee_type')
+                amount = item.get('amount')
+
+                if not fee_type_id or not amount:
+                    errors.append(f"Assignment {idx + 1}: fee_type and amount are required")
+                    continue
+
+                try:
+                    fee_type = FeeType.objects.get(id=fee_type_id, is_active=True)
+                except FeeType.DoesNotExist:
+                    errors.append(f"Assignment {idx + 1}: Fee type {fee_type_id} not found or inactive")
+                    continue
+
+                try:
+                    amount_dec = Decimal(str(amount))
+                    if amount_dec <= 0:
+                        errors.append(f"Assignment {idx + 1}: Amount must be positive")
+                        continue
+                except Exception:
+                    errors.append(f"Assignment {idx + 1}: Invalid amount")
+                    continue
+
+                # Check if assignment already exists
+                existing = StudentFeeAssignment.objects.filter(
+                    student=student,
+                    fee_type=fee_type,
+                    is_active=True
+                ).first()
+
+                if existing:
+                    # Update existing
+                    existing.amount = amount_dec
+                    existing.currency = currency
+                    existing.payment_plan = payment_plan
+                    if class_level_id:
+                        existing.class_level_id = class_level_id
+                    existing.save()
+                    created_assignments.append(existing)
+                else:
+                    # Create new
+                    assignment = StudentFeeAssignment.objects.create(
+                        student=student,
+                        fee_type=fee_type,
+                        amount=amount_dec,
+                        currency=currency,
+                        payment_plan=payment_plan,
+                        class_level_id=class_level_id if class_level_id else None,
+                        is_active=True,
+                        is_mandatory=fee_type.is_mandatory,
+                    )
+                    created_assignments.append(assignment)
+
+        serializer = StudentFeeAssignmentSerializer(
+            created_assignments, many=True, context={'request': request}
+        )
+
+        return Response({
+            'success': True,
+            'message': f'{len(created_assignments)} fee assignment(s) created/updated',
+            'created_count': len(created_assignments),
+            'errors': errors,
+            'assignments': serializer.data,
+        }, status=drf_status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'])
+    def create_payments(self, request):
+        """
+        Create payments for selected fee assignments and months.
+        Request body:
+        {
+            "student": student_id,
+            "payment_date": "2026-01-15",
+            "period_year": "2026",
+            "currency": "AFN",
+            "payment_status": "completed",
+            "reference_number": "PAY-2026-001",
+            "description": "Monthly payment",
+            "payments": [
+                {
+                    "assignment_id": 1,
+                    "amount": "1000",
+                    "period_months": ["01", "02", "03"]
+                },
+                {
+                    "assignment_id": 2,
+                    "amount": "500",
+                    "period_months": ["01"]
+                }
+            ]
+        }
+        """
+        student_id = request.data.get('student')
+        payments_data = request.data.get('payments', [])
+        payment_date = request.data.get('payment_date', timezone.now().date().isoformat())
+        period_year = request.data.get('period_year', str(timezone.now().year))
+        currency = request.data.get('currency', 'AFN')
+        payment_status = request.data.get('payment_status', 'completed')
+        reference_number = request.data.get('reference_number', '')
+        description = request.data.get('description', '')
+
+        if not student_id:
+            return Response(
+                {'error': 'student is required'},
+                status=drf_status.HTTP_400_BAD_REQUEST
+            )
+
+        if not payments_data:
+            return Response(
+                {'error': 'payments must be a non-empty list'},
+                status=drf_status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response(
+                {'error': 'Student not found'},
+                status=drf_status.HTTP_404_NOT_FOUND
+            )
+
+        created_payments = []
+        errors = []
+
+        with transaction.atomic():
+            for idx, pay_item in enumerate(payments_data):
+                assignment_id = pay_item.get('assignment_id')
+                amount = pay_item.get('amount')
+                period_months = pay_item.get('period_months', [])
+
+                if not assignment_id:
+                    errors.append(f"Payment {idx + 1}: assignment_id is required")
+                    continue
+
+                if not amount or Decimal(str(amount)) <= 0:
+                    errors.append(f"Payment {idx + 1}: amount must be positive")
+                    continue
+
+                if not period_months:
+                    errors.append(f"Payment {idx + 1}: at least one month must be selected")
+                    continue
+
+                try:
+                    assignment = StudentFeeAssignment.objects.select_related('fee_type').get(
+                        id=assignment_id,
+                        student=student,
+                        is_active=True
+                    )
+                except StudentFeeAssignment.DoesNotExist:
+                    errors.append(f"Payment {idx + 1}: Assignment not found or not active")
+                    continue
+
+                # Validate payment_plan constraint
+                if assignment.payment_plan and len(period_months) > assignment.payment_plan:
+                    errors.append(
+                        f"Payment {idx + 1}: {assignment.fee_type.name} allows at most "
+                        f"{assignment.payment_plan} month(s). You selected {len(period_months)}."
+                    )
+                    continue
+
+                # Validate not overpaying
+                try:
+                    per_month_amount = Decimal(str(amount))
+                except Exception:
+                    errors.append(f"Payment {idx + 1}: Invalid amount")
+                    continue
+
+                total_payment = per_month_amount * len(period_months)
+
+                paid_so_far = StudentPayment.objects.filter(
+                    assignment=assignment,
+                    payment_status='completed',
+                ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+                remaining = (assignment.amount or Decimal('0')) - paid_so_far
+                if total_payment > remaining:
+                    errors.append(
+                        f"Payment {idx + 1}: Total ({total_payment}) exceeds remaining "
+                        f"balance ({remaining}) for {assignment.fee_type.name}"
+                    )
+                    continue
+
+                # Check for duplicate month payments
+                already_paid_months = set(
+                    StudentPayment.objects.filter(
+                        assignment=assignment,
+                        payment_status='completed',
+                        period_year=period_year,
+                    ).values_list('period_month', flat=True)
+                )
+
+                duplicate_months = set(period_months) & already_paid_months
+                if duplicate_months:
+                    errors.append(
+                        f"Payment {idx + 1}: Months {sorted(duplicate_months)} already paid for "
+                        f"{assignment.fee_type.name}"
+                    )
+                    continue
+
+                # Normalize months
+                norm_months = []
+                for m in period_months:
+                    try:
+                        mi = int(m)
+                        if 1 <= mi <= 12:
+                            norm_months.append(str(mi).zfill(2))
+                    except (ValueError, TypeError):
+                        continue
+
+                # Create a payment for each month
+                for month_str in norm_months:
+                    payment = StudentPayment.objects.create(
+                        assignment=assignment,
+                        amount=per_month_amount,
+                        currency=currency,
+                        payment_date=payment_date,
+                        payment_status=payment_status,
+                        period_year=str(period_year),
+                        period_month=month_str,
+                        fee_type_id=assignment.fee_type_id,
+                        reference_number=reference_number,
+                        description=description,
+                    )
+                    created_payments.append(payment)
+
+        serializer = StudentPaymentSerializer(
+            created_payments, many=True, context={'request': request}
+        )
+
+        if errors and not created_payments:
+            return Response({
+                'success': False,
+                'errors': errors,
+            }, status=drf_status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'success': True,
+            'message': f'{len(created_payments)} payment(s) created successfully',
+            'created_count': len(created_payments),
+            'errors': errors if errors else None,
+            'payments': serializer.data,
+        }, status=drf_status.HTTP_201_CREATED)
+
+
+class FinanceLedgerViewSet(DataRootViewSet):
+    """API endpoint for FinanceLedger - Audit trail for all financial transactions
+    ویوی لیجر مالی - ردیابی کامل تراکنشهای مالی"""
+    queryset = FinanceLedger.objects.all().select_related('student')
+    serializer_class = FinanceLedgerSerializer
+    filterset_fields = ['student', 'entry_type', 'account', 'entry_side']
+    search_fields = ['student__full_name', 'student__registration_number', 'account', 'description']
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        student_id = self.request.query_params.get('student')
+        entry_type = self.request.query_params.get('entry_type')
+        account = self.request.query_params.get('account')
+        
+        if student_id:
+            queryset = queryset.filter(student_id=student_id)
+        if entry_type:
+            queryset = queryset.filter(entry_type=entry_type)
+        if account:
+            queryset = queryset.filter(account=account)
+        
+        return queryset
+    
+    @action(detail=False, methods=['get'])
+    def by_student(self, request):
+        """Get ledger entries for a specific student | سطرهای لیجر یک شاگرد"""
+        student_id = request.query_params.get('student')
+        if not student_id:
+            return Response({'error': 'student parameter is required'}, status=drf_status.HTTP_400_BAD_REQUEST)
+        
+        entries = self.get_queryset().filter(student_id=student_id)
+        serializer = self.get_serializer(entries, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def trial_balance(self, request):
+        """Get trial balance by account | توازن کتابها بر اساس حساب"""
+        from django.db.models import Q
+        entries = FinanceLedger.objects.all()
+        
+        balance = {}
+        for entry in entries:
+            account = entry.account
+            if account not in balance:
+                balance[account] = {'debit': Decimal('0'), 'credit': Decimal('0')}
+            
+            if entry.entry_side == 'debit':
+                balance[account]['debit'] += entry.amount
+            else:
+                balance[account]['credit'] += entry.amount
+        
+        result = []
+        for account, amounts in balance.items():
+            result.append({
+                'account': account,
+                'debit': str(amounts['debit']),
+                'credit': str(amounts['credit']),
+                'balance': str(amounts['debit'] - amounts['credit'])
+            })
+        
+        return Response({'accounts': result, 'total_debit': str(sum(a['debit'] for a in result)), 'total_credit': str(sum(a['credit'] for a in result))})
+    
+    @action(detail=True, methods=['get'])
+    def student_statement(self, request, pk=None):
+        """Get student financial statement | صورت وضعیت مالی شاگرد"""
+        student = self.get_object()
+        entries = FinanceLedger.objects.filter(student=student).order_by('created_at')
+        serializer = self.get_serializer(entries, many=True)
+        
+        # Calculate totals
+        totals = entries.aggregate(
+            total_debit=Sum('amount', filter=Q(entry_side='debit')),
+            total_credit=Sum('amount', filter=Q(entry_side='credit'))
+        )
+        
+        return Response({
+            'student': {
+                'id': student.id,
+                'full_name': student.full_name,
+                'registration_number': student.registration_number
+            },
+            'entries': serializer.data,
+            'total_debit': str(totals['total_debit'] or Decimal('0')),
+            'total_credit': str(totals['total_credit'] or Decimal('0')),
+            'balance': str((totals['total_debit'] or Decimal('0')) - (totals['total_credit'] or Decimal('0')))
+        })

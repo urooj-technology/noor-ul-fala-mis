@@ -92,8 +92,10 @@ const navigationItems = [
     isExpandable: true,
     section: 'education',
     subItems: [
-      { key: 'studentsList', icon: BookOpen, path: '/students' },
-      { key: 'studentPayments', icon: DollarSign, path: '/student-payments' }
+      { key: 'studentsList', icon: Users, path: '/students' },
+      { key: 'feeTypes', icon: Tag, path: '/fee-types' },
+      { key: 'feeAssignments', icon: Receipt, path: '/student-fee-assignments' },
+      { key: 'studentPayments', icon: CreditCard, path: '/student-payments' }
     ]
   },
   { 
@@ -218,7 +220,7 @@ export const Sidebar: React.FC = () => {
   };
 
   const isStudentsRoute = (path: string) => {
-    const studentRoutes = ['/students', '/student-payments'];
+    const studentRoutes = ['/students', '/student-payments', '/fee-types', '/student-fee-assignments'];
     return studentRoutes.some(route => path.startsWith(route));
   };
 

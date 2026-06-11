@@ -5,8 +5,15 @@ Supports: Gregorian, Shamsi (Jalali/Persian Solar), Qamari (Hijri Lunar)
 Note: Afghanistan uses the same Shamsi calendar as Iran (Jalali),
 with Dari month names instead of Persian.
 """
-import jdatetime
-from hijri_converter import Gregorian
+try:
+    import jdatetime
+except Exception:
+    jdatetime = None
+
+try:
+    from hijri_converter import Gregorian
+except Exception:
+    Gregorian = None
 from datetime import date
 
 
@@ -80,10 +87,12 @@ def gregorian_to_shamsi(gregorian_date):
         except (ValueError, AttributeError):
             return None
     
+    if not jdatetime:
+        return None
     try:
         j_date = jdatetime.date.fromgregorian(date=gregorian_date)
         month_index = j_date.month - 1
-        
+
         return {
             'year': j_date.year,
             'month': j_date.month,
@@ -121,10 +130,12 @@ def gregorian_to_qamari(gregorian_date):
         month = gregorian_date.month
         day = gregorian_date.day
     
+    if not Gregorian:
+        return None
     try:
         h_date = Gregorian(year, month, day).to_hijri()
         month_index = h_date.month - 1
-        
+
         return {
             'year': h_date.year,
             'month': h_date.month,
@@ -149,6 +160,8 @@ def shamsi_to_gregorian(year, month, day):
     Returns:
         date object or None
     """
+    if not jdatetime:
+        return None
     try:
         j_date = jdatetime.date(year, month, day)
         return j_date.togregorian()

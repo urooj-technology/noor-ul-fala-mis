@@ -1,7 +1,9 @@
 from django.db import models
 from django.utils import timezone
+from django.apps import apps
 from api.models.data.base import BaseModel
 from api.models.data.choices import CURRENCY_CHOICES, DEFAULT_CURRENCY
+from decimal import Decimal
 
 
 class ClassLevel(models.Model):
@@ -59,11 +61,6 @@ class Student(BaseModel):
         ('public_transport', 'Public Transport'),
     ]
 
-    PAYMENT_CYCLE_CHOICES = [
-        ('monthly', 'Monthly'),
-        ('yearly', 'Yearly'),
-    ]
-
     # Personal Information
     full_name = models.CharField(max_length=200)
     father_name = models.CharField(max_length=200)
@@ -99,15 +96,23 @@ class Student(BaseModel):
         related_name='students',
         help_text='Class level the student is enrolled in'
     )
+    # Payment interval - flexible (1=monthly, 2=bimonthly, 3=quarterly, etc.)
+    payment_interval_months = models.PositiveIntegerField(
+        default=1,
+        help_text='Number of months between payments (1=monthly, 2=bimonthly, 3=quarterly, 12=yearly)'
+    )
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default=DEFAULT_CURRENCY)
+    
+    # DEPRECATED fields - kept for backward compatibility only
     payment_cycle = models.CharField(
         max_length=10,
-        choices=PAYMENT_CYCLE_CHOICES,
         default='monthly',
-        help_text='Payment frequency: monthly or yearly'
+        blank=True,
+        null=True,
+        help_text='DEPRECATED: Use payment_interval_months'
     )
-    monthly_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    yearly_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default=DEFAULT_CURRENCY)
+    monthly_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0, blank=True, null=True)
+    yearly_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0, blank=True, null=True)
 
     # Transportation
     transportation = models.CharField(
@@ -132,7 +137,7 @@ class Student(BaseModel):
             models.Index(fields=['tazkira_number']),
             models.Index(fields=['status']),
             models.Index(fields=['class_level']),
-            models.Index(fields=['payment_cycle']),
+            models.Index(fields=['payment_interval_months']),
         ]
 
     def __str__(self):
@@ -149,77 +154,161 @@ class Student(BaseModel):
         return None
 
     @property
+    def payment_interval_display(self):
+        """Display text for payment interval"""
+        intervals = {
+            1: 'Monthly',
+            2: 'Bimonthly',
+            3: 'Quarterly',
+            4: 'Every 4 months',
+            5: 'Every 5 months',
+            6: 'Semi-annually',
+            12: 'Yearly',
+        }
+        return intervals.get(self.payment_interval_months, f'Every {self.payment_interval_months} months')
+
+    def _get_finance_models(self):
+        """Get finance models using apps.get_model to avoid circular imports"""
+        StudentFeeAssignment = apps.get_model('api', 'StudentFeeAssignment')
+        StudentPayment = apps.get_model('api', 'StudentPayment')
+        return StudentFeeAssignment, StudentPayment
+
+    @property
     def effective_fee(self):
-        """Get the effective fee based on payment cycle"""
-        if self.payment_cycle == 'yearly':
-            return self.yearly_fee
-        return self.monthly_fee
+        """Get total expected fees from StudentFeeAssignment | کل فیسهای مورد انتظار"""
+        StudentFeeAssignment = self._get_finance_models()[0]
+        total = StudentFeeAssignment.objects.filter(
+            student=self,
+            is_active=True
+        ).aggregate(total=models.Sum('amount'))['total']
+        return total if total else Decimal('0')
 
     def get_total_paid_for_period(self, start_date, end_date):
         """Calculate total payments made within a date range"""
-        from api.models.data.student_payment import StudentPayment
+        StudentPayment = self._get_finance_models()[1]
         total = StudentPayment.objects.filter(
-            student=self,
+            assignment__student=self,
             payment_status='completed',
             payment_date__gte=start_date,
             payment_date__lte=end_date
-        ).aggregate(total=models.Sum('amount'))['total'] or 0
-        return float(total)
-
-    def get_total_paid_monthly(self):
-        """Calculate total completed monthly-cycle payments"""
-        from api.models.data.student_payment import StudentPayment
-        total = StudentPayment.objects.filter(
-            student=self,
-            payment_status='completed',
-            payment_cycle='monthly'
-        ).aggregate(total=models.Sum('amount'))['total'] or 0
-        return float(total)
-
-    def get_total_paid_yearly(self):
-        """Calculate total completed yearly-cycle payments"""
-        from api.models.data.student_payment import StudentPayment
-        total = StudentPayment.objects.filter(
-            student=self,
-            payment_status='completed',
-            payment_cycle='yearly'
-        ).aggregate(total=models.Sum('amount'))['total'] or 0
-        return float(total)
+        ).aggregate(total=models.Sum('amount'))['total']
+        return total if total else Decimal('0')
 
     def get_total_payments(self):
         """Calculate total completed payments made by student"""
-        from api.models.data.student_payment import StudentPayment
+        StudentPayment = self._get_finance_models()[1]
         total = StudentPayment.objects.filter(
-            student=self,
+            assignment__student=self,
             payment_status='completed'
-        ).aggregate(total=models.Sum('amount'))['total'] or 0
-        return float(total)
+        ).aggregate(total=models.Sum('amount'))['total']
+        return total if total else Decimal('0')
+
+    def get_fee_breakdown(self):
+        """Get fee breakdown for the student"""
+        StudentFeeAssignment, StudentPayment = self._get_finance_models()
+        
+        assignments = StudentFeeAssignment.objects.filter(student=self, is_active=True).select_related('fee_type')
+        
+        fee_breakdown = []
+        for assignment in assignments:
+            amount = float(assignment.amount) if assignment.amount else 0
+            
+            paid_for_fee = StudentPayment.objects.filter(
+                assignment=assignment,
+                payment_status='completed'
+            ).aggregate(total=models.Sum('amount'))['total']
+            paid = float(paid_for_fee) if paid_for_fee else 0
+            
+            fee_breakdown.append({
+                'fee_type': assignment.fee_type.name if assignment.fee_type else 'Unknown',
+                'fee_category': assignment.fee_type.category if assignment.fee_type else 'other',
+                'amount': str(amount),
+                'currency': assignment.currency,
+                'paid_amount': str(paid),
+                'remaining_amount': str(amount - paid),
+                'fee_type_id': assignment.fee_type.id if assignment.fee_type else None,
+            })
+        
+        return fee_breakdown
 
     def get_remaining_balance(self):
-        """Calculate remaining balance based on payment cycle
-
-        For monthly: monthly_fee * 12 minus total completed monthly-cycle payments.
-        For yearly: yearly_fee minus total completed yearly-cycle payments.
         """
-        from api.models.data.student_payment import StudentPayment
-        if self.payment_cycle == 'yearly':
-            paid = float(self.get_total_paid_yearly())
-            return max(float(self.yearly_fee) - paid, 0)
-        # monthly
-        paid = float(self.get_total_paid_monthly())
-        expected = float(self.monthly_fee) * 12
-        return max(expected - paid, 0)
+        FIXED: Calculate remaining balance using payment_interval_months ONLY
+        Removed payment_cycle logic completely
+        """
+        StudentFeeAssignment, StudentPayment = self._get_finance_models()
+        
+        expected = StudentFeeAssignment.objects.filter(
+            student=self, is_active=True
+        ).aggregate(total=models.Sum('amount'))['total']
+        expected = expected if expected else Decimal('0')
+        
+        paid = StudentPayment.objects.filter(
+            assignment__student=self, payment_status='completed'
+        ).aggregate(total=models.Sum('amount'))['total']
+        paid = paid if paid else Decimal('0')
+        
+        return max(expected - paid, Decimal('0'))
 
     def get_financial_summary(self):
-        """Get complete financial summary for student"""
+        """
+        FIXED: Returns Decimal values (not floats) for financial accuracy
+        Now uses StudentFeeAssignment and StudentPayment instead of StudentInvoice
+        """
+        StudentFeeAssignment, StudentPayment = self._get_finance_models()
+        
+        # Get total expected fees from assignments
+        expected = StudentFeeAssignment.objects.filter(
+            student=self, is_active=True
+        ).aggregate(total=models.Sum('amount'))['total']
+        expected = expected if expected else Decimal('0')
+        
+        # Get total paid from payments (linked via assignment)
+        total_payments = StudentPayment.objects.filter(
+            assignment__student=self, payment_status='completed'
+        ).aggregate(total=models.Sum('amount'))['total']
+        total_payments = total_payments if total_payments else Decimal('0')
+        
+        # Calculate remaining balance
+        remaining = expected - total_payments
+        if remaining < 0:
+            remaining = Decimal('0')
+        
+        # Build fee breakdown by type from assignments and payments
+        assignments = StudentFeeAssignment.objects.filter(student=self, is_active=True).select_related('fee_type')
+        by_fee_type = {}
+        
+        for assignment in assignments:
+            fee_name = assignment.fee_type.name if assignment.fee_type else 'Unknown'
+            if fee_name not in by_fee_type:
+                by_fee_type[fee_name] = {
+                    'expected': Decimal('0'),
+                    'paid': Decimal('0'),
+                    'remaining': Decimal('0'),
+                }
+            
+            by_fee_type[fee_name]['expected'] += assignment.amount
+            
+            # Calculate paid for this fee type from payments
+            paid_for_fee = StudentPayment.objects.filter(
+                assignment=assignment,
+                payment_status='completed'
+            ).aggregate(total=models.Sum('amount'))['total']
+            paid_for_fee = paid_for_fee if paid_for_fee else Decimal('0')
+            
+            by_fee_type[fee_name]['paid'] += paid_for_fee
+            by_fee_type[fee_name]['remaining'] += assignment.amount - paid_for_fee
+        
         return {
-            'total_payments': float(self.get_total_payments()),
-            'remaining_balance': float(self.get_remaining_balance()),
-            'payment_cycle': self.payment_cycle,
-            'monthly_fee': float(self.monthly_fee),
-            'yearly_fee': float(self.yearly_fee),
+            'total_payments': total_payments,
+            'total_invoices': expected,  # 'invoices' now means total expected from assignments
+            'total_paid_invoices': total_payments,
+            'remaining_balance': remaining,
+            'payment_interval_months': self.payment_interval_months,
+            'payment_interval_display': self.payment_interval_display,
             'currency': self.currency,
             'registration_number': self.registration_number,
             'status': self.status,
             'class_level': self.class_level.name if self.class_level else None,
+            'by_fee_type': by_fee_type,
         }

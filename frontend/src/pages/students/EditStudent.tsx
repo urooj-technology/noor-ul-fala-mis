@@ -33,9 +33,7 @@ interface StudentFormData {
   status: string;
   transportation: string;
   class_level: string;
-  payment_cycle: string;
-  monthly_fee: string;
-  yearly_fee: string;
+  payment_interval_months: string; // Changed from payment_cycle
   currency: string;
   photo?: File | null;
   tazkira_copy?: File | null;
@@ -76,9 +74,7 @@ const EditStudent = () => {
     status: 'active',
     transportation: 'school_bus',
     class_level: '',
-    payment_cycle: 'monthly',
-    monthly_fee: '0',
-    yearly_fee: '0',
+    payment_interval_months: '1', // Default to monthly
     currency: 'AFN',
     photo: null,
     tazkira_copy: null,
@@ -142,9 +138,7 @@ const EditStudent = () => {
         status: data.status || 'active',
         transportation: data.transportation || 'school_bus',
         class_level: data.class_level ? String(data.class_level) : '',
-        payment_cycle: data.payment_cycle || 'monthly',
-        monthly_fee: data.monthly_fee ? String(data.monthly_fee) : '0',
-        yearly_fee: data.yearly_fee ? String(data.yearly_fee) : '0',
+        payment_interval_months: data.payment_interval_months ? String(data.payment_interval_months) : '1',
         currency: data.currency || 'AFN',
         photo: null,
         tazkira_copy: null,
@@ -507,32 +501,20 @@ const EditStudent = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="payment_cycle" className="font-semibold">{t("students.paymentCycle")} <span className="text-destructive">*</span></Label>
-                  <Select value={formData.payment_cycle} onValueChange={(value) => setFormData((prev) => ({ ...prev, payment_cycle: value }))}>
-                    <SelectTrigger className="h-10"><SelectValue placeholder={t("students.selectPaymentCycle")} /></SelectTrigger>
+                  <Label htmlFor="payment_interval_months" className="font-semibold">{t("students.paymentInterval")} <span className="text-destructive">*</span></Label>
+                  <Select value={formData.payment_interval_months} onValueChange={(value) => setFormData((prev) => ({ ...prev, payment_interval_months: value }))}>
+                    <SelectTrigger className="h-10"><SelectValue placeholder={t("students.selectPaymentInterval")} /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="monthly">{t("students.paymentCycleOptions.monthly")}</SelectItem>
-                      <SelectItem value="yearly">{t("students.paymentCycleOptions.yearly")}</SelectItem>
+                      <SelectItem value="1">{t("students.paymentIntervalMonths.monthly")}</SelectItem>
+                      <SelectItem value="2">{t("students.paymentIntervalMonths.bimonthly")}</SelectItem>
+                      <SelectItem value="3">{t("students.paymentIntervalMonths.quarterly")}</SelectItem>
+                      <SelectItem value="4">{t("students.paymentIntervalMonths.every4")}</SelectItem>
+                      <SelectItem value="5">{t("students.paymentIntervalMonths.every5")}</SelectItem>
+                      <SelectItem value="6">{t("students.paymentIntervalMonths.every6")}</SelectItem>
+                      <SelectItem value="12">{t("students.paymentIntervalMonths.yearly")}</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="monthly_fee" className="font-semibold">{t("students.monthlyFee")}</Label>
-                  <Input id="monthly_fee" type="number" step="0.01" value={formData.monthly_fee} onChange={(e) => setFormData((prev) => ({ ...prev, monthly_fee: e.target.value }))} placeholder={t("students.enterMonthlyFee")} className="h-10" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="yearly_fee" className="font-semibold">{t("students.yearlyFee")}</Label>
-                  <Input id="yearly_fee" type="number" step="0.01" value={formData.yearly_fee} onChange={(e) => setFormData((prev) => ({ ...prev, yearly_fee: e.target.value }))} placeholder={t("students.enterYearlyFee")} className="h-10" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fee_currency" className="font-semibold">{t("students.feeCurrency")}</Label>
-                  <Select value={formData.currency} onValueChange={(value) => setFormData((prev) => ({ ...prev, currency: value }))}>
-                    <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="AFN">{t("student-payments.afn")}</SelectItem>
-                      <SelectItem value="USD">{t("student-payments.usd")}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <p className="text-xs text-muted-foreground">{t('students.paymentIntervalDescription')}</p>
                 </div>
               </div>
               <div className="pt-6 border-t">

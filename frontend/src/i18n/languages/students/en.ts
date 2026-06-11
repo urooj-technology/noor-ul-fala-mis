@@ -90,10 +90,22 @@ export const studentsEn = {
   selectClassLevel: "Select Class Level",
   classLevelShort: "Class",
   paymentCycle: "Payment Cycle",
+  paymentInterval: "Payment Interval",
   selectPaymentCycle: "Select Payment Cycle",
+  selectPaymentInterval: "Select Payment Interval",
   paymentCycleOptions: {
     monthly: "Monthly",
     yearly: "Yearly",
+  },
+  paymentIntervalMonths: {
+    monthly: "Monthly (Every 1 Month)",
+    bimonthly: "Bimonthly (Every 2 Months)",
+    quarterly: "Quarterly (Every 3 Months)",
+    every4: "Every 4 Months",
+    every5: "Every 5 Months",
+    every6: "Semi-Annually (Every 6 Months)",
+    yearly: "Yearly (Every 12 Months)",
+    custom: "Custom Interval"
   },
   monthlyFee: "Monthly Fee",
   yearlyFee: "Yearly Fee",
@@ -105,7 +117,67 @@ export const studentsEn = {
   yearlyFeeLabel: "Yearly Fee",
   feeLabel: "Fee",
   notSet: "Not Set",
+  months: "months",
+  
+  // Payment interval description
+  paymentIntervalDescription: "How often should the student pay?",
+  paymentIntervalHint: "Select the number of months between payments",
+  monthsBetweenPayments: "months between payments",
+  every: "Every",
+  notes: "Notes",
 
+  // Fee Types
+  feeTypes: "Fee Types",
+  feeType: "Fee Type",
+  addFeeType: "Add Fee Type",
+  editFeeType: "Edit Fee Type",
+  feeName: "Fee Name",
+  code: "Code",
+  category: "Category",
+  mandatory: "Mandatory",
+  selectCategory: "Select category",
+  feeCategories: {
+    admission: "Admission Fee",
+    book: "Book Fee",
+    uniform: "Uniform Fee",
+    transportation: "Transportation Fee",
+    exam: "Exam Fee",
+    other: "Other Fee"
+  },
+
+  // Class Fees
+  classFees: "Class Fees",
+  classFee: "Class Fee",
+  addClassFee: "Add Class Fee",
+  editClassFee: "Edit Class Fee",
+  manageClassFees: "Manage class fees",
+  searchClassFees: "Search class fees...",
+  noClassFeesFound: "No class fees found",
+  addFirstClassFee: "Add your first class fee",
+  loadingClassFees: "Loading class fees...",
+  
+  // Fee Assignments
+  feeAssignments: "Fee Assignments",
+  feeAssignment: "Fee Assignment",
+  addFeeAssignment: "Add Fee Assignment",
+  studentFees: "Student Fees",
+  assignFees: "Assign Fees",
+  feeAmount: "Fee Amount",
+  totalFees: "Total Fees",
+  noFeesAssigned: "No fees assigned yet",
+  manageFeeAssignments: "Manage Fee Assignments",
+  searchFeeAssignments: "Search...",
+  noFeeAssignmentsFound: "No fee assignments found",
+  addFirstFeeAssignment: "Add your first fee assignment",
+  loadingFeeAssignments: "Loading...",
+  
+  // Fee Types management
+  manageFeeTypes: "Manage fee types",
+  searchFeeTypes: "Search fee types...",
+  noFeeTypesFound: "No fee types found",
+  addFirstFeeType: "Add your first fee type",
+  loadingFeeTypes: "Loading fee types...",
+  
   // Bulk Change Class Level
   bulkChangeClassLevel: "Bulk Change Class Level",
   selectNewClassLevel: "New Class Level",
@@ -125,6 +197,8 @@ export const studentsEn = {
   backToList: "Back to Student List",
   alreadyAtLevel: "already at this level",
   changeClassLevel: "Change Class Level",
+  studentsSelected: "student selected",
+  failedToLoadClassLevels: "Failed to load class levels",
 
   // UI Components
   manageStudents: "Manage student records",
@@ -136,8 +210,6 @@ export const studentsEn = {
   addFirstStudent: "Add your first student to get started",
   loadingStudents: "Loading students...",
   allStatuses: "All Statuses",
-  studentsSelected: "students selected",
-  failedToLoadClassLevels: "Failed to load class levels",
   
   // Validation
   validation: {
@@ -146,6 +218,207 @@ export const studentsEn = {
     tazkiraNumber: "Tazkira number is required",
     registrationNumber: "Registration number is required",
     registrationDate: "Registration date is required",
-    phone: "Phone number is required"
-  }
+    phone: "Phone number is required",
+    paymentInterval: "Payment interval is required"
+  },
+
+  // Fee Assignment Notes
+  feeAssignmentNote: "After registration, fees will be auto-assigned from class defaults",
+  feeAssignmentNote2: "You can customize fees in Student Fee Assignments after registration",
+  selectCurrency: "Select Currency",
+  addFeeAssignmentDesc: "Assign fees to student from class defaults or create custom assignments",
+  amount: "Amount",
+  notes: "Notes",
+  currency: "Currency",
+
+  // Payment Status
+  paymentStatus: "Payment Status",
+  paid: "Paid",
+  unpaid: "Unpaid",
+  partiallyPaid: "Partially Paid",
+  overdue: "Overdue",
+
+  // Fee Summary
+  totalFeeAmount: "Total Fee Amount",
+  totalPaidAmount: "Total Paid Amount",
+  totalRemainingAmount: "Total Remaining Amount",
+  totalRemaining: "Total Remaining",
+  viewFeeAssignments: "View Fee Assignments",
+  feeBreakdown: "Fee Breakdown by Type",
+
+  // Common actions
+  add: "Add",
+  save: "Save",
+  cancel: "Cancel",
+  back: "Back",
+  next: "Next",
+  delete: "Delete",
+  edit: "Edit",
+  view: "View",
+  
+  // Common terms
+  search: "Search",
+  filter: "Filter",
+  clear: "Clear",
+  all: "All",
+  
+  // Student
+  student: "Student",
+  
+  // Common messages
+  required: "Required",
+  positive: "Must be positive",
+  loading: "Loading...",
+  saving: "Saving...",
+  updating: "Updating...",
+  generating: "Generating...",
+  notAvailable: "Not Available",
+  notUploaded: "Not Uploaded",
+  optionalNotes: "Optional notes",
+  upload: "Upload",
+  preview: "Preview",
+  download: "Download",
+  
+  // Status labels
+  active: "Active",
+  inactive: "Inactive",
+  yes: "Yes",
+  no: "No",
+  
+  // Invoice Status
+  invoiceStatus: {
+    pending: "Pending",
+    partial: "Partially Paid",
+    paid: "Paid",
+    overdue: "Overdue",
+    cancelled: "Cancelled"
+  },
+  
+  // Student Invoices
+  studentInvoices: "Student Invoices",
+  invoiceDetails: "Invoice Details",
+  generateInvoices: "Generate Invoices",
+  addInvoice: "Add Invoice",
+  editInvoice: "Edit Invoice",
+  deleteInvoice: "Delete Invoice",
+  manageInvoices: "Manage student invoices",
+  noInvoicesFound: "No invoices found",
+  addFirstInvoice: "Add your first invoice",
+  loadingInvoices: "Loading...",
+  searchInvoices: "Search...",
+  period: "Period",
+  
+  // Payment Plans
+  paymentPlans: "Payment Plans",
+  paymentPlan: "Payment Plan",
+  addPaymentPlan: "Add Payment Plan",
+  editPaymentPlan: "Edit Payment Plan",
+  managePaymentPlans: "Manage payment plans",
+  noPaymentPlansFound: "No payment plans found",
+  addFirstPaymentPlan: "Add first plan",
+  loadingPaymentPlans: "Loading...",
+  searchPaymentPlans: "Search...",
+  interval: "Interval",
+  startDate: "Start Date",
+  endDate: "End Date",
+  
+  // Invoice generation
+  periodicGeneration: "Periodic Invoice Generation",
+  generateInvoicesForPeriod: "Generate invoices for all students in a period",
+  invoicesCreated: "invoices created",
+  intervalUsed: "Interval used",
+  periodsGenerated: "Periods generated",
+  selectStudents: "Select students",
+  selectStudentsDescription: "Select students to generate invoices for",
+  periodMonth: "Period Month",
+  periodYear: "Period Year",
+  
+  // Invoice generation success
+  success: {
+    title: "Invoices Generated Successfully!",
+    description: (count: number) => `${count} invoices were created`
+  },
+  
+  // Invoice generation errors
+  error: {
+    generate: "Failed to generate invoices"
+  },
+  
+  // Fee type info
+  feeTypeInformation: "Fee Type Information",
+  addFeeTypeDesc: "Create a new fee type",
+  editFeeTypeDesc: "Update fee type details",
+  
+  // Class fee info
+  classFeeInformation: "Class Fee Information",
+  addClassFeeDesc: "Create a new class fee",
+  editClassFeeDesc: "Update class fee details",
+  
+  // Payment plan info
+  paymentPlanInformation: "Payment Plan Information",
+  addPaymentPlanDesc: "Create a new payment plan",
+  editPaymentPlanDesc: "Update payment plan details",
+  
+  // Common form terms
+  selectStatus: "Select Status",
+  selectFeeType: "Select Fee Type",
+  enterDescription: "Enter description",
+  referenceNumberPlaceholder: "e.g. BANK-2026-001",
+  
+  // Fee Categories
+  feeCategories: {
+    admission: "Admission Fee",
+    book: "Book Fee",
+    uniform: "Uniform Fee",
+    transportation: "Transportation Fee",
+    exam: "Exam Fee",
+    other: "Other Fee"
+  },
+
+  // Bulk Fee Assignment
+  bulkFeeAssignment: "Bulk Fee Assignment",
+  assignFeesToStudent: "Assign multiple fee types to a student at once",
+  selectLevelAndStudent: "Select Class Level & Student",
+  selectClassLevel: "Select Class Level",
+  student: "Student",
+  selectStudent: "Select Student",
+  selectedStudent: "Selected Student",
+  fullName: "Full Name",
+  registrationNumber: "Registration Number",
+  classLevelLabel: "Class Level",
+  currency: "Currency",
+  paymentPlanLabel: "Payment Plan (months)",
+  totalFeesLabel: "Total Fees",
+  feeTypesCount: "fee type(s) selected",
+  clickToDeselect: "Click to deselect",
+  clickToSelect: "Click to select",
+  selectedForAssignment: "Selected for assignment",
+  previouslyAssignedAtLevel: "Previously assigned at this level (suggested amount shown)",
+  loadingFeeTypes: "Loading fee types...",
+  monthly: "Monthly",
+  quarterly: "Quarterly",
+  semiAnnually: "Semi-annually",
+  yearly: "Yearly",
+  everyMonths: "Every {months} months",
+  cancel: "Cancel",
+  assignFeesButton: "Assign Fees",
+  saving: "Saving...",
+  selectAStudentToContinue: "Select a student to continue",
+  feeType: "Fee Type",
+  category: "Category",
+  amount: "Amount",
+  mandatory: "Mandatory",
+  configureFees: "Configure Fee Types",
+  configureFeesDesc: "Enable fee types and set amounts for this student",
+  selectCurrency: "Select Currency",
+  
+  // Additional keys
+  studentName: "Student Name",
+  classLevel: "Class Level",
+  totalPaid: "Total Paid",
+  remainingBalance: "Remaining Balance",
+  pleaseSelectStudent: "Please select a student",
+  enableFeeTypeWithAmount: "Please enable at least one fee type with an amount",
+  clickToDeselect: "Click to deselect",
+  clickToSelect: "Click to select"
 };

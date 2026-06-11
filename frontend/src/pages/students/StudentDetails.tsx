@@ -97,9 +97,8 @@ interface Student {
     level: string;
     name: string;
   } | null;
-  payment_cycle?: string;
-  monthly_fee?: number;
-  yearly_fee?: number;
+  payment_interval_months?: number;
+  payment_interval_display?: string;
   currency?: string;
   photo?: string;
   tazkira_copy?: string;
@@ -111,12 +110,11 @@ interface Student {
     total_payments: number;
     remaining_balance: number;
     payment_cycle: string;
-    monthly_fee: number;
-    yearly_fee: number;
     currency: string;
     registration_number: string;
     status: string;
     class_level: string | null;
+    by_fee_type?: Record<string, any>;
   };
   created_at: string;
   updated_at: string;
@@ -197,12 +195,17 @@ const StudentDetails = () => {
     return labels[transportation] || transportation;
   };
 
-  const getPaymentCycleLabel = (cycle: string) => {
-    const labels: Record<string, string> = {
-      monthly: t('students.paymentCycleOptions.monthly', 'Monthly'),
-      yearly: t('students.paymentCycleOptions.yearly', 'Yearly'),
+  const getPaymentIntervalLabel = (interval: number) => {
+    const labels: Record<number, string> = {
+      1: t('students.paymentIntervalMonths.monthly'),
+      2: t('students.paymentIntervalMonths.bimonthly'),
+      3: t('students.paymentIntervalMonths.quarterly'),
+      4: t('students.paymentIntervalMonths.every4'),
+      5: t('students.paymentIntervalMonths.every5'),
+      6: t('students.paymentIntervalMonths.every6'),
+      12: t('students.paymentIntervalMonths.yearly'),
     };
-    return labels[cycle] || cycle;
+    return labels[interval] || t('students.paymentIntervalMonths.custom');
   };
 
   const formatDate = (dateString: string) => {
@@ -345,35 +348,13 @@ const StudentDetails = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {student.payment_cycle && (
+              {student.payment_interval_months && (
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground uppercase tracking-wide">
-                    {t('students.paymentCycle')}
+                    {t('students.paymentInterval')}
                   </span>
                   <span className="text-xs font-semibold bg-muted px-2 py-0.5 rounded-md">
-                    {getPaymentCycleLabel(student.payment_cycle)}
-                  </span>
-                </div>
-              )}
-
-              {(student.monthly_fee != null && student.monthly_fee > 0) && (
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground uppercase tracking-wide">
-                    {t('students.monthlyFeeLabel', 'Monthly Fee')}
-                  </span>
-                  <span className="text-sm font-bold text-indigo-700 dark:text-indigo-400">
-                    {formatCurrency(student.monthly_fee)}
-                  </span>
-                </div>
-              )}
-
-              {(student.yearly_fee != null && student.yearly_fee > 0) && (
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground uppercase tracking-wide">
-                    {t('students.yearlyFeeLabel', 'Yearly Fee')}
-                  </span>
-                  <span className="text-sm font-bold text-indigo-700 dark:text-indigo-400">
-                    {formatCurrency(student.yearly_fee)}
+                    {student.payment_interval_display || getPaymentIntervalLabel(student.payment_interval_months)}
                   </span>
                 </div>
               )}
@@ -395,6 +376,49 @@ const StudentDetails = () => {
                     {formatCurrency(student.financial_summary?.remaining_balance || 0)}
                   </span>
                 </div>
+              </div>
+
+              {/* Fee Breakdown by Type */}
+              {student.financial_summary?.by_fee_type && Object.keys(student.financial_summary.by_fee_type).length > 0 && (
+                <div className="border-t pt-3 mt-2">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                    {t('students.feeBreakdown', 'Fee Breakdown')}
+                  </div>
+                  <div className="space-y-1.5">
+                    {Object.entries(student.financial_summary.by_fee_type).map(([feeName, data]: [string, any]) => (
+                      <div key={feeName} className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">{feeName}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-emerald-600">{formatCurrency(data.paid || 0)}</span>
+                          <span className="text-muted-foreground">/</span>
+                          <span className="font-medium">{formatCurrency(data.expected || 0)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="border-t pt-3 mt-2 space-y-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full" 
+                  onClick={() => navigate(`/student-fee-assignments?student=${student.id}`)}
+                >
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  {t('students.manageFeeAssignments', 'Manage Fees')}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full" 
+                  onClick={() => navigate(`/student-payments/add?student=${student.id}`)}
+                >
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  {t('student-payments.addPayment', 'Add Payment')}
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -584,22 +608,12 @@ const StudentDetails = () => {
                   accentDot="bg-rose-400"
                 />
                 <InfoRow
-                  label={t('students.paymentCycle')}
+                  label={t('students.paymentInterval')}
                   value={
                     <Badge variant="outline" className="text-xs">
-                      {getPaymentCycleLabel(student.payment_cycle || 'monthly')}
+                      {student.payment_interval_display || getPaymentIntervalLabel(student.payment_interval_months || 1)}
                     </Badge>
                   }
-                  accentDot="bg-rose-400"
-                />
-                <InfoRow
-                  label={t('students.monthlyFee')}
-                  value={formatCurrency(student.monthly_fee || 0)}
-                  accentDot="bg-rose-400"
-                />
-                <InfoRow
-                  label={t('students.yearlyFee')}
-                  value={formatCurrency(student.yearly_fee || 0)}
                   accentDot="bg-rose-400"
                 />
                 <InfoRow

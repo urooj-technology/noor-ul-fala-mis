@@ -7,7 +7,7 @@ from django.utils import timezone
 from api.models.data.expenses import Expense
 from api.models.data.payroll import Payroll
 from api.models.data.advance import Advance
-from api.models.data.student_payment import StudentPayment
+from api.models.data.student_finance import StudentPayment
 from api.models.data.shop_rental import ShopRental
 from api.models.data.other_income import OtherIncome
 from api.services.accounting_service import AccountingService
@@ -178,17 +178,16 @@ class ComprehensiveReportView(APIView):
             count=Count('id')
         )
 
-        by_payment_cycle = payments.values('payment_cycle', 'currency').annotate(
-            total=Sum('amount'),
-            count=Count('id')
-        )
+        # FIXED: Remove payment_cycle aggregation since it's deprecated
+        # Keeping the structure for backward compatibility but with empty data
+        by_payment_cycle = []
 
         return {
             'period': period,
             'generated_at': timezone.now().isoformat(),
             'total': {'AFN': float(total_afn), 'USD': float(total_usd)},
             'by_status': list(by_status),
-            'by_payment_cycle': list(by_payment_cycle),
+            'by_payment_cycle': by_payment_cycle,
             'payment_count': payments.count()
         }
     

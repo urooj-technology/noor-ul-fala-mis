@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from decimal import Decimal
 from api.models.data.student import Student, ClassLevel
 from api.serializers.data.base import DataRootSerializer
 from api.utils.calendar import get_calendar_info
@@ -12,7 +13,8 @@ class ClassLevelSerializer(DataRootSerializer):
 
 class StudentSerializer(DataRootSerializer):
     class_level_details = serializers.SerializerMethodField(read_only=True)
-    financial_summary = serializers.SerializerMethodField(read_only=True)
+    total_paid = serializers.SerializerMethodField(read_only=True)
+    remaining_balance = serializers.SerializerMethodField(read_only=True)
     phone = serializers.CharField(source='parent_phone', read_only=True)
     # Calendar date fields
     date_of_birth_shamsi = serializers.SerializerMethodField(read_only=True)
@@ -31,12 +33,13 @@ class StudentSerializer(DataRootSerializer):
             'registration_date_shamsi', 'registration_date_qamari',
             'status', 'transportation', 'photo', 'tazkira_copy',
             'parent_tazkira_copy', 'previous_result_card', 'payment_receipt',
-            'class_level', 'payment_cycle', 'monthly_fee', 'yearly_fee', 'currency',
-            'age', 'class_level_details', 'financial_summary', 'phone',
+            'class_level', 'payment_interval_months', 'payment_interval_display',
+            'currency',
+            'age', 'class_level_details', 'total_paid', 'remaining_balance', 'phone',
             'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'age', 'class_level_details', 'financial_summary', 'phone',
+            'age', 'class_level_details', 'total_paid', 'remaining_balance', 'phone',
             'date_of_birth_shamsi', 'date_of_birth_qamari',
             'registration_date_shamsi', 'registration_date_qamari'
         ]
@@ -50,19 +53,25 @@ class StudentSerializer(DataRootSerializer):
             }
         return None
 
-    def get_financial_summary(self, obj):
-        summary = obj.get_financial_summary()
-        return {
-            'total_payments': float(summary.get('total_payments', 0)),
-            'remaining_balance': float(summary.get('remaining_balance', 0)),
-            'payment_cycle': summary.get('payment_cycle'),
-            'monthly_fee': float(summary.get('monthly_fee', 0)),
-            'yearly_fee': float(summary.get('yearly_fee', 0)),
-            'currency': summary.get('currency'),
-            'registration_number': summary.get('registration_number'),
-            'status': summary.get('status'),
-            'class_level': summary.get('class_level'),
-        }
+    def get_total_paid(self, obj):
+        """Get total paid amount from StudentPayment"""
+        total = obj.get_total_payments()
+        def decimal_to_str(val):
+            if isinstance(val, str):
+                return val
+            return str(val)
+        return decimal_to_str(total)
+
+    def get_remaining_balance(self, obj):
+        """Get remaining balance"""
+        expected = obj.effective_fee
+        total_paid = obj.get_total_payments()
+        remaining = max(expected - total_paid, Decimal('0'))
+        def decimal_to_str(val):
+            if isinstance(val, str):
+                return val
+            return str(val)
+        return decimal_to_str(remaining)
 
     def get_date_of_birth_shamsi(self, obj):
         """Get date of birth in Afghanistan Shamsi calendar"""

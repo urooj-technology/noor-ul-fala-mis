@@ -243,6 +243,10 @@ export const commonFa = {
   entries: "مورد",
   show: "نمایش",
   next: "بعدی",
+  totals: "مجموع",
+  selectInvoices: "انتخاب صورتحسابها",
+  processing: "در حال پردازش...",
+  deselectAll: "عدم انتخاب همه",
   purchases: {
     details: "جزئیات خرید",
     items: "آیتمها",
@@ -415,17 +419,19 @@ export const commonFa = {
   
   // Additional missing common keys
   paid: "پرداخت شده",
+  unpaid: "پرداخت نشده",
+  partial: "جزئی پرداخت شده",
   
-  // Calendar types
+// Calendar types
   calendar: {
-    calendarType: "نوع تاریخ",
-    calendarSettings: "تنظیمات تاریخ",
-    selectCalendarType: "انتخاب نوع تاریخ",
-    calendarTypeDescription: "سیستم تاریخ مورد نظر خود را برای نمایش تاریخها در سراسر برنامه انتخاب کنید.",
+    calendarType: "نوع تقویم",
+    calendarSettings: "تنظیمات تقویم",
+    selectCalendarType: "انتخاب نوع تقویم",
+    calendarTypeDescription: "سیستم تقویم مورد نظر خود را برای نمایش تاریخها در سراسر برنامه انتخاب کنید.",
     shamsi: "شمسی",
-    shamsiDescription: "تاریخ شمسی افغانستان (جلالی) - تاریخ خورشیدی افغانستان با نامهای ماههای دری و پشتو",
+    shamsiDescription: "تقویم شمسی افغانستان (جلالی) - تقویم خورشیدی افغانستان با نامهای ماههای دری و پشتو",
     qamari: "قمری",
-    qamariDescription: "تاریخ قمری (هجری قمری) - تاریخ قمری اسلامی با نامهای ماههای عربی",
+    qamariDescription: "تقویم قمری (هجری قمری) - تقویم قمری اسلامی با نامهای ماههای عربی",
     gregorian: "میلادی",
     monthShamsi: "ماه",
     yearShamsi: "سال",

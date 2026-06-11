@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DatePicker from '@/components/ui/date-picker-calendar';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { RotateCw, ArrowLeft, Upload, X, Eye, FileText, Image as ImageIcon, User, MapPin, Phone, File, GraduationCap, CreditCard, Info } from 'lucide-react';
+import { RotateCw, ArrowLeft, Upload, X, Eye, FileText, Image as ImageIcon, User, MapPin, Phone, File, GraduationCap, CreditCard, Info, DollarSign } from 'lucide-react';
 import useAdd from '@/api/useAdd';
 
 interface StudentFormData {
@@ -32,9 +32,7 @@ interface StudentFormData {
   status: string;
   transportation: string;
   class_level: string;
-  payment_cycle: string;
-  monthly_fee: string;
-  yearly_fee: string;
+  payment_interval_months: string; // Changed from payment_cycle
   currency: string;
   photo?: File | null;
   tazkira_copy?: File | null;
@@ -64,9 +62,7 @@ const defaultForm: StudentFormData = {
   status: 'active',
   transportation: 'school_bus',
   class_level: '',
-  payment_cycle: 'monthly',
-  monthly_fee: '0',
-  yearly_fee: '0',
+  payment_interval_months: '1', // Default to monthly
   currency: 'AFN',
   photo: null,
   tazkira_copy: null,
@@ -74,6 +70,17 @@ const defaultForm: StudentFormData = {
   previous_result_card: null,
   payment_receipt: null,
 };
+
+// Payment interval options
+const PAYMENT_INTERVAL_OPTIONS = [
+  { value: '1', label: 'monthly' },
+  { value: '2', label: 'bimonthly' },
+  { value: '3', label: 'quarterly' },
+  { value: '4', label: 'every4' },
+  { value: '5', label: 'every5' },
+  { value: '6', label: 'every6' },
+  { value: '12', label: 'yearly' },
+];
 
 const AddStudent = () => {
   const { t } = useLanguage();
@@ -99,7 +106,7 @@ const AddStudent = () => {
     endpoint: 'students/',
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isSuccess) {
       navigate('/students');
     }
@@ -144,7 +151,7 @@ const AddStudent = () => {
           <img 
             src={preview} 
             alt={fieldName} 
-            className="h-20 w-20 object-cover rounded-lg border"
+            className="h-20 w-20 object-cover rounded-lg border" 
           />
         ) : (
           <div className="h-20 w-20 flex items-center justify-center bg-muted rounded-lg border">
@@ -207,7 +214,7 @@ const AddStudent = () => {
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => forwardedRef.current?.click()}
+          onClick={() => (forwardedRef as React.RefObject<HTMLInputElement>).current?.click()}
           className="h-9"
         >
           {icon || <Upload className="h-4 w-4 mr-2" />}
@@ -775,70 +782,59 @@ const AddStudent = () => {
                   </Select>
                 </div>
 
+                {/* Payment Interval - NEW FIELD */}
                 <div className="space-y-2">
-                  <Label htmlFor="payment_cycle" className="font-semibold">
-                    {t("students.paymentCycle")} <span className="text-destructive">*</span>
+                  <Label htmlFor="payment_interval_months" className="font-semibold">
+                    {t("students.paymentInterval")} <span className="text-destructive">*</span>
                   </Label>
                   <Select
-                    value={formData.payment_cycle}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, payment_cycle: value }))}
+                    value={formData.payment_interval_months}
+                    onValueChange={(value) => setFormData((prev) => ({ ...prev, payment_interval_months: value }))}
                   >
                     <SelectTrigger className="h-10">
-                      <SelectValue placeholder={t("students.selectPaymentCycle")} />
+                      <SelectValue placeholder={t("students.selectPaymentInterval")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="monthly">{t("students.paymentCycleOptions.monthly")}</SelectItem>
-                      <SelectItem value="yearly">{t("students.paymentCycleOptions.yearly")}</SelectItem>
+                      {PAYMENT_INTERVAL_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {t(`students.paymentIntervalMonths.${option.label}`)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {t('students.paymentIntervalDescription')}
+                  </p>
                 </div>
 
+                {/* Currency */}
                 <div className="space-y-2">
-                  <Label htmlFor="monthly_fee" className="font-semibold">
-                    {t("students.monthlyFee")}
-                  </Label>
-                  <Input
-                    id="monthly_fee"
-                    type="number"
-                    step="0.01"
-                    value={formData.monthly_fee}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, monthly_fee: e.target.value }))}
-                    placeholder={t("students.enterMonthlyFee")}
-                    className="h-10"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="yearly_fee" className="font-semibold">
-                    {t("students.yearlyFee")}
-                  </Label>
-                  <Input
-                    id="yearly_fee"
-                    type="number"
-                    step="0.01"
-                    value={formData.yearly_fee}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, yearly_fee: e.target.value }))}
-                    placeholder={t("students.enterYearlyFee")}
-                    className="h-10"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="fee_currency" className="font-semibold">
-                    {t("students.feeCurrency")}
+                  <Label htmlFor="currency" className="font-semibold">
+                    {t("students.feeCurrency")} <span className="text-destructive">*</span>
                   </Label>
                   <Select
                     value={formData.currency}
                     onValueChange={(value) => setFormData((prev) => ({ ...prev, currency: value }))}
                   >
                     <SelectTrigger className="h-10">
-                      <SelectValue />
+                      <SelectValue placeholder={t("students.selectCurrency", 'Select Currency')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="AFN">{t("student-payments.afn")}</SelectItem>
-                      <SelectItem value="USD">{t("student-payments.usd")}</SelectItem>
+                      <SelectItem value="AFN">AFN - افغانی</SelectItem>
+                      <SelectItem value="USD">USD - دالر</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              {/* Fee Info Box */}
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4">
+                <div className="flex items-start gap-2">
+                  <Info className="h-4 w-4 text-blue-600 mt-0.5" />
+                  <div className="text-xs text-blue-800 dark:text-blue-200">
+                    <p className="font-medium mb-1">{t('students.feeAssignmentNote', 'After registration, fees will be auto-assigned from class defaults')}</p>
+                    <p className="text-blue-600 dark:text-blue-300">{t('students.feeAssignmentNote2', 'You can customize fees in Student Fee Assignments after registration')}</p>
+                  </div>
                 </div>
               </div>
 

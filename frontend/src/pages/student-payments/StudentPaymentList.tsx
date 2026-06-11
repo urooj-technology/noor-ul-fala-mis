@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, Eye, DollarSign, FileSpreadsheet, Printer } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, DollarSign, FileSpreadsheet, Printer, Layers, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
@@ -16,18 +16,27 @@ interface StudentDetails {
   full_name: string;
   registration_number: string;
   class_level?: string;
-  payment_cycle?: string;
+  payment_interval_months?: number;
 }
 
 interface PaymentRecord {
   id: number;
   reference_number: string | null;
   student_details: StudentDetails | null;
-  payment_cycle: string;
+  payment_interval_months?: number;
   amount: string | number;
   currency: string;
   payment_date: string;
   payment_status: string;
+  fee_type?: number;
+  fee_type_details?: {
+    id: number;
+    name: string;
+    code: string;
+    category: string;
+  };
+  period_month?: string;
+  period_year?: string;
 }
 
 interface PaginatedResponse {
@@ -68,6 +77,12 @@ export const StudentPaymentList = () => {
   const payments = paymentsData?.results || [];
   const totalItems = paymentsData?.count || 0;
 
+  // Calculate totals
+  const totalAmount = payments.reduce((sum: number, p: PaymentRecord) => sum + (parseFloat(String(p.amount)) || 0), 0);
+  const completedPayments = payments.filter((p: PaymentRecord) => p.payment_status === 'completed');
+  const completedTotal = completedPayments.reduce((sum: number, p: PaymentRecord) => sum + (parseFloat(String(p.amount)) || 0), 0);
+  const currency = payments[0]?.currency || 'AFN';
+
   const handleEdit = (payment: PaymentRecord) => {
     navigate(`/student-payments/${payment.id}/edit`);
   };
@@ -77,14 +92,14 @@ export const StudentPaymentList = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
       completed: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
       cancelled: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
       refunded: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
     };
     return (
-      <Badge variant={colors[status as keyof typeof colors] ? 'default' : 'secondary'}>
+      <Badge className={`${colors[status] || ''} text-xs`}>
         {t(`student-payments.status.${status}`) || status}
       </Badge>
     );
@@ -106,7 +121,7 @@ export const StudentPaymentList = () => {
       title: t('student-payments.student'),
       render: (value) => (
         <div className="space-y-0.5">
-          <span className="text-xs">{value?.full_name || t('common.notAvailable')}</span>
+          <span className="text-xs font-medium">{value?.full_name || t('common.notAvailable')}</span>
           {value?.class_level && (
             <span className="text-[10px] text-muted-foreground block">Class: {value.class_level}</span>
           )}
@@ -114,20 +129,33 @@ export const StudentPaymentList = () => {
       )
     },
     {
-      key: 'payment_cycle',
-      title: t('student-payments.paymentCycle'),
-      render: (value) => (
-        <Badge variant={value === 'yearly' ? 'secondary' : 'outline'} className="text-[10px]">
-          {value === 'yearly'
-            ? t('students.paymentCycleOptions.yearly', 'Yearly')
-            : t('students.paymentCycleOptions.monthly', 'Monthly')}
-        </Badge>
-      )
+      key: 'fee_type_details',
+      title: t('student-payments.feeType', 'Fee Type'),
+      render: (value) => {
+        if (!value) return <span className="text-xs text-muted-foreground">-</span>;
+        return (
+          <Badge variant="outline" className="text-[10px]">
+            {value.name}
+          </Badge>
+        );
+      }
+    },
+    {
+      key: 'period_month',
+      title: t('student-payments.period', 'Period'),
+      render: (value, record: PaymentRecord) => {
+        if (!value || !record.period_year) return <span className="text-xs text-muted-foreground">-</span>;
+        return (
+          <Badge variant="secondary" className="text-[10px]">
+            {value}/{record.period_year}
+          </Badge>
+        );
+      }
     },
     {
       key: 'amount',
       title: t('student-payments.amount'),
-      render: (value, record: { currency?: string }) => (
+      render: (value, record: PaymentRecord) => (
         <span className="font-bold text-xs text-green-600">
           {Number(value || 0).toFixed(2)} {record.currency || ''}
         </span>
@@ -242,57 +270,93 @@ export const StudentPaymentList = () => {
   return (
     <div className="space-y-6 p-6">
       <CalendarProvider>
-        <DataTable
-        data={payments}
-        columns={columns}
-        loading={isLoading}
-        title={t('student-payments.studentPayments')}
-        subtitle={t('student-payments.managePayments')}
-        icon={<DollarSign className="h-5 w-5" />}
-        headerActions={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" />
-              {t('common.print', 'Print')}
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/student-payments/export')}>
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-              {t('student-payments.exportToExcel', 'Export')}
-            </Button>
-            <Button onClick={() => navigate('/student-payments/add')}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t('student-payments.addPayment')}
-            </Button>
+        {/* Summary Cards */}
+        {payments.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800 dark:text-blue-200">{t('students.totalPayments', 'Total Payments')}:</span>
+              </div>
+              <span className="text-xl font-bold text-blue-700 dark:text-blue-300">{totalAmount.toFixed(2)} {currency}</span>
+              <div className="text-xs text-muted-foreground mt-1">{payments.length} payment(s)</div>
+            </div>
+            <div className="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 p-4">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-emerald-600" />
+                <span className="text-sm font-medium text-emerald-800 dark:text-emerald-200">{t('students.completedTotal', 'Completed')}:</span>
+              </div>
+              <span className="text-xl font-bold text-emerald-700 dark:text-emerald-300">{completedTotal.toFixed(2)} {currency}</span>
+              <div className="text-xs text-muted-foreground mt-1">{completedPayments.length} completed</div>
+            </div>
+            <div className="rounded-lg bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 p-4">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-indigo-600" />
+                <span className="text-sm font-medium text-indigo-800 dark:text-indigo-200">{t('students.pendingTotal', 'Pending')}:</span>
+              </div>
+              <span className="text-xl font-bold text-indigo-700 dark:text-indigo-300">
+                {(totalAmount - completedTotal).toFixed(2)} {currency}
+              </span>
+              <div className="text-xs text-muted-foreground mt-1">{payments.length - completedPayments.length} pending</div>
+            </div>
           </div>
-        }
-        searchable
-        searchPlaceholder={t('student-payments.searchPayments')}
-        searchValue={searchTerm}
-        onSearch={handleSearch}
-        customFilters={customFilters}
-        showClearFilters={hasActiveFilters}
-        clearFiltersLabel={t('student-payments.clearFilters')}
-        onClearFilters={handleClearFilters}
-        rowActions={rowActions}
-        pagination={{
-          current: currentPage,
-          pageSize,
-          total: totalItems,
-          onPageChange: setCurrentPage,
-          showSizeChanger: true,
-          pageSizeOptions: [10, 25, 50, 100],
-          onPageSizeChange: (size) => {
-            setPageSize(size);
-            setCurrentPage(1);
+        )}
+
+        <DataTable
+          data={payments}
+          columns={columns}
+          loading={isLoading}
+          title={t('student-payments.studentPayments')}
+          subtitle={t('student-payments.managePayments')}
+          icon={<DollarSign className="h-5 w-5" />}
+          headerActions={
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => window.print()}>
+                <Printer className="mr-2 h-4 w-4" />
+                {t('common.print', 'Print')}
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/student-payments/export')}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                {t('student-payments.exportToExcel', 'Export')}
+              </Button>
+              <Button variant="secondary" onClick={() => navigate('/student-payments/flow')}>
+                <Layers className="mr-2 h-4 w-4" />
+                {t('student-payments.paymentFlow', 'Payment Flow')}
+              </Button>
+              <Button onClick={() => navigate('/student-payments/add')}>
+                <Plus className="mr-2 h-4 w-4" />
+                {t('student-payments.addPayment')}
+              </Button>
+            </div>
           }
-        }}
-        emptyIcon={<DollarSign className="h-8 w-8 text-muted-foreground" />}
-        emptyTitle={t('student-payments.noPaymentsFound')}
-        emptyDescription={searchTerm ? t('student-payments.tryAdjustingSearch') : t('student-payments.addFirstPayment')}
-        loadingText={t('student-payments.loadingPayments')}
-        maxHeight="75vh"
-        stickyHeader={true}
-      />
+          searchable
+          searchPlaceholder={t('student-payments.searchPayments')}
+          searchValue={searchTerm}
+          onSearch={handleSearch}
+          customFilters={customFilters}
+          showClearFilters={hasActiveFilters}
+          clearFiltersLabel={t('student-payments.clearFilters')}
+          onClearFilters={handleClearFilters}
+          rowActions={rowActions}
+          pagination={{
+            current: currentPage,
+            pageSize,
+            total: totalItems,
+            onPageChange: setCurrentPage,
+            showSizeChanger: true,
+            pageSizeOptions: [10, 25, 50, 100],
+            onPageSizeChange: (size) => {
+              setPageSize(size);
+              setCurrentPage(1);
+            }
+          }}
+          emptyIcon={<DollarSign className="h-8 w-8 text-muted-foreground" />}
+          emptyTitle={t('student-payments.noPaymentsFound')}
+          emptyDescription={searchTerm ? t('student-payments.tryAdjustingSearch') : t('student-payments.addFirstPayment')}
+          loadingText={t('student-payments.loadingPayments')}
+          maxHeight="75vh"
+          stickyHeader={true}
+        />
       </CalendarProvider>
 
       <ConfirmDialog />

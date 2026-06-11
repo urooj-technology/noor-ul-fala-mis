@@ -353,3 +353,17 @@ export function getYearsArray(calendarType: CalendarType, length: number = 10): 
   const currentYear = getCurrentYear(calendarType);
   return Array.from({ length }, (_, i) => currentYear - Math.floor(length / 2) + i);
 }
+
+/**
+ * Return month names array based on calendar type and language
+ */
+export function getMonthNames(calendarType: CalendarType, lang: 'fa' | 'ps' = 'fa'): string[] {
+  if (calendarType === 'shamsi') {
+    return lang === 'ps' ? SHAMSI_MONTHS_PASHTO : SHAMSI_MONTHS_DARI;
+  }
+  if (calendarType === 'qamari') {
+    return QAMARI_MONTHS;
+  }
+  // Fallback to Gregorian English month names
+  return Array.from({ length: 12 }, (_, i) => new Date(0, i).toLocaleString('default', { month: 'long' }));
+}

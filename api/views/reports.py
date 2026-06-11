@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from api.models.data.expenses import Expense
 from api.models.data.payroll import Payroll
 from api.models.data.advance import Advance
-from api.models.data.student_payment import StudentPayment
+from api.models.data.student_finance import StudentPayment
 from api.models.data.shop_rental import ShopRental
 from api.models.data.other_income import OtherIncome
 from django.utils import timezone

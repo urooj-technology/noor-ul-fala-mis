@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, Eye, User, GraduationCap, Printer } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, User, GraduationCap, Printer, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
@@ -11,24 +11,77 @@ import { formatDateByCalendarType } from '@/utils/calendar';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 
+interface FinancialSummary {
+  total_payments?: string | number;
+  total_invoices?: string | number;
+  total_paid_invoices?: string | number;
+  remaining_balance?: string | number;
+  payment_interval_months?: number;
+  payment_interval_display?: string;
+  currency?: string;
+}
+
 interface StudentItem {
   id: number | string;
   registration_number?: string;
   full_name?: string;
   father_name?: string;
   class_level_details?: { name?: string };
-  payment_cycle?: string;
+  payment_interval_months?: number;
   monthly_fee?: number;
   yearly_fee?: number;
   status?: string;
   currency?: string;
   phone?: string;
+  financial_summary?: FinancialSummary;
 }
 
 interface PaginatedResponse {
   results: StudentItem[];
   count: number;
 }
+
+// Helper function to format currency
+function formatCurrency(amount: string | number | undefined, currency: string = 'AFN'): string {
+  const val = typeof amount === 'string' ? parseFloat(amount) || 0 : (amount ?? 0);
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(val);
+}
+
+// Payment status indicator component
+const PaymentStatusBadge = ({ summary }: { summary?: FinancialSummary }) => {
+  if (!summary) return <Badge variant="outline" className="text-xs">-</Badge>;
+  
+  const total = parseFloat(String(summary.total_invoices || 0));
+  const paid = parseFloat(String(summary.total_paid_invoices || 0));
+  const remaining = parseFloat(String(summary.remaining_balance || 0));
+  
+  if (total === 0) {
+    return <Badge variant="outline" className="text-xs bg-gray-50">No Fees</Badge>;
+  }
+  
+  if (remaining <= 0) {
+    return <Badge className="text-xs bg-green-100 text-green-800">Paid</Badge>;
+  }
+  
+  if (paid > 0) {
+    return (
+      <Badge className="text-xs bg-yellow-100 text-yellow-800">
+        {formatCurrency(remaining, summary.currency)} due
+      </Badge>
+    );
+  }
+  
+  return (
+    <Badge className="text-xs bg-red-100 text-red-800">
+      {formatCurrency(remaining, summary.currency)} unpaid
+    </Badge>
+  );
+};
 
 export const StudentList = () => {
   const { t } = useLanguage();
@@ -38,13 +91,13 @@ export const StudentList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [classLevelFilter, setClassLevelFilter] = useState('');
-  const [paymentCycleFilter, setPaymentCycleFilter] = useState('');
+  const [paymentIntervalFilter, setPaymentIntervalFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [selectedStudentIds, setSelectedStudentIds] = useState<Set<number | string>>(new Set());
 
   const { data: studentsData, isLoading } = useFetchObjects<PaginatedResponse>({
-    queryKey: ['students', currentPage.toString(), pageSize.toString(), searchTerm, statusFilter, classLevelFilter, paymentCycleFilter],
+    queryKey: ['students', currentPage.toString(), pageSize.toString(), searchTerm, statusFilter, classLevelFilter, paymentIntervalFilter],
     endpoint: 'students/',
     params: {
       page: currentPage,
@@ -52,7 +105,7 @@ export const StudentList = () => {
       search: searchTerm,
       ...(statusFilter && { status: statusFilter }),
       ...(classLevelFilter && { class_level: classLevelFilter }),
-      ...(paymentCycleFilter && { payment_cycle: paymentCycleFilter }),
+      ...(paymentIntervalFilter && { payment_interval_months: paymentIntervalFilter }),  // FIXED
     },
   });
 
@@ -99,11 +152,18 @@ export const StudentList = () => {
     );
   };
 
-  const getPaymentCycleBadge = (cycle: string) => {
-    const isMonthly = cycle === 'monthly';
+  const getPaymentIntervalBadge = (interval: number) => {
+    const labels: Record<number, string> = {
+      1: t('students.paymentIntervalMonths.monthly'),
+      2: t('students.paymentIntervalMonths.bimonthly'),
+      3: t('students.paymentIntervalMonths.quarterly'),
+      5: t('students.paymentIntervalMonths.every5'),
+      6: t('students.paymentIntervalMonths.every6'),
+      12: t('students.paymentIntervalMonths.yearly'),
+    };
     return (
-      <Badge variant={isMonthly ? 'outline' : 'secondary'}>
-        {isMonthly ? t('students.paymentCycleOptions.monthly') : t('students.paymentCycleOptions.yearly')}
+      <Badge variant="outline" className="text-xs">
+        {labels[interval] || t('students.paymentIntervalMonths.custom', `Every ${interval} months`)}
       </Badge>
     );
   };
@@ -125,11 +185,6 @@ export const StudentList = () => {
       render: (value) => <span className="text-xs">{value || t('common.notAvailable')}</span>
     },
     {
-      key: 'father_name',
-      title: t('students.fatherName'),
-      render: (value) => <span className="text-xs">{value || t('common.notAvailable')}</span>
-    },
-    {
       key: 'class_level_details',
       title: t('students.classLevel'),
       render: (value) => (
@@ -140,9 +195,14 @@ export const StudentList = () => {
       )
     },
     {
-      key: 'payment_cycle',
-      title: t('students.paymentCycle'),
-      render: (value) => getPaymentCycleBadge(value || 'monthly')
+      key: 'payment_interval_months',
+      title: t('students.paymentInterval'),
+      render: (value) => getPaymentIntervalBadge(value || 1)
+    },
+    {
+      key: 'financial_summary',
+      title: t('students.paymentStatus', 'Payment Status'),
+      render: (value) => <PaymentStatusBadge summary={value} />
     },
     {
       key: 'status',
@@ -163,6 +223,13 @@ export const StudentList = () => {
       icon: <Eye className="h-4 w-4" />,
       onClick: handleDetails,
       tooltip: t('students.viewDetails')
+    },
+    {
+      key: 'fees',
+      label: t('students.manageFeeAssignments', 'Manage Fees'),
+      icon: <DollarSign className="h-4 w-4" />,
+      onClick: (record) => navigate(`/student-fee-assignments?student=${record.id}`),
+      tooltip: t('students.manageFeeAssignments', 'Manage Fee Assignments')
     },
     {
       key: 'edit',
@@ -190,9 +257,14 @@ export const StudentList = () => {
     { value: 'transferred', label: t('students.statusOptions.transferred') },
   ];
 
-  const paymentCycleOptions = [
-    { value: 'monthly', label: t('students.paymentCycleOptions.monthly') },
-    { value: 'yearly', label: t('students.paymentCycleOptions.yearly') },
+  const paymentIntervalOptions = [
+    { value: '1', label: t('students.paymentIntervalMonths.monthly') },
+    { value: '2', label: t('students.paymentIntervalMonths.bimonthly') },
+    { value: '3', label: t('students.paymentIntervalMonths.quarterly') },
+    { value: '4', label: t('students.paymentIntervalMonths.every4') },
+    { value: '5', label: t('students.paymentIntervalMonths.every5') },
+    { value: '6', label: t('students.paymentIntervalMonths.every6') },
+    { value: '12', label: t('students.paymentIntervalMonths.yearly') },
   ];
 
   const customFilters = [
@@ -231,17 +303,17 @@ export const StudentList = () => {
       )
     },
     {
-      key: 'payment_cycle',
-      label: t('students.paymentCycle'),
+      key: 'payment_interval_months',
+      label: t('students.paymentInterval'),
       component: (
         <Autocomplete
-          options={paymentCycleOptions}
-          value={paymentCycleFilter}
+          options={paymentIntervalOptions}
+          value={paymentIntervalFilter}
           onChange={(value) => {
-            setPaymentCycleFilter(value as string);
+            setPaymentIntervalFilter(value as string);
             setCurrentPage(1);
           }}
-          placeholder={t('students.selectPaymentCycle')}
+          placeholder={t('students.selectPaymentInterval')}
           getOptionLabel={(p) => p.label}
           getOptionValue={(p) => p.value}
         />
@@ -257,12 +329,12 @@ export const StudentList = () => {
   const handleClearFilters = () => {
     setStatusFilter('');
     setClassLevelFilter('');
-    setPaymentCycleFilter('');
+    setPaymentIntervalFilter('');  // FIXED
     setSearchTerm('');
     setCurrentPage(1);
   };
 
-  const hasActiveFilters = statusFilter || classLevelFilter || paymentCycleFilter || searchTerm;
+  const hasActiveFilters = statusFilter || classLevelFilter || paymentIntervalFilter || searchTerm;
 
   return (
     <div className="space-y-6 p-6">

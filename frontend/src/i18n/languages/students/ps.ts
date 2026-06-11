@@ -87,13 +87,25 @@ export const studentsPs = {
   // Class & Fee Information
   classFeeInformation: "د صنف او فیس معلومات",
   classLevel: "صنف",
-  selectClassLevel: "صنف وټاکئ",
+  selectClassLevel: "انتخاب صنف",
   classLevelShort: "صنف",
   paymentCycle: "د تادیې چکل",
+  paymentInterval: "د تادیې وخت",
   selectPaymentCycle: "د تادیې چکل وټاکئ",
+  selectPaymentInterval: "د تادیې وخت وټاکئ",
   paymentCycleOptions: {
     monthly: "میاشتې",
     yearly: "کلنه",
+  },
+  paymentIntervalMonths: {
+    monthly: "میاشتی (هر 1 میاشت)",
+    bimonthly: "دوه میاشتی (هر 2 میاشت)",
+    quarterly: "درې میاشتی (هر 3 میاشت)",
+    every4: "هر 4 میاشت",
+    every5: "هر 5 میاشت",
+    every6: "شپږ میاشتی (هر 6 میاشت)",
+    yearly: "کلنه (هر 12 میاشت)",
+    custom: "د خوښې وخت"
   },
   monthlyFee: "میاشتی فیس",
   yearlyFee: "کلنه فیس",
@@ -105,9 +117,90 @@ export const studentsPs = {
   yearlyFeeLabel: "کلنه فیس",
   feeLabel: "فیس",
   notSet: "رامینځته نشوی",
+  months: "میاشتې",
+  
+  // Payment interval description
+  paymentIntervalDescription: "زده کونکی څومره وخت وروسته فیس ورکړي؟",
+  paymentIntervalHint: "د تادیو ترمنځ میاشتو شمېر وټاکئ",
+  monthsBetweenPayments: "میاشتې ترمنځ تادیو",
+  every: "هر",
+  notes: "یادښتونه",
+
+  // Fee Types
+  feeTypes: "د فیس ډولونه",
+  feeType: "د فیس ډول",
+  addFeeType: "د فیس ډول زياتول",
+  feeName: "د فیس نوم",
+  code: "کوډ",
+  category: "کتګوري",
+  mandatory: "اړین",
+  selectCategory: "کتګوري وټاکئ",
+  feeCategories: {
+    admission: "د داخلې فیس",
+    book: "د کتاب فیس",
+    uniform: "د یونیفرم فیس",
+    transportation: "د ګرځېدنې فیس",
+    exam: "د امتحان فیس",
+    other: "نور فیس"
+  },
+
+  // Class Fees
+  classFees: "د صنف فیسونه",
+  classFee: "د صنف فیس",
+  addClassFee: "د صنف فیس زياتول",
+  editClassFee: "د صنف فیس سمول",
+  manageClassFees: "د فیسو اداره کول",
+  searchClassFees: "د فیسو لټون...",
+  noClassFeesFound: "هیڅ فیس ونه موندل شو",
+  addFirstClassFee: "خپل لومړی فیس زيات کړئ",
+  loadingClassFees: "د فیسو لوډیږي...",
+  
+  // Fee Assignments
+  feeAssignments: "د فیسو تخصیص",
+  feeAssignment: "د فیس تخصیص",
+  addFeeAssignment: "د فیس تخصیص زياتول",
+  studentFees: "د زده کونکي فیسو",
+  assignFees: "فیسو تخصیص کړئ",
+  feeAmount: "د فیس مقدار",
+  totalFees: "ټول فیسو",
+  noFeesAssigned: "تر اوسه هیڅ فیس تخصیص شوی نه دی",
+  manageFeeAssignments: "د تخصیسو اداره کول",
+  searchFeeAssignments: "لټون...",
+  noFeeAssignmentsFound: "هیڅ تخصیص ونه موندل شو",
+  addFirstFeeAssignment: "خپل لومړی تخصیص زيات کړئ",
+  loadingFeeAssignments: "لوډیږي...",
+  
+  // Fee Types management
+  manageFeeTypes: "د فیس ډولونو اداره کول",
+  searchFeeTypes: "د فیس ډولونو لټون...",
+  noFeeTypesFound: "هیڅ فیس ډول ونه موندل شو",
+  addFirstFeeType: "خپل لومړی فیس ډول زيات کړئ",
+  loadingFeeTypes: "د فیس ډولونو لوډیږي...",
+  
+  // Bulk Change Class Level
+  bulkChangeClassLevel: "د ډلويز تغییر صنف",
+  selectNewClassLevel: "نوی صنف",
+  moveToClass: "زده کونکي ته انتقال کول",
+  changeSummary: "تغییر خلاصه",
+  totalSelected: "ټول غوره شوي",
+  willChange: "تغییر کیدی شي",
+  alreadyInLevel: "له مخکې په هغه سطح کې",
+  targetLevel: "هدف سطح",
+  applyChanges: "تغییرات لاړوایستل",
+  bulkUpdateSuccess: "د صنف سطح بهروزه شوه",
+  studentsUpdated: "زده کونکي بهروزه شول",
+  bulkUpdateFailed: "د صنف سطحونو بهروزه کولو کې ستونزه",
+  selectedStudents: "غوره شوي زده کونکي",
+  currentClass: "اوسنی صنف",
+  noStudentsSelected: "هیڅ زده کونکي غوره نه شوی. د زده کونکو لړلسته ورته راګرځئ او ابتدا زده کونکي غوره کړئ.",
+  backToList: "د زده کونکو لړلسته ته راګرځئ",
+  alreadyAtLevel: "له مخکې په هغه سطح کې",
+  changeClassLevel: "د صنف سطح تغییر کول",
+  studentsSelected: "زده کونکی غوره شوی",
+  failedToLoadClassLevels: "د صنف سطحونو لوډولو کې ستونزه",
 
   // UI Components
-  manageStudents: "د زده کونکو ریکارډونه اداره کړئ",
+  manageStudents: "د زده کونکو ریکارډونو اداره کول",
   searchStudents: "زده کونکي لټول...",
   filterByStatus: "د حالت له مخې فلټر",
   clearFilters: "فلټرونه پاکول",
@@ -124,6 +217,207 @@ export const studentsPs = {
     tazkiraNumber: "د تذکره شمېره اړینه ده",
     registrationNumber: "د ثبت شمېره اړینه ده",
     registrationDate: "د ثبت نېټه اړینه ده",
-    phone: "د تلیفون شمېره اړینه ده"
-  }
+    phone: "د تلیفون شمېره اړینه ده",
+    paymentInterval: "د تادیې وخت اړین دی"
+  },
+
+  // Fee Assignment Notes
+  feeAssignmentNote: "د ثبت وروسته، فیسو به ډوله خپلکانې د صنف څخه تخصیص کېږي",
+  feeAssignmentNote2: "تاسو کولی شئ د فیسو تخصیص کړئ",
+  selectCurrency: "اسعار وټاکئ",
+  addFeeAssignmentDesc: "د صنف پیش فرض څخه زده کونکي ته فیسو تخصیص کړئ یا د خپل خوښونه تخصیصونه جوړ کړئ",
+  amount: "مقدار",
+  notes: "یادښتونه",
+  currency: "اسعار",
+
+  // Payment Status
+  paymentStatus: "د تادیې حالت",
+  paid: "تادیه شوی",
+  unpaid: "تادیه نشوی",
+  partiallyPaid: "بشپړه تادیه شوی",
+  overdue: "د تادیې نیټه تېره شوی",
+
+// Fee Summary
+  totalFeeAmount: "ټول مقدار فیس",
+  totalPaidAmount: "ټول تادیه شوی مقدار",
+  totalRemainingAmount: "ټول پاتې مقدار",
+  totalRemaining: "ټول پاتې",
+  viewFeeAssignments: "د تخصيصو وګورئ",
+  feeBreakdown: "د فیسو تفصیل په ډول",
+
+  // Common actions
+  add: "زياتول",
+  save: "خوندي کول",
+  cancel: "لغو کول",
+  back: "ورګرځول",
+  next: "بل",
+  delete: "حذف کول",
+  edit: "سمول",
+  view: "وګورئ",
+  
+  // Common terms
+  search: "لټون",
+  filter: "فلټر",
+  clear: "پاکول",
+  all: "ټول",
+  
+  // Student
+  student: "زده کونکی",
+  
+  // Common messages
+  required: "اړین دی",
+  positive: "باید مثبت وي",
+  loading: "لوډیږي...",
+  saving: "خوندي کیږي...",
+  updating: "بهروزه کیږي...",
+  generating: "جوړیدی...",
+  notAvailable: "شته نه دی",
+  notUploaded: "آپلود شوی نه دی",
+  optionalNotes: "اختیاري یادښتونه",
+  upload: "آپلود کول",
+  preview: "مخکتنه",
+  download: "ډاونلوډ کول",
+  
+  // Status labels
+  active: "فعال",
+  inactive: "غیر فعال",
+  yes: "یا",
+  no: "نه",
+  
+  // Invoice Status
+  invoiceStatus: {
+    pending: "پاتې",
+    partial: "بشپړه تادیه شوی",
+    paid: "تادیه شوی",
+    overdue: "د تادیې نیټه تېره شوی",
+    cancelled: "لغو شوی"
+  },
+  
+  // Student Invoices
+  studentInvoices: "د زده کونکو صورتحسابونه",
+  invoiceDetails: "د صورتحساب تفصیلات",
+  generateInvoices: "صورتحسابونه جوړول",
+  addInvoice: "صورتحساب زياتول",
+  editInvoice: "صورتحساب سمول",
+  deleteInvoice: "صورتحساب حذف کول",
+  manageInvoices: "د زده کونکو صورتحسابونو اداره کول",
+  noInvoicesFound: "هیڅ صورتحساب ونه موندل شو",
+  addFirstInvoice: "خپل لومړی صورتحساب زيات کړئ",
+  loadingInvoices: "لوډیږي...",
+  searchInvoices: "لټون...",
+  period: "دوره",
+  
+  // Payment Plans
+  paymentPlans: "د تادیې برنامې",
+  paymentPlan: "د تادیې برنامه",
+  addPaymentPlan: "د تادیې برنامه زياتول",
+  editPaymentPlan: "د تادیې برنامه سمول",
+  managePaymentPlans: "د تادیې برنامو اداره کول",
+  noPaymentPlansFound: "هیڅ د تادیې برنامه ونه موندل شوه",
+  addFirstPaymentPlan: "لومړۍ برنامه زایاتول",
+  loadingPaymentPlans: "لوډیږي...",
+  searchPaymentPlans: "لټون...",
+  interval: "فاصله",
+  startDate: "د پیل نېټه",
+  endDate: "د پای نېټه",
+  
+  // Invoice generation
+  periodicGeneration: "د صورتحسابونو دورتي تولید",
+  generateInvoicesForPeriod: "د ټولو زده کونکو لپاره د دورې په پیل کې صورتحسابونه جوړول",
+  invoicesCreated: "صورتحسابونه جوړول شول",
+  intervalUsed: "فاصله وکارول شوی",
+  periodsGenerated: "دورې جوړه شوي",
+  selectStudents: "زده کونکي وټاکئ",
+  selectStudentsDescription: "د صورتحساب تولید لپاره زده کونکي وټاکئ",
+  periodMonth: "د دورې میاشت",
+  periodYear: "د دورې کال",
+  
+  // Invoice generation success
+  success: {
+    title: "صورتحسابونه په بریالیتوب سره جوړول شول!",
+    description: (count: number) => `${count} صورتحسابونه جوړول شول`
+  },
+  
+  // Invoice generation errors
+  error: {
+    generate: "د صورتحسابونو جوړولو کې ستونزه"
+  },
+  
+  // Fee type info
+  feeTypeInformation: "د فیس ډول معلومات",
+  addFeeTypeDesc: "نوی فیس ډول جوړول",
+  editFeeTypeDesc: "د فیس ډول تفصیلات بهروزه کول",
+  
+  // Class fee info
+  classFeeInformation: "د صنف فیس معلومات",
+  addClassFeeDesc: "نوی د صنف فیس جوړول",
+  editClassFeeDesc: "د صنف فیس تفصیلات بهروزه کول",
+  
+  // Payment plan info
+  paymentPlanInformation: "د تادیې برنامه معلومات",
+  addPaymentPlanDesc: "نوی د تادیې برنامه جوړول",
+  editPaymentPlanDesc: "د تادیې برنامه تفصیلات بهروزه کول",
+  
+  // Common form terms
+  selectStatus: "حالت وټاکئ",
+  selectFeeType: "د فیس ډول وټاکئ",
+  enterDescription: "توضیحات دننه کړئ",
+  referenceNumberPlaceholder: "د. بنک-2026-001",
+  
+  // Fee Categories
+  feeCategories: {
+    admission: "د داخلې فیس",
+    book: "د کتاب فیس",
+    uniform: "د یونیفرم فیس",
+    transportation: "د ګرځېدنې فیس",
+    exam: "د امتحان فیس",
+    other: "نور فیس"
+  },
+
+  // Bulk Fee Assignment
+  bulkFeeAssignment: "د فیسو تخصیص",
+  assignFeesToStudent: "د زده کونکي څومره فیسو تخصیص کول",
+  selectLevelAndStudent: "د صنف سطح او زده کونکي وټاکئ",
+  selectClassLevel: "د صنف سطح وټاکئ",
+  student: "زده کونکی",
+  selectStudent: "زده کونکی وټاکئ",
+  selectedStudent: "غوره شوی زده کونکی",
+  fullName: "ټول نوم",
+  registrationNumber: "د ثبت شمېره",
+  classLevelLabel: "د صنف سطح",
+  currency: "اسعار",
+  paymentPlanLabel: "د تادیې برنامه (ماه)",
+  totalFeesLabel: "ټول فیسو",
+  feeTypesCount: "فیس ډول(ها) غوره شوي",
+  clickToDeselect: "کلیک کول ترونه لغو کول",
+  clickToSelect: "کلیک کول ترونه وټاکول",
+  selectedForAssignment: "تخصیص لپاره غوره شوی",
+  previouslyAssignedAtLevel: "په هماغه سطح کې قبلاً تخصیص شوی (مبلغ پیشنهادی نمایش داده شو)",
+  loadingFeeTypes: "د فیس ډولو لوډیږي...",
+  monthly: "میاشتی",
+  quarterly: "سه میاشتی",
+  semiAnnually: "شپږ میاشتی",
+  yearly: "کلنی",
+  everyMonths: "هر {ماه} میاشت",
+  cancel: "لغو کول",
+  assignFeesButton: "فیسو تخصیص کول",
+  saving: "خوندي کیږي...",
+  selectAStudentToContinue: "د ادامې لپاره زده کونکی وټاکئ",
+  feeType: "د فیس ډول",
+  category: "کتگوري",
+  amount: "مبلغ",
+  mandatory: "اړین",
+  configureFees: "فیسو پیکره کول",
+  configureFeesDesc: "د زده کونکي فیسو فعال کنید او مبلغو وټاکیدی...",
+  selectCurrency: "اسعار وټاکئ",
+  
+  // Additional keys
+  studentName: "نوم زده کونکی",
+  classLevel: "سطح صنف",
+  totalPaid: "ټول تادیه شوی",
+  remainingBalance: "پاتې مبلغ",
+  pleaseSelectStudent: "لطفاً یک شاگرد را انتخاب کنید",
+  enableFeeTypeWithAmount: "لطفاً حداقل یک نوع فیس با مبلغ را فعال کنید",
+  clickToDeselect: "کلیک ترونه لغو کول",
+  clickToSelect: "کلیک ترونه وټاکول"
 };

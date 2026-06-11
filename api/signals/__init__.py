@@ -2,7 +2,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
 from decimal import Decimal
-from api.models.data.student_payment import StudentPayment
+from api.models.data.student_finance import StudentPayment
 from api.models.data.expenses import Expense
 from api.models.data.payroll import Payroll
 from api.models.data.advance import Advance
@@ -17,15 +17,16 @@ def create_student_payment_journal(sender, instance, created, **kwargs):
     # Create journal entry when payment is created and status is completed
     if created and instance.payment_status == 'completed':
         try:
-            cycle_label = instance.payment_cycle or 'monthly'
-            AccountingService.record_student_payment(
-                student_id=instance.student.id,
-                amount=instance.amount,
-                date=instance.payment_date,
-                description=f"{instance.student.full_name}",
-                reference=instance.reference_number,
-                payment_cycle=cycle_label
-            )
+            student_obj = instance.assignment.student if instance.assignment and instance.assignment.student else None
+            if student_obj:
+                AccountingService.record_student_payment(
+                    student_id=student_obj.id,
+                    amount=instance.amount,
+                    date=instance.payment_date,
+                    description=f"{student_obj.full_name}",
+                    reference=instance.reference_number,
+                    payment_cycle='interval'  # Now using payment_interval_months
+                )
         except Exception as e:
             import logging
             logger = logging.getLogger(__name__)
@@ -36,15 +37,16 @@ def create_student_payment_journal(sender, instance, created, **kwargs):
         try:
             old_instance = StudentPayment.objects.get(pk=instance.pk)
             if old_instance.payment_status != 'completed' and instance.payment_status == 'completed':
-                cycle_label = instance.payment_cycle or 'monthly'
-                AccountingService.record_student_payment(
-                    student_id=instance.student.id,
-                    amount=instance.amount,
-                    date=instance.payment_date,
-                    description=f"{instance.student.full_name}",
-                    reference=instance.reference_number,
-                    payment_cycle=cycle_label
-                )
+                student_obj = instance.assignment.student if instance.assignment and instance.assignment.student else None
+                if student_obj:
+                    AccountingService.record_student_payment(
+                        student_id=student_obj.id,
+                        amount=instance.amount,
+                        date=instance.payment_date,
+                        description=f"{student_obj.full_name}",
+                        reference=instance.reference_number,
+                        payment_cycle='interval'  # Now using payment_interval_months
+                    )
         except StudentPayment.DoesNotExist:
             pass
         except Exception as e:
