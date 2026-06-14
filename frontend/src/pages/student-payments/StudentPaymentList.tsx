@@ -319,10 +319,6 @@ export const StudentPaymentList = () => {
                 <FileSpreadsheet className="mr-2 h-4 w-4" />
                 {t('student-payments.exportToExcel', 'Export')}
               </Button>
-              <Button variant="secondary" onClick={() => navigate('/student-payments/flow')}>
-                <Layers className="mr-2 h-4 w-4" />
-                {t('student-payments.paymentFlow', 'Payment Flow')}
-              </Button>
               <Button onClick={() => navigate('/student-payments/add')}>
                 <Plus className="mr-2 h-4 w-4" />
                 {t('student-payments.addPayment')}

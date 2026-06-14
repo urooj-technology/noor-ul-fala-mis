@@ -38,6 +38,23 @@ import {
   ScrollText,
 } from 'lucide-react';
 
+interface FinancialSummary {
+  total_fee: string | number;
+  total_payments: string | number;
+  total_paid: string | number;
+  remaining_balance: string | number;
+  currency: string;
+  class_level?: string | null;
+  class_level_id?: number | null;
+  by_fee_type?: Record<string, {
+    expected: string | number;
+    paid: string | number;
+    remaining: string | number;
+    class_level_id?: number | null;
+    class_level_name?: string | null;
+  }>;
+}
+
 interface Student {
   id: number;
   full_name: string;
@@ -94,6 +111,7 @@ interface Student {
   status: string;
   transportation: string;
   class_level?: {
+    id?: number;
     level: string;
     name: string;
   } | null;
@@ -106,16 +124,10 @@ interface Student {
   previous_result_card?: string;
   payment_receipt?: string;
   age?: number;
-  financial_summary?: {
-    total_payments: number;
-    remaining_balance: number;
-    payment_cycle: string;
-    currency: string;
-    registration_number: string;
-    status: string;
-    class_level: string | null;
-    by_fee_type?: Record<string, any>;
-  };
+  total_fee?: string | number;
+  total_paid?: string | number;
+  remaining_balance?: string | number;
+  financial_summary?: FinancialSummary;
   created_at: string;
   updated_at: string;
 }
@@ -221,12 +233,13 @@ const StudentDetails = () => {
     }
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: string | number | undefined) => {
+    const val = typeof amount === 'string' ? parseFloat(amount) || 0 : (amount ?? 0);
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'AFN',
       minimumFractionDigits: 0,
-    }).format(amount || 0);
+    }).format(val);
   };
 
   const getFileTypeIcon = (url?: string) => {
@@ -346,35 +359,38 @@ const StudentDetails = () => {
                 <DollarSign className="h-4 w-4 text-emerald-600" />
                 {t('students.financialSummary', 'Financial Summary')}
               </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {student.payment_interval_months && (
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground uppercase tracking-wide">
-                    {t('students.paymentInterval')}
-                  </span>
-                  <span className="text-xs font-semibold bg-muted px-2 py-0.5 rounded-md">
-                    {student.payment_interval_display || getPaymentIntervalLabel(student.payment_interval_months)}
-                  </span>
+              {student.class_level && (
+                <div className="text-xs text-muted-foreground">
+                  {t('students.classLevel', 'Class')}: {student.class_level.name}
                 </div>
               )}
-
-              <div className="border-t pt-3 mt-1 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    {t('students.totalPayments', 'Total Paid')}
-                  </span>
-                  <span className="text-sm font-bold text-emerald-600">
-                    {formatCurrency(student.financial_summary?.total_payments || 0)}
-                  </span>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-blue-50 rounded-lg p-3 text-center">
+                  <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">
+                    {t('students.totalFee', 'Total Fee')}
+                  </div>
+                  <div className="text-sm font-bold text-blue-600">
+                    {formatCurrency(student.financial_summary?.total_fee || student.total_fee || 0)}
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    {t('students.remainingBalance', 'Balance Due')}
-                  </span>
-                  <span className="text-sm font-bold text-red-600">
-                    {formatCurrency(student.financial_summary?.remaining_balance || 0)}
-                  </span>
+                <div className="bg-green-50 rounded-lg p-3 text-center">
+                  <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">
+                    {t('students.totalPaid', 'Total Paid')}
+                  </div>
+                  <div className="text-sm font-bold text-green-600">
+                    {formatCurrency(student.financial_summary?.total_payments || student.total_paid || 0)}
+                  </div>
+                </div>
+                <div className="bg-red-50 rounded-lg p-3 text-center">
+                  <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">
+                    {t('students.remainingBalance', 'Remaining')}
+                  </div>
+                  <div className="text-sm font-bold text-red-600">
+                    {formatCurrency(student.financial_summary?.remaining_balance || student.remaining_balance || 0)}
+                  </div>
                 </div>
               </div>
 
@@ -386,12 +402,17 @@ const StudentDetails = () => {
                   </div>
                   <div className="space-y-1.5">
                     {Object.entries(student.financial_summary.by_fee_type).map(([feeName, data]: [string, any]) => (
-                      <div key={feeName} className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">{feeName}</span>
+                      <div key={feeName} className="flex items-center justify-between text-xs bg-muted/30 rounded px-2 py-1.5">
+                        <span className="text-muted-foreground font-medium">{feeName}</span>
                         <div className="flex items-center gap-2">
-                          <span className="text-emerald-600">{formatCurrency(data.paid || 0)}</span>
+                          <span className="text-green-600 font-semibold">{formatCurrency(data.paid)}</span>
                           <span className="text-muted-foreground">/</span>
-                          <span className="font-medium">{formatCurrency(data.expected || 0)}</span>
+                          <span className="font-bold">{formatCurrency(data.expected)}</span>
+                          {parseFloat(String(data.remaining || 0)) > 0 && (
+                            <Badge variant="destructive" className="ml-1 text-[10px] px-1.5 py-0">
+                              {formatCurrency(data.remaining)}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     ))}

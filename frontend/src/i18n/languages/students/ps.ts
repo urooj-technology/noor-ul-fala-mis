@@ -238,6 +238,9 @@ export const studentsPs = {
   overdue: "د تادیې نیټه تېره شوی",
 
 // Fee Summary
+  totalFee: "ټول فیس",
+  paidFee: "تادیه شوی",
+  remainingFee: "پاتې",
   totalFeeAmount: "ټول مقدار فیس",
   totalPaidAmount: "ټول تادیه شوی مقدار",
   totalRemainingAmount: "ټول پاتې مقدار",
@@ -260,6 +263,9 @@ export const studentsPs = {
   filter: "فلټر",
   clear: "پاکول",
   all: "ټول",
+  printed: "چاپ شوی",
+  signature: "لاسلیک",
+  generatedBy: "دا سند د زده کونکو مدیریت سیستم لخوا جوړ شوی",
   
   // Student
   student: "زده کونکی",

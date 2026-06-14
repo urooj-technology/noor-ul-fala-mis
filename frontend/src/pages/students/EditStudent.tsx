@@ -33,8 +33,6 @@ interface StudentFormData {
   status: string;
   transportation: string;
   class_level: string;
-  payment_interval_months: string; // Changed from payment_cycle
-  currency: string;
   photo?: File | null;
   tazkira_copy?: File | null;
   parent_tazkira_copy?: File | null;
@@ -74,8 +72,6 @@ const EditStudent = () => {
     status: 'active',
     transportation: 'school_bus',
     class_level: '',
-    payment_interval_months: '1', // Default to monthly
-    currency: 'AFN',
     photo: null,
     tazkira_copy: null,
     parent_tazkira_copy: null,
@@ -138,8 +134,6 @@ const EditStudent = () => {
         status: data.status || 'active',
         transportation: data.transportation || 'school_bus',
         class_level: data.class_level ? String(data.class_level) : '',
-        payment_interval_months: data.payment_interval_months ? String(data.payment_interval_months) : '1',
-        currency: data.currency || 'AFN',
         photo: null,
         tazkira_copy: null,
         parent_tazkira_copy: null,
@@ -499,22 +493,6 @@ const EditStudent = () => {
                       {Array.from({ length: 12 }, (_, i) => (i + 1).toString()).map((lv) => (<SelectItem key={lv} value={lv}>{t('students.classLevelShort', 'Class')} {lv}</SelectItem>))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="payment_interval_months" className="font-semibold">{t("students.paymentInterval")} <span className="text-destructive">*</span></Label>
-                  <Select value={formData.payment_interval_months} onValueChange={(value) => setFormData((prev) => ({ ...prev, payment_interval_months: value }))}>
-                    <SelectTrigger className="h-10"><SelectValue placeholder={t("students.selectPaymentInterval")} /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">{t("students.paymentIntervalMonths.monthly")}</SelectItem>
-                      <SelectItem value="2">{t("students.paymentIntervalMonths.bimonthly")}</SelectItem>
-                      <SelectItem value="3">{t("students.paymentIntervalMonths.quarterly")}</SelectItem>
-                      <SelectItem value="4">{t("students.paymentIntervalMonths.every4")}</SelectItem>
-                      <SelectItem value="5">{t("students.paymentIntervalMonths.every5")}</SelectItem>
-                      <SelectItem value="6">{t("students.paymentIntervalMonths.every6")}</SelectItem>
-                      <SelectItem value="12">{t("students.paymentIntervalMonths.yearly")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">{t('students.paymentIntervalDescription')}</p>
                 </div>
               </div>
               <div className="pt-6 border-t">

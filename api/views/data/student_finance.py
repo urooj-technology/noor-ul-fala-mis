@@ -65,6 +65,201 @@ class StudentFeeAssignmentViewSet(DataRootViewSet):
         return Response(serializer.data)
     
     # Class-based auto-assignment removed. Create assignments via student-fee-assignments API.
+    
+    @action(detail=False, methods=['get'])
+    def fee_assignment_data(self, request):
+        """
+        Get all data needed for fee assignment in one request.
+        Returns: fee types, class level assigned fees, and student's existing assignments.
+        """
+        class_level_id = request.query_params.get('class_level')
+        student_id = request.query_params.get('student')
+        
+        # Get all active fee types
+        fee_types_qs = FeeType.objects.filter(is_active=True).order_by('name')
+        fee_types = []
+        for ft in fee_types_qs:
+            fee_types.append({
+                'id': ft.id,
+                'name': ft.name,
+                'code': ft.code,
+                'category': ft.category,
+                'is_mandatory': ft.is_mandatory,
+            })
+        
+        # Get all active fee assignments for this class level
+        class_assignments_qs = StudentFeeAssignment.objects.filter(
+            class_level_id=class_level_id,
+            is_active=True
+        ).select_related('fee_type', 'student') if class_level_id else []
+        
+        # Group by fee_type with assignment count and amounts
+        from collections import Counter
+        fee_type_map = {}
+        for a in class_assignments_qs:
+            if a.fee_type_id not in fee_type_map:
+                fee_type_map[a.fee_type_id] = {
+                    'fee_type_id': a.fee_type_id,
+                    'assignment_count': 0,
+                    'amounts': [],
+                }
+            fee_type_map[a.fee_type_id]['assignment_count'] += 1
+            fee_type_map[a.fee_type_id]['amounts'].append(a.amount)
+        
+        # Calculate most common amount for each fee type
+        class_level_fees = {}
+        for ft_id, data in fee_type_map.items():
+            amount_counts = Counter(data['amounts'])
+            most_common_amount = amount_counts.most_common(1)[0][0] if amount_counts else Decimal('0')
+            class_level_fees[ft_id] = {
+                'assignment_count': data['assignment_count'],
+                'suggested_amount': str(most_common_amount),
+            }
+        
+        # Get student's existing assignments if student_id provided
+        student_assignments = []
+        if student_id:
+            try:
+                student = Student.objects.get(id=student_id)
+                # Filter by class_level if provided to get level-specific assignments
+                student_assignments_qs = StudentFeeAssignment.objects.filter(
+                    student=student,
+                    is_active=True
+                ).select_related('fee_type', 'class_level')
+                
+                # If class_level_id is provided, only get assignments for that level
+                if class_level_id:
+                    student_assignments_qs = student_assignments_qs.filter(class_level_id=class_level_id)
+                
+                for a in student_assignments_qs:
+                    student_assignments.append({
+                        'id': a.id,
+                        'fee_type_id': a.fee_type_id,
+                        'amount': str(a.amount),
+                        'currency': a.currency,
+                        'payment_plan': a.payment_plan,
+                        'class_level_id': a.class_level_id,
+                        'class_level_name': a.class_level.name if a.class_level else None,
+                    })
+            except Student.DoesNotExist:
+                pass
+        
+        return Response({
+            'fee_types': fee_types,
+            'class_level_fees': class_level_fees,
+            'student_assignments': student_assignments,
+        })
+
+    @action(detail=False, methods=['post'])
+    def bulk_assign_fees(self, request):
+        """
+        Bulk create fee assignments for a student.
+        Request body:
+        {
+            "student": student_id,
+            "class_level": class_level_id,
+            "currency": "AFN",
+            "payment_plan": 1,
+            "assignments": [
+                {"fee_type": 1, "amount": "1000"},
+                {"fee_type": 2, "amount": "500"},
+                ...
+            ]
+        }
+        """
+        student_id = request.data.get('student')
+        class_level_id = request.data.get('class_level')
+        currency = request.data.get('currency', 'AFN')
+        payment_plan = request.data.get('payment_plan', 1)
+        assignments_data = request.data.get('assignments', [])
+
+        if not student_id:
+            return Response(
+                {'error': 'student is required'},
+                status=drf_status.HTTP_400_BAD_REQUEST
+            )
+
+        if not assignments_data:
+            return Response(
+                {'error': 'assignments must be a non-empty list'},
+                status=drf_status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response(
+                {'error': 'Student not found'},
+                status=drf_status.HTTP_404_NOT_FOUND
+            )
+
+        created_assignments = []
+        errors = []
+
+        with transaction.atomic():
+            for idx, item in enumerate(assignments_data):
+                fee_type_id = item.get('fee_type')
+                amount = item.get('amount')
+
+                if not fee_type_id or not amount:
+                    errors.append(f"Assignment {idx + 1}: fee_type and amount are required")
+                    continue
+
+                try:
+                    fee_type = FeeType.objects.get(id=fee_type_id, is_active=True)
+                except FeeType.DoesNotExist:
+                    errors.append(f"Assignment {idx + 1}: Fee type {fee_type_id} not found or inactive")
+                    continue
+
+                try:
+                    amount_dec = Decimal(str(amount))
+                    if amount_dec <= 0:
+                        errors.append(f"Assignment {idx + 1}: Amount must be positive")
+                        continue
+                except Exception:
+                    errors.append(f"Assignment {idx + 1}: Invalid amount")
+                    continue
+
+                # Check if assignment already exists for this student+fee_type+class_level
+                existing = StudentFeeAssignment.objects.filter(
+                    student=student,
+                    fee_type=fee_type,
+                    class_level_id=class_level_id if class_level_id else None,
+                    is_active=True
+                ).first()
+
+                if existing:
+                    # Update existing
+                    existing.amount = amount_dec
+                    existing.currency = currency
+                    existing.payment_plan = payment_plan
+                    existing.save()
+                    created_assignments.append(existing)
+                else:
+                    # Create new with class_level
+                    assignment = StudentFeeAssignment.objects.create(
+                        student=student,
+                        fee_type=fee_type,
+                        amount=amount_dec,
+                        currency=currency,
+                        payment_plan=payment_plan,
+                        class_level_id=class_level_id if class_level_id else student.class_level_id,
+                        is_active=True,
+                        is_mandatory=fee_type.is_mandatory,
+                    )
+                    created_assignments.append(assignment)
+
+        serializer = StudentFeeAssignmentSerializer(
+            created_assignments, many=True, context={'request': request}
+        )
+
+        return Response({
+            'success': True,
+            'message': f'{len(created_assignments)} fee assignment(s) created/updated',
+            'created_count': len(created_assignments),
+            'errors': errors,
+            'assignments': serializer.data,
+        }, status=drf_status.HTTP_201_CREATED)
 
 
 # StudentInvoice endpoints removed — invoices and ledger are deprecated. Use StudentFeeAssignment and StudentPayment instead.
@@ -230,7 +425,7 @@ class StudentPaymentViewSet(DataRootViewSet):
                     payment = StudentPayment.objects.create(
                         assignment=assignment,
                         amount=amt_dec,
-                        currency=serializer.validated_data.get('currency', student.currency if student else assignment.currency),
+                        currency=serializer.validated_data.get('currency', assignment.currency),
                         payment_date=serializer.validated_data.get('payment_date', timezone.now().date()),
                         payment_status=serializer.validated_data.get('payment_status', 'completed'),
                         period_year=str(period_year),
@@ -275,7 +470,7 @@ class StudentPaymentViewSet(DataRootViewSet):
                     payment = StudentPayment.objects.create(
                         assignment=a,
                         amount=alloc_amt,
-                        currency=serializer.validated_data.get('currency', student.currency if student else a.currency),
+                        currency=serializer.validated_data.get('currency', a.currency),
                         payment_date=serializer.validated_data.get('payment_date', timezone.now().date()),
                         payment_status=serializer.validated_data.get('payment_status', 'completed'),
                         period_year=str(period_year),
@@ -573,7 +768,14 @@ class StudentPaymentViewSet(DataRootViewSet):
     @action(detail=False, methods=['get'])
     def financial_info(self, request):
         """Get comprehensive financial info for a student.
-        Shows total fees, total paid, remaining balance, and payment history."""
+        Shows total fees, total paid, remaining balance, and payment history.
+        
+        Query params:
+            student: Student ID (required)
+            class_level: Filter by class level (optional)
+            month: Filter by month (optional)
+            year: Filter by year (optional)
+        """
         student_id = request.query_params.get('student')
         
         if not student_id:
@@ -593,148 +795,65 @@ class StudentPaymentViewSet(DataRootViewSet):
         assignments_qs = StudentFeeAssignment.objects.filter(student=student, is_active=True)
         if class_level and class_level != 'all':
             assignments_qs = assignments_qs.filter(class_level_id=class_level)
-        assignments = assignments_qs.select_related('fee_type')
-        total_fee = assignments.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        assignments = list(assignments_qs.select_related('fee_type', 'class_level'))
+        total_fee = sum(a.amount or Decimal('0') for a in assignments)
         
-        # Calculate total completed payments (assignment-based)
-        total_paid = StudentPayment.objects.filter(
+        # Calculate total completed payments (assignment-based, filtered by class_level)
+        payments_qs = StudentPayment.objects.filter(
             assignment__student=student,
             payment_status='completed'
-        ).aggregate(total_paid=Sum('amount'))['total_paid'] or Decimal('0')
+        )
+        if class_level and class_level != 'all':
+            payments_qs = payments_qs.filter(assignment__class_level_id=class_level)
+        total_paid = payments_qs.aggregate(total_paid=Sum('amount'))['total_paid'] or Decimal('0')
         
         # Calculate remaining balance
         remaining = total_fee - total_paid
         if remaining < 0:
             remaining = Decimal('0')
         
-        # Get payment count
-        total_payment_count = StudentPayment.objects.filter(
-            assignment__student=student,
-            payment_status='completed'
-        ).count()
+        # Get payment count (filtered by class_level)
+        total_payment_count = payments_qs.count()
         
         # Build fee breakdown by type
         fee_breakdown = []
-        payments_by_fee_type = []  # NEW: Track payments by fee type
         
-        # Get unique fee types from assignments AND from payments with fee_type set
-        all_fee_types = {}  # Use dict to avoid duplicates
         for assignment in assignments:
-            if assignment.fee_type:
-                all_fee_types[assignment.fee_type.id] = assignment.fee_type
-        
-        # Also include fee_types from payments that have fee_type set
-        # Payment fee types (only include those relevant to the filtered assignments)
-        payment_fee_types = StudentPayment.objects.filter(
-            assignment__student=student,
-            payment_status='completed',
-            fee_type__isnull=False
-        ).values_list('fee_type', flat=True).distinct()
-        for fee_type_id in payment_fee_types:
-            if fee_type_id not in all_fee_types:
-                try:
-                    fee_type = FeeType.objects.get(id=fee_type_id)
-                    all_fee_types[fee_type_id] = fee_type
-                except FeeType.DoesNotExist:
-                    pass
-        
-        # Process each fee type
-        for fee_type in all_fee_types.values():
-            # Find the assignment for this fee type (if exists)
-            assignment = next((a for a in assignments if a.fee_type_id == fee_type.id), None)
-            
-            # Calculate how much has been paid for this fee type
-            paid_for_fee = StudentPayment.objects.filter(
-                student=student,
+            # Get paid amount for this assignment
+            paid_for_assignment = StudentPayment.objects.filter(
+                assignment=assignment,
                 payment_status='completed'
-            )
-            
-            if fee_type:
-                # Include payments that are either associated to assignments for this fee type
-                # or explicitly tagged with this fee_type
-                q_filter = (
-                    Q(assignment__fee_type=fee_type) |
-                    Q(fee_type=fee_type)
-                )
-                paid_for_fee = StudentPayment.objects.filter(
-                    assignment__student=student,
-                    payment_status='completed'
-                ).filter(q_filter).aggregate(total_paid=Sum('amount'))['total_paid'] or Decimal('0')
-
-                # Get detailed payment breakdown for this fee type
-                fee_type_payments = StudentPayment.objects.filter(
-                    assignment__student=student,
-                    payment_status='completed'
-                ).filter(q_filter).values(
-                    'id', 'amount', 'payment_date', 'period_month', 'period_year',
-                    'fee_type__name', 'reference_number'
-                ).distinct()
-                payments_by_fee_type.append({
-                    'fee_type_id': fee_type.id,
-                    'fee_type_name': fee_type.name,
-                    'fee_type_category': fee_type.category,
-                    'payments': list(fee_type_payments),
-                })
-            else:
-                paid_for_fee = paid_for_fee.aggregate(total_paid=Sum('amount'))['total_paid'] or Decimal('0')
+            ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
             
             fee_breakdown.append({
-                'fee_type': fee_type.name,
-                'fee_category': fee_type.category,
-                'amount': str(assignment.amount if assignment else '0'),
-                'currency': assignment.currency if assignment else student.currency,
-                'is_mandatory': assignment.is_mandatory if assignment else True,
-                'paid_amount': str(paid_for_fee),
-                'remaining_amount': str(max(Decimal('0'), Decimal(assignment.amount if assignment else '0') - paid_for_fee)),
+                'fee_type_id': assignment.fee_type_id,
+                'fee_type': assignment.fee_type.name if assignment.fee_type else 'Unknown',
+                'fee_category': assignment.fee_type.category if assignment.fee_type else 'other',
+                'amount': str(assignment.amount or '0'),
+                'currency': assignment.currency,
+                'is_mandatory': assignment.is_mandatory,
+                'paid_amount': str(paid_for_assignment),
+                'remaining_amount': str(max(Decimal('0'), (assignment.amount or Decimal('0')) - paid_for_assignment)),
+                'class_level_id': assignment.class_level_id,
+                'class_level_name': assignment.class_level.name if assignment.class_level else None,
             })
-        
-        # If specific month/year provided, calculate period-specific info
-        period_info = None
-        if month and year:
-            month_str = str(month).zfill(2)
-            year_str = str(year)
-            
-            # Calculate period paid from payments in this period
-            period_paid = StudentPayment.objects.filter(
-                student=student,
-                payment_status='completed',
-                period_year=year_str,
-                period_month=month_str
-            ).aggregate(total_paid=Sum('amount'))['total_paid'] or Decimal('0')
-            
-            # Calculate period fees for this month
-            period_fees = Decimal('0')
-            for assignment in assignments:
-                # Under the new model, period fees are derived from assignment amounts
-                period_fees += assignment.amount or Decimal('0')
-            
-            period_info = {
-                'month': int(month),
-                'year': int(year),
-                'period_fees': str(period_fees),
-                'period_paid': str(period_paid),
-                'period_remaining': str(max(period_fees - period_paid, Decimal('0'))),
-            }
         
         return Response({
             'student_id': student.id,
             'student_name': student.full_name,
-            'currency': student.currency,
-            'payment_interval_months': student.payment_interval_months,
-            'payment_interval_display': student.payment_interval_display,
+            'registration_number': student.registration_number,
+            'currency': assignments[0].currency if assignments else 'AFN',
+            'class_level': assignments[0].class_level.name if assignments and assignments[0].class_level else None,
+            'class_level_id': assignments[0].class_level_id if assignments else None,
             # Overall financial status
-            'total_amount': str(total_fee),
-            'paid_amount': str(total_paid),
+            'total_fee': str(total_fee),
+            'total_paid': str(total_paid),
             'remaining_amount': str(remaining),
             'is_paid': total_paid >= total_fee and total_fee > 0,
             'payment_percentage': float((total_paid / total_fee * 100) if total_fee > 0 else 0),
             'total_payment_count': total_payment_count,
             # Fee breakdown by type
             'fee_breakdown': fee_breakdown,
-            # NEW: Detailed payment breakdown by fee type
-            'payments_by_fee_type': payments_by_fee_type,
-            # Period-specific info (if requested)
-            'period_info': period_info,
         })
     
     @action(detail=False, methods=['get'])
@@ -776,8 +895,8 @@ class StudentPaymentViewSet(DataRootViewSet):
                 'full_name': student.full_name,
                 'registration_number': student.registration_number,
                 'class_level': student.class_level.name if student.class_level else None,
-                'total_paid': student.get_total_payments(),
-                'remaining_balance': student.get_remaining_balance(),
+                'total_paid': student.get_total_payments(class_level=student.class_level if class_level == 'all' or not class_level else None),
+                'remaining_balance': student.get_remaining_balance(class_level=student.class_level if class_level == 'all' or not class_level else None),
             },
             'total_assignments': serializer.data,
         })
@@ -865,12 +984,15 @@ class StudentPaymentViewSet(DataRootViewSet):
 
             result.append(assignment_data)
 
-        # Student financial summary
+        # Student financial summary (filtered by class_level if provided)
         total_expected = sum(a.amount for a in assignments if a.amount) or Decimal('0')
-        total_paid_all = StudentPayment.objects.filter(
+        payments_qs = StudentPayment.objects.filter(
             assignment__student=student,
             payment_status='completed',
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        )
+        if class_level and class_level != 'all':
+            payments_qs = payments_qs.filter(assignment__class_level_id=class_level)
+        total_paid_all = payments_qs.aggregate(total=Sum('amount'))['total'] or Decimal('0')
         total_remaining = max(total_expected - total_paid_all, Decimal('0'))
 
         return Response({
@@ -879,11 +1001,11 @@ class StudentPaymentViewSet(DataRootViewSet):
             'student_registration': student.registration_number,
             'class_level': class_level,
             'year': year,
-            'currency': student.currency,
+            'currency': assignments[0].currency if assignments else 'USD',
             'total_expected': str(total_expected),
             'total_paid': str(total_paid_all),
             'total_remaining': str(total_remaining),
-            'payment_interval_months': student.payment_interval_months,
+            'payment_interval_months': assignments[0].payment_plan if assignments else 1,
             'assignments': result,
         })
 
@@ -948,10 +1070,15 @@ class StudentPaymentViewSet(DataRootViewSet):
         if student_id:
             try:
                 student = Student.objects.get(id=student_id)
+                # Filter by class_level if provided to get level-specific assignments
                 student_assignments_qs = StudentFeeAssignment.objects.filter(
                     student=student,
                     is_active=True
-                ).select_related('fee_type')
+                ).select_related('fee_type', 'class_level')
+                
+                # If class_level_id is provided, only get assignments for that level
+                if class_level_id:
+                    student_assignments_qs = student_assignments_qs.filter(class_level_id=class_level_id)
                 
                 for a in student_assignments_qs:
                     student_assignments.append({
@@ -960,6 +1087,8 @@ class StudentPaymentViewSet(DataRootViewSet):
                         'amount': str(a.amount),
                         'currency': a.currency,
                         'payment_plan': a.payment_plan,
+                        'class_level_id': a.class_level_id,
+                        'class_level_name': a.class_level.name if a.class_level else None,
                     })
             except Student.DoesNotExist:
                 pass
@@ -1040,10 +1169,11 @@ class StudentPaymentViewSet(DataRootViewSet):
                     errors.append(f"Assignment {idx + 1}: Invalid amount")
                     continue
 
-                # Check if assignment already exists
+                # Check if assignment already exists for this student+fee_type+class_level
                 existing = StudentFeeAssignment.objects.filter(
                     student=student,
                     fee_type=fee_type,
+                    class_level_id=class_level_id if class_level_id else None,
                     is_active=True
                 ).first()
 
@@ -1052,19 +1182,17 @@ class StudentPaymentViewSet(DataRootViewSet):
                     existing.amount = amount_dec
                     existing.currency = currency
                     existing.payment_plan = payment_plan
-                    if class_level_id:
-                        existing.class_level_id = class_level_id
                     existing.save()
                     created_assignments.append(existing)
                 else:
-                    # Create new
+                    # Create new with class_level
                     assignment = StudentFeeAssignment.objects.create(
                         student=student,
                         fee_type=fee_type,
                         amount=amount_dec,
                         currency=currency,
                         payment_plan=payment_plan,
-                        class_level_id=class_level_id if class_level_id else None,
+                        class_level_id=class_level_id if class_level_id else student.class_level_id,
                         is_active=True,
                         is_mandatory=fee_type.is_mandatory,
                     )

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { RotateCw, ArrowLeft, DollarSign, Users, CheckCircle, AlertCircle } from 'lucide-react';
+import { RotateCw, ArrowLeft, DollarSign, Users, CheckCircle, AlertCircle, Edit } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import useFetchObjects from '@/api/useFetchObjects';
 import useAdd from '@/api/useAdd';
@@ -31,6 +31,16 @@ interface Student {
   };
 }
 
+interface ExistingAssignment {
+  id: number;
+  fee_type_id: number;
+  amount: string;
+  currency: string;
+  payment_plan: number;
+  class_level_id?: number;
+  class_level_name?: string;
+}
+
 interface FeeEntry {
   fee_type_id: number;
   fee_type_name: string;
@@ -40,6 +50,7 @@ interface FeeEntry {
   enabled: boolean;
   assignment_count?: number;
   suggested_amount?: string;
+  existing_assignment?: ExistingAssignment | null;
 }
 
 const AddStudentFeeAssignment = () => {
@@ -67,15 +78,28 @@ const AddStudentFeeAssignment = () => {
 
   const studentsInLevel = studentsData?.results || [];
 
-  // Fetch all fee assignment data in one request
-  const { data: feeData, isLoading: loadingFeeData } = useFetchObjects<{
-    fee_types: FeeType[];
-    class_level_fees: Record<number, { assignment_count: number; suggested_amount: string }>;
-    student_assignments: { id: number; fee_type_id: number; amount: string; currency: string; payment_plan: number }[];
+  const { data: classLevelsData } = useFetchObjects<any>({ queryKey: ['class-levels'], endpoint: 'class-levels' });
+  const classLevels = (classLevelsData?.results || classLevelsData || []).sort((a: any, b: any) => Number(a.level) - Number(b.level));
+
+  // Fetch all fee types (independent of student/level selection)
+  const { data: feeTypesData, isLoading: loadingFeeTypes } = useFetchObjects<{ results: FeeType[] }>({
+    queryKey: ['fee-types-active'],
+    endpoint: 'fee-types',
+    params: {
+      is_active: true,
+      page_size: 100,
+    },
+  });
+
+  const allFeeTypes = feeTypesData?.results || [];
+
+  // Fetch existing assignments for the selected student and level
+  const { data: existingAssignmentsData, isLoading: loadingExisting } = useFetchObjects<{
+    student_assignments: ExistingAssignment[];
   }>({
-    queryKey: ['fee-assignment-data', selectedLevel, selectedStudent?.id],
+    queryKey: ['student-existing-assignments', selectedStudent?.id, selectedLevel],
     endpoint: 'student-fee-assignments/fee_assignment_data',
-    enabled: !!selectedLevel,
+    enabled: !!selectedStudent && !!selectedLevel,
     params: {
       class_level: selectedLevel,
       student: selectedStudent?.id || '',
@@ -84,30 +108,28 @@ const AddStudentFeeAssignment = () => {
 
   // Initialize fee entries when data loads
   useEffect(() => {
-    if (feeData?.fee_types && selectedStudent) {
-      const studentAssignmentsMap = new Map(
-        (feeData.student_assignments || []).map((a) => [a.fee_type_id, a])
+    if (allFeeTypes.length > 0) {
+      const existingMap = new Map<number, ExistingAssignment>(
+        (existingAssignmentsData?.student_assignments || []).map((a) => [a.fee_type_id, a])
       );
 
-      const entries: FeeEntry[] = feeData.fee_types.map((ft) => {
-        const existing = studentAssignmentsMap.get(ft.id);
-        const classLevelInfo = feeData.class_level_fees?.[ft.id];
+      const entries: FeeEntry[] = allFeeTypes.map((ft) => {
+        const existing = existingMap.get(ft.id);
         
         return {
           fee_type_id: ft.id,
           fee_type_name: ft.name,
           fee_type_category: ft.category,
           is_mandatory: ft.is_mandatory,
-          amount: existing?.amount || classLevelInfo?.suggested_amount || '',
+          amount: existing?.amount || '',
           enabled: !!existing,
-          assignment_count: classLevelInfo?.assignment_count || 0,
-          suggested_amount: classLevelInfo?.suggested_amount || '',
+          existing_assignment: existing || null,
         };
       });
 
       setFeeEntries(entries);
     }
-  }, [feeData, selectedStudent]);
+  }, [allFeeTypes, existingAssignmentsData, selectedStudent, selectedLevel]);
 
   // Update entry
   const updateEntry = (feeTypeId: number, field: keyof FeeEntry, value: any) => {
@@ -131,6 +153,10 @@ const AddStudentFeeAssignment = () => {
   const enabledEntries = feeEntries.filter((e) => e.enabled && parseFloat(e.amount) > 0);
   const totalAmount = enabledEntries.reduce((sum, e) => sum + parseFloat(e.amount || '0'), 0);
 
+  // Count existing assignments being edited
+  const editingCount = enabledEntries.filter((e) => e.existing_assignment).length;
+  const newCount = enabledEntries.filter((e) => !e.existing_assignment).length;
+
   // Submit using useAdd hook - single request to bulk_assign_fees
   const { handleAdd, loading, isSuccess } = useAdd<any>({
     queryKey: ['student-fee-assignments'],
@@ -151,6 +177,11 @@ const AddStudentFeeAssignment = () => {
       return;
     }
 
+    if (!selectedLevel) {
+      toast({ title: t('common.error'), description: t('students.pleaseSelectLevel', 'Please select a class level'), variant: 'destructive' });
+      return;
+    }
+
     if (enabledEntries.length === 0) {
       toast({ title: t('common.error'), description: t('students.enableFeeTypeWithAmount', 'Please enable at least one fee type with an amount'), variant: 'destructive' });
       return;
@@ -159,7 +190,7 @@ const AddStudentFeeAssignment = () => {
     // Single request with all assignments
     const submitData = {
       student: selectedStudent.id,
-      class_level: selectedLevel || null,
+      class_level: selectedLevel,
       currency: currency,
       payment_plan: paymentPlan,
       assignments: enabledEntries.map((e) => ({
@@ -170,6 +201,8 @@ const AddStudentFeeAssignment = () => {
 
     handleAdd(submitData);
   };
+
+  const isLoading = loadingFeeTypes || loadingExisting;
 
   return (
     <div className="container mx-auto py-6 space-y-6 max-w-6xl">
@@ -211,6 +244,7 @@ const AddStudentFeeAssignment = () => {
                 placeholder={t('students.selectClassLevel')}
                 getOptionLabel={(c) => c.name}
                 getOptionValue={(c) => c.id.toString()}
+                sortOptions={(a: any, b: any) => Number(a.level) - Number(b.level)}
               />
             </div>
 
@@ -263,7 +297,7 @@ const AddStudentFeeAssignment = () => {
       </Card>
 
       {/* Step 2: Configure Fees */}
-      {selectedStudent && (
+      {selectedStudent && selectedLevel && (
         <Card className="border-t-4 border-t-emerald-500">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -308,16 +342,25 @@ const AddStudentFeeAssignment = () => {
                   <div className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
                     {totalAmount.toLocaleString()} {currency}
                   </div>
-                  <div className="text-[10px] text-muted-foreground">{enabledEntries.length} fee type(s) selected</div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {newCount > 0 && `${newCount} new`}
+                    {newCount > 0 && editingCount > 0 && ' • '}
+                    {editingCount > 0 && `${editingCount} updated`}
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Fee Types Table */}
-            {loadingFeeData ? (
+            {isLoading ? (
               <div className="py-8 text-center text-muted-foreground">
                 <RotateCw className="h-6 w-6 animate-spin mx-auto mb-2" />
                 {t('students.loadingFeeTypes')}
+              </div>
+            ) : feeEntries.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground">
+                <AlertCircle className="h-6 w-6 mx-auto mb-2" />
+                {t('students.noFeeTypesFound', 'No fee types found. Please add fee types first.')}
               </div>
             ) : (
               <div className="border rounded-lg overflow-hidden">
@@ -340,6 +383,9 @@ const AddStudentFeeAssignment = () => {
                         <th className="p-3 text-center font-semibold text-slate-700 dark:text-slate-300 w-24">
                           {t('students.mandatory')}
                         </th>
+                        <th className="p-3 text-center font-semibold text-slate-700 dark:text-slate-300 w-28">
+                          {t('students.status', 'Status')}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -349,6 +395,8 @@ const AddStudentFeeAssignment = () => {
                           className={`border-b transition-colors ${
                             entry.enabled
                               ? 'bg-emerald-50 dark:bg-emerald-900/20'
+                              : entry.existing_assignment
+                              ? 'bg-amber-50 dark:bg-amber-900/10'
                               : index % 2 === 0
                               ? 'bg-white dark:bg-slate-900'
                               : 'bg-slate-50 dark:bg-slate-800/50'
@@ -373,16 +421,12 @@ const AddStudentFeeAssignment = () => {
                               <span className="font-medium text-slate-800 dark:text-slate-200">
                                 {entry.fee_type_name}
                               </span>
-                              {entry.assignment_count && entry.assignment_count > 0 && !entry.enabled && (
-                                <div className="flex flex-wrap items-center gap-2">
+                              {entry.existing_assignment && !entry.enabled && (
+                                <div className="flex items-center gap-2">
                                   <Badge variant="outline" className="text-xs bg-amber-100 dark:bg-amber-900/40 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200">
-                                    {entry.assignment_count} student(s)
+                                    <Edit className="h-3 w-3 mr-1" />
+                                    {parseInt(entry.existing_assignment.amount).toLocaleString()} {entry.existing_assignment.currency}
                                   </Badge>
-                                  {entry.suggested_amount && (
-                                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                                      {parseInt(entry.suggested_amount).toLocaleString()} {currency}
-                                    </span>
-                                  )}
                                 </div>
                               )}
                             </div>
@@ -398,7 +442,7 @@ const AddStudentFeeAssignment = () => {
                               step="0.01"
                               value={entry.amount}
                               onChange={(e) => updateEntry(entry.fee_type_id, 'amount', e.target.value)}
-                              placeholder={entry.suggested_amount || "0.00"}
+                              placeholder={entry.existing_assignment?.amount || "0.00"}
                               className={`h-9 w-32 mx-auto text-center ${
                                 !entry.enabled 
                                   ? 'opacity-50 bg-slate-100 dark:bg-slate-800' 
@@ -418,6 +462,24 @@ const AddStudentFeeAssignment = () => {
                               </Badge>
                             )}
                           </td>
+                          <td className="p-3 text-center align-middle">
+                            {entry.enabled && entry.existing_assignment ? (
+                              <Badge className="text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-700">
+                                <Edit className="h-3 w-3 mr-1" />
+                                {t('students.updating', 'Updating')}
+                              </Badge>
+                            ) : entry.enabled ? (
+                              <Badge className="text-xs bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
+                                {t('students.new', 'New')}
+                              </Badge>
+                            ) : entry.existing_assignment ? (
+                              <Badge variant="outline" className="text-xs text-amber-700 dark:text-amber-300">
+                                {t('students.existing', 'Existing')}
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">-</span>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -434,7 +496,7 @@ const AddStudentFeeAssignment = () => {
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-4 h-4 rounded bg-amber-100 border border-amber-300"></div>
-                <span>Previously assigned at this level (suggested amount shown)</span>
+                <span>Already assigned for this level (click to modify)</span>
               </div>
             </div>
 
@@ -468,6 +530,18 @@ const AddStudentFeeAssignment = () => {
             <AlertCircle className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
             <p className="text-sm text-muted-foreground">
               {t('students.selectStudentToContinue', 'Select a student to continue')}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Empty State - No Level Selected */}
+      {!selectedLevel && (
+        <Card>
+          <CardContent className="py-8 text-center">
+            <AlertCircle className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+            <p className="text-sm text-muted-foreground">
+              {t('students.selectLevelToContinue', 'Select a class level to continue')}
             </p>
           </CardContent>
         </Card>

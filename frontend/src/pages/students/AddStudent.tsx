@@ -32,8 +32,6 @@ interface StudentFormData {
   status: string;
   transportation: string;
   class_level: string;
-  payment_interval_months: string; // Changed from payment_cycle
-  currency: string;
   photo?: File | null;
   tazkira_copy?: File | null;
   parent_tazkira_copy?: File | null;
@@ -62,25 +60,12 @@ const defaultForm: StudentFormData = {
   status: 'active',
   transportation: 'school_bus',
   class_level: '',
-  payment_interval_months: '1', // Default to monthly
-  currency: 'AFN',
   photo: null,
   tazkira_copy: null,
   parent_tazkira_copy: null,
   previous_result_card: null,
   payment_receipt: null,
 };
-
-// Payment interval options
-const PAYMENT_INTERVAL_OPTIONS = [
-  { value: '1', label: 'monthly' },
-  { value: '2', label: 'bimonthly' },
-  { value: '3', label: 'quarterly' },
-  { value: '4', label: 'every4' },
-  { value: '5', label: 'every5' },
-  { value: '6', label: 'every6' },
-  { value: '12', label: 'yearly' },
-];
 
 const AddStudent = () => {
   const { t } = useLanguage();
@@ -281,14 +266,16 @@ const AddStudent = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-5">
-          {tabs.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
-              <tab.icon className="h-4 w-4 mr-2" />
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <div className="w-full overflow-x-auto pb-2">
+          <TabsList className="grid w-full min-w-[600px] grid-cols-5">
+            {tabs.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value} className="text-xs sm:text-sm">
+                <tab.icon className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">{tab.label}</span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
 
         <TabsContent value="personal" className="space-y-6">
           <Card>
@@ -397,7 +384,7 @@ const AddStudent = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="gender" className="font-semibold">
-                    {t("students.gender")} <span className="text-destructive">*</span>
+                    {t("students.genderLabel")} <span className="text-destructive">*</span>
                   </Label>
                   <Select
                     value={formData.gender}
@@ -466,30 +453,32 @@ const AddStudent = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="permanent_address" className="font-semibold">
-                  {t("students.permanentAddress")} <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="permanent_address"
-                  value={formData.permanent_address}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, permanent_address: e.target.value }))}
-                  placeholder={t("students.permanentAddress")}
-                  className="h-10"
-                />
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="permanent_address" className="font-semibold">
+                    {t("students.permanentAddress")} <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="permanent_address"
+                    value={formData.permanent_address}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, permanent_address: e.target.value }))}
+                    placeholder={t("students.permanentAddress")}
+                    className="h-10"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="current_address" className="font-semibold">
-                  {t("students.currentAddress")} <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="current_address"
-                  value={formData.current_address}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, current_address: e.target.value }))}
-                  placeholder={t("students.currentAddress")}
-                  className="h-10"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="current_address" className="font-semibold">
+                    {t("students.currentAddress")} <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="current_address"
+                    value={formData.current_address}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, current_address: e.target.value }))}
+                    placeholder={t("students.currentAddress")}
+                    className="h-10"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -781,50 +770,6 @@ const AddStudent = () => {
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Payment Interval - NEW FIELD */}
-                <div className="space-y-2">
-                  <Label htmlFor="payment_interval_months" className="font-semibold">
-                    {t("students.paymentInterval")} <span className="text-destructive">*</span>
-                  </Label>
-                  <Select
-                    value={formData.payment_interval_months}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, payment_interval_months: value }))}
-                  >
-                    <SelectTrigger className="h-10">
-                      <SelectValue placeholder={t("students.selectPaymentInterval")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PAYMENT_INTERVAL_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {t(`students.paymentIntervalMonths.${option.label}`)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    {t('students.paymentIntervalDescription')}
-                  </p>
-                </div>
-
-                {/* Currency */}
-                <div className="space-y-2">
-                  <Label htmlFor="currency" className="font-semibold">
-                    {t("students.feeCurrency")} <span className="text-destructive">*</span>
-                  </Label>
-                  <Select
-                    value={formData.currency}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, currency: value }))}
-                  >
-                    <SelectTrigger className="h-10">
-                      <SelectValue placeholder={t("students.selectCurrency", 'Select Currency')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="AFN">AFN - افغانی</SelectItem>
-                      <SelectItem value="USD">USD - دالر</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
 
               {/* Fee Info Box */}
@@ -895,19 +840,19 @@ const AddStudent = () => {
       </Tabs>
 
       {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row justify-end gap-3 sticky bottom-4 z-10">
+      <div className="flex flex-col sm:flex-row justify-end gap-3 sticky bottom-4 z-10 bg-background/95 backdrop-blur p-4 rounded-lg border shadow-lg">
         <Button 
           variant="outline" 
           onClick={() => navigate('/students')} 
           disabled={loading}
-          className="h-10 px-6"
+          className="h-10 px-4 sm:px-6 w-full sm:w-auto"
         >
           {t('common.cancel')}
         </Button>
         <Button 
           onClick={handleSubmit} 
           disabled={loading}
-          className="h-10 px-6 bg-primary hover:bg-primary/90"
+          className="h-10 px-4 sm:px-6 w-full sm:w-auto bg-primary hover:bg-primary/90"
         >
           {loading ? (
             <>

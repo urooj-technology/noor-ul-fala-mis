@@ -4,16 +4,12 @@ Student Finance Models - Export all fee-related models
 """
 from api.models.data.student_finance import (
     FeeType,
-    ClassFee,
     StudentFeeAssignment,
     StudentPayment,
-    FinanceLedger,
 )
 
 __all__ = [
     'FeeType',
-    'ClassFee',
     'StudentFeeAssignment',
     'StudentPayment',
-    'FinanceLedger',
 ]

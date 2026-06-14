@@ -41,6 +41,7 @@ interface AutocompleteProps {
   renderOption?: (option: Option) => React.ReactNode;
   getOptionLabel?: (option: Option) => string;
   getOptionValue?: (option: Option) => string | number;
+  sortOptions?: (a: Option, b: Option) => number;
   labelKey?: string;
   valueKey?: string;
   apiUrl?: string;
@@ -62,6 +63,7 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
   renderOption,
   getOptionLabel,
   getOptionValue,
+  sortOptions,
   labelKey = 'label',
   valueKey = 'value',
   apiUrl,
@@ -122,7 +124,8 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
     );
   };
 
-  const options = Array.isArray(staticOptions) ? staticOptions : (Array.isArray(data?.results) ? data.results : (Array.isArray(data) ? data : []));
+  const rawOptions = Array.isArray(staticOptions) ? staticOptions : (Array.isArray(data?.results) ? data.results : (Array.isArray(data) ? data : []));
+  const options = sortOptions ? [...rawOptions].sort(sortOptions) : rawOptions;
   const hasMore = data?.next ? true : false;
 
   useEffect(() => {

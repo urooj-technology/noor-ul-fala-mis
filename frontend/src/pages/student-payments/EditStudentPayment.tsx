@@ -330,18 +330,9 @@ const EditStudentPayment = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t('common.all', 'All Levels')}</SelectItem>
-                  <SelectItem value="1">{t('students.classLevels.1', 'Class 1')}</SelectItem>
-                  <SelectItem value="2">{t('students.classLevels.2', 'Class 2')}</SelectItem>
-                  <SelectItem value="3">{t('students.classLevels.3', 'Class 3')}</SelectItem>
-                  <SelectItem value="4">{t('students.classLevels.4', 'Class 4')}</SelectItem>
-                  <SelectItem value="5">{t('students.classLevels.5', 'Class 5')}</SelectItem>
-                  <SelectItem value="6">{t('students.classLevels.6', 'Class 6')}</SelectItem>
-                  <SelectItem value="7">{t('students.classLevels.7', 'Class 7')}</SelectItem>
-                  <SelectItem value="8">{t('students.classLevels.8', 'Class 8')}</SelectItem>
-                  <SelectItem value="9">{t('students.classLevels.9', 'Class 9')}</SelectItem>
-                  <SelectItem value="10">{t('students.classLevels.10', 'Class 10')}</SelectItem>
-                  <SelectItem value="11">{t('students.classLevels.11', 'Class 11')}</SelectItem>
-                  <SelectItem value="12">{t('students.classLevels.12', 'Class 12')}</SelectItem>
+                  {Array.from({ length: 12 }, (_, i) => (i + 1).toString()).map((lv) => (
+                    <SelectItem key={lv} value={lv}>{t('students.classLevels.' + lv, `Class ${lv}`)}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

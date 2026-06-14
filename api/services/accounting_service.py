@@ -70,7 +70,7 @@ class AccountingService:
     
     @staticmethod
     @transaction.atomic
-    def record_student_payment(student_id, amount, date, description, reference=None, payment_cycle='monthly'):
+    def record_student_payment(student_id, amount, date, description, reference=None, payment_cycle='monthly', currency='AFN'):
         """Record a student payment as a journal entry
 
         Args:
@@ -80,17 +80,15 @@ class AccountingService:
             description: Human-readable description
             reference: Reference / receipt number (optional)
             payment_cycle: 'monthly' or 'yearly'
+            currency: Currency code (AFN or USD)
         """
         from api.models.data.student import Student
-        
-        # Get student to determine currency
-        student = Student.objects.get(id=student_id)
-        currency = student.currency
+        from api.models.data.accounting import Account
         
         cash_account = Account.objects.filter(code=f'1000_{currency}').first()
-        revenue_account = Account.objects.filter(code=f'4000_{currency}').first()
+        receivable_account = Account.objects.filter(code=f'1200_{currency}').first()
 
-        if not cash_account or not revenue_account:
+        if not cash_account or not receivable_account:
             raise ValueError(f"Default accounts not configured for {currency}. Please run init_chart_of_accounts.")
 
         cycle_label = payment_cycle.capitalize() if payment_cycle else ''
@@ -98,12 +96,13 @@ class AccountingService:
         if cycle_label:
             full_description = f"[{cycle_label}] {description}"
 
+        # Payment: Debit Cash, Credit Accounts Receivable
         return AccountingService.create_journal_entry(
             date=date,
             description=f"Student Payment - {full_description}",
             lines=[
                 {'account_id': cash_account.id, 'debit': amount, 'credit': 0},
-                {'account_id': revenue_account.id, 'debit': 0, 'credit': amount}
+                {'account_id': receivable_account.id, 'debit': 0, 'credit': amount}
             ],
             transaction_type='student_payment',
             reference=reference

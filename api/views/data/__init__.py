@@ -6,12 +6,10 @@ from api.views.data.student_finance import (
     FeeTypeViewSet,
     StudentFeeAssignmentViewSet,
     StudentPaymentViewSet,
-    FinanceLedgerViewSet,
 )
 
 __all__ = [
     'FeeTypeViewSet',
     'StudentFeeAssignmentViewSet',
     'StudentPaymentViewSet',
-    'FinanceLedgerViewSet',
 ]

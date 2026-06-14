@@ -20,7 +20,7 @@ class ClassLevelViewSet(DataRootViewSet):
 class StudentViewSet(DataRootViewSet):
     queryset = Student.objects.all().order_by('-registration_date')
     serializer_class = StudentSerializer
-    filterset_fields = ['status', 'gender', 'payment_interval_months', 'class_level']
+    filterset_fields = ['status', 'gender', 'class_level']
     search_fields = [
         'full_name', 'father_name', 'grandfather_name',
         'registration_number', 'tazkira_number', 'phone'
@@ -48,14 +48,6 @@ class StudentViewSet(DataRootViewSet):
         if class_level:
             queryset = queryset.filter(class_level_id=class_level)
 
-        # Filter by payment_interval_months (FIXED: using interval, not cycle)
-        payment_interval = self.request.query_params.get('payment_interval_months')
-        if payment_interval:
-            try:
-                queryset = queryset.filter(payment_interval_months=int(payment_interval))
-            except ValueError:
-                pass
-
         # Filter by list of IDs (for bulk operations)
         id_in = self.request.query_params.get('id__in')
         if id_in:
@@ -66,9 +58,24 @@ class StudentViewSet(DataRootViewSet):
 
     @action(detail=True, methods=['get'])
     def financial_summary(self, request, pk=None):
-        """FIXED: Get student financial summary with Decimal-safe output"""
+        """FIXED: Get student financial summary with Decimal-safe output.
+        
+        Query params:
+            class_level: Optional - get finances for a specific class level.
+                        If not provided, uses student's current class_level.
+        """
         student = self.get_object()
-        summary = student.get_financial_summary()
+        class_level_id = request.query_params.get('class_level')
+        
+        # Get the ClassLevel object if provided
+        class_level = None
+        if class_level_id and class_level_id != 'all':
+            try:
+                class_level = ClassLevel.objects.get(id=class_level_id)
+            except ClassLevel.DoesNotExist:
+                pass
+        
+        summary = student.get_financial_summary(class_level=class_level)
 
         def decimal_to_str(val):
             if isinstance(val, str):
@@ -76,16 +83,18 @@ class StudentViewSet(DataRootViewSet):
             return str(val)
 
         return Response({
+            'student_id': student.id,
+            'student_name': student.full_name,
+            'registration_number': student.registration_number,
+            'total_fee': decimal_to_str(summary.get('total_invoices', '0')),
             'total_payments': decimal_to_str(summary.get('total_payments', '0')),
             'total_invoices': decimal_to_str(summary.get('total_invoices', '0')),
             'total_paid_invoices': decimal_to_str(summary.get('total_paid_invoices', '0')),
             'remaining_balance': decimal_to_str(summary.get('remaining_balance', '0')),
-            'payment_interval_months': summary.get('payment_interval_months', 1),
-            'payment_interval_display': summary.get('payment_interval_display', 'Monthly'),
-            'currency': summary.get('currency'),
             'registration_number': summary.get('registration_number'),
             'status': summary.get('status'),
             'class_level': summary.get('class_level'),
+            'class_level_id': summary.get('class_level_id'),
             'by_fee_type': summary.get('by_fee_type', {}),
         })
 

@@ -239,6 +239,9 @@ export const studentsFa = {
   overdue: "سررسید گذشته",
 
   // Fee Summary
+  totalFee: "کل فیس",
+  paidFee: "پرداخت شده",
+  remainingFee: "باقیمانده",
   totalFeeAmount: "کل مبلغ فیس",
   totalPaidAmount: "کل مبلغ پرداخت شده",
   totalRemainingAmount: "کل مبلغ باقیمانده",
@@ -261,6 +264,9 @@ export const studentsFa = {
   filter: "فیلتر",
   clear: "پاک کردن",
   all: "همه",
+  printed: "چاپ شده",
+  signature: "امضا",
+  generatedBy: "این سند توسط سیستم مدیریت شاگردان تولید شده است",
   
   // Student
   student: "شاگرد",
@@ -377,14 +383,14 @@ export const studentsFa = {
   // Bulk Fee Assignment
   bulkFeeAssignment: "تخصیص گروهی فیس",
   assignFeesToStudent: "تخصیص چندین نوع فیس به یک شاگرد",
-  selectLevelAndStudent: "انتخاب سطح کلاس و شاگرد",
-  selectClassLevel: "انتخاب سطح کلاس",
+  selectLevelAndStudent: "انتخاب سطح صنف و شاگرد",
+  selectClassLevel: "انتخاب سطح صنف",
   student: "شاگرد",
   selectStudent: "انتخاب شاگرد",
   selectedStudent: "شاگرد انتخاب شده",
   fullName: "نام کامل",
   registrationNumber: "شماره ثبت",
-  classLevelLabel: "سطح کلاس",
+  classLevelLabel: "سطح صنف",
   currency: "ارز",
   paymentPlanLabel: "برنامه پرداخت (ماه)",
   totalFeesLabel: "کل فیسها",
@@ -413,7 +419,7 @@ export const studentsFa = {
   
   // Additional keys
   studentName: "نام شاگرد",
-  classLevel: "سطح کلاس",
+  classLevel: "سطح صنف",
   totalPaid: "کل پرداخت شده",
   remainingBalance: "مانده حساب",
   pleaseSelectStudent: "لطفاً یک شاگرد را انتخاب کنید",

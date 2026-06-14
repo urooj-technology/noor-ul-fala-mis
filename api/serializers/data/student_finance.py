@@ -143,6 +143,7 @@ class StudentPaymentSerializer(DataRootSerializer):
                 'amount': str(obj.assignment.amount),
                 'currency': obj.assignment.currency,
                 'class_level': obj.assignment.class_level.name if obj.assignment.class_level else None,
+                'class_level_id': obj.assignment.class_level.id if obj.assignment.class_level else None,
             }
     
     def get_currency_details(self, obj):
@@ -212,7 +213,7 @@ class StudentPaymentSerializer(DataRootSerializer):
 # Finance ledger removed — ledger entries are deprecated in the simplified payments flow
 
 
-class FinanceLedgerSerializer(DataRootSerializer):
+class FinanceLedgerSerializer(serializers.ModelSerializer):
     """Serializer for FinanceLedger model (minimal)"""
     class Meta:
         model = FinanceLedger

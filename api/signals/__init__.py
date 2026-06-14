@@ -2,13 +2,48 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
 from decimal import Decimal
-from api.models.data.student_finance import StudentPayment
+from api.models.data.student_finance import StudentPayment, StudentFeeAssignment
 from api.models.data.expenses import Expense
 from api.models.data.payroll import Payroll
 from api.models.data.advance import Advance
 from api.models.data.other_income import OtherIncome
 from api.models.data.shop_rental_payment import ShopRentalPayment
 from api.services.accounting_service import AccountingService
+
+
+@receiver(post_save, sender=StudentFeeAssignment)
+def create_fee_assignment_journal(sender, instance, created, **kwargs):
+    """Create journal entry when fee is assigned to a student (Accounts Receivable)"""
+    if created:
+        try:
+            student = instance.student
+            currency = instance.currency
+            
+            # Get accounts for this currency
+            from api.models.data.accounting import Account
+            receivable_account = Account.objects.filter(code=f'1200_{currency}').first()
+            revenue_account = Account.objects.filter(code=f'4000_{currency}').first()
+            
+            if not receivable_account or not revenue_account:
+                raise ValueError(f"Default accounts not configured for {currency}. Please run init_chart_of_accounts.")
+            
+            fee_type_name = instance.fee_type.name if instance.fee_type else 'Fee'
+            class_level_name = instance.class_level.name if instance.class_level else ''
+            
+            AccountingService.create_journal_entry(
+                date=timezone.now().date(),
+                description=f"Fee Assignment - {student.full_name} - {fee_type_name} ({class_level_name})",
+                lines=[
+                    {'account_id': receivable_account.id, 'debit': instance.amount, 'credit': 0},
+                    {'account_id': revenue_account.id, 'debit': 0, 'credit': instance.amount}
+                ],
+                transaction_type='student_payment',
+                reference=f"FEE-ASSIGN-{instance.id}"
+            )
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to create journal entry for fee assignment {instance.id}: {e}")
 
 
 @receiver(post_save, sender=StudentPayment)
@@ -25,7 +60,8 @@ def create_student_payment_journal(sender, instance, created, **kwargs):
                     date=instance.payment_date,
                     description=f"{student_obj.full_name}",
                     reference=instance.reference_number,
-                    payment_cycle='interval'  # Now using payment_interval_months
+                    payment_cycle='interval',
+                    currency=instance.currency or 'AFN'
                 )
         except Exception as e:
             import logging
@@ -45,7 +81,8 @@ def create_student_payment_journal(sender, instance, created, **kwargs):
                         date=instance.payment_date,
                         description=f"{student_obj.full_name}",
                         reference=instance.reference_number,
-                        payment_cycle='interval'  # Now using payment_interval_months
+                        payment_cycle='interval',
+                        currency=instance.currency or 'AFN'
                     )
         except StudentPayment.DoesNotExist:
             pass

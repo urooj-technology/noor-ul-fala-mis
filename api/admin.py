@@ -7,7 +7,7 @@ from api.models.data.activity_log import ActivityLog
 from api.models.data.student import Student, ClassLevel
 from api.models.data.student_finance import (
     StudentPayment, StudentFeeAssignment,
-    FeeType, FinanceLedger
+    FeeType
 )
 
 
@@ -21,8 +21,8 @@ class ClassLevelAdmin(admin.ModelAdmin):
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ['registration_number', 'full_name', 'class_level', 'payment_interval_months', 'payment_interval_display', 'status']
-    list_filter = ['status', 'class_level', 'payment_interval_months']
+    list_display = ['registration_number', 'full_name', 'class_level', 'status']
+    list_filter = ['status', 'class_level']
     search_fields = ['full_name', 'father_name', 'registration_number', 'tazkira_number']
     readonly_fields = ['created_at', 'updated_at', 'registration_date']
     fieldsets = (
@@ -39,7 +39,7 @@ class StudentAdmin(admin.ModelAdmin):
             'fields': ('registration_number', 'registration_date', 'status', 'transportation')
         }),
         ('Academic & Fee Information', {
-            'fields': ('class_level', 'payment_interval_months', 'monthly_fee', 'yearly_fee', 'currency')
+            'fields': ('class_level',)
         }),
         ('Documents', {
             'fields': ('tazkira_copy', 'parent_tazkira_copy', 'previous_result_card', 'payment_receipt')
@@ -70,55 +70,3 @@ class StudentPaymentAdmin(admin.ModelAdmin):
     readonly_fields = ['reference_number', 'created_at', 'updated_at']
 
 
-@admin.register(FinanceLedger)
-class FinanceLedgerAdmin(admin.ModelAdmin):
-    list_display = ['student', 'entry_type', 'account', 'amount', 'entry_side', 'created_at']
-    list_filter = ['entry_type', 'account', 'entry_side', 'created_at']
-    search_fields = ['student__full_name', 'student__registration_number', 'account']
-    readonly_fields = ['created_at', 'updated_at']
-
-
-@admin.register(Expense)
-class ExpenseAdmin(admin.ModelAdmin):
-    list_display = ['category', 'amount', 'get_currency_info', 'expense_date', 'get_user_info']
-    list_filter = ['category', 'currency', 'expense_date']
-    search_fields = ['category__name', 'description', 'user__username', 'user__first_name', 'user__last_name']
-    readonly_fields = ['created_at', 'updated_at']
-
-    def get_currency_info(self, obj):
-        return obj.currency if obj.currency else "-"
-    get_currency_info.short_description = 'Currency'
-
-    def get_user_info(self, obj):
-        if obj.user:
-            full_name = f"{obj.user.first_name} {obj.user.last_name}".strip()
-            return full_name if full_name else obj.user.username
-        return "-"
-    get_user_info.short_description = 'User'
-
-
-@admin.register(ExpenseCategory)
-class ExpenseCategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'description']
-    list_filter = []
-    search_fields = ['name', 'description']
-
-
-admin.site.register(Employee)
-admin.site.register(Payroll)
-admin.site.register(Advance)
-
-
-@admin.register(ActivityLog)
-class ActivityLogAdmin(admin.ModelAdmin):
-    list_display = ['user', 'action', 'model_name', 'object_id', 'created_at']
-    list_filter = ['action', 'model_name', 'created_at']
-    search_fields = ['description', 'user__username', 'user__email']
-    readonly_fields = ['user', 'action', 'model_name', 'object_id', 'description', 'ip_address', 'user_agent', 'changes', 'created_at', 'updated_at']
-    date_hierarchy = 'created_at'
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False

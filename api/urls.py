@@ -15,7 +15,6 @@ from api.views.data.student_finance import (
     FeeTypeViewSet,
     StudentFeeAssignmentViewSet,
     StudentPaymentViewSet,
-    FinanceLedgerViewSet
 )
 
 # ====================== SHOP RENTAL ======================
@@ -68,7 +67,6 @@ router.register(r'student-payments', StudentPaymentViewSet, basename='student-pa
 # Student Finance (Fee)
 router.register(r'fee-types', FeeTypeViewSet, basename='fee-type')
 router.register(r'student-fee-assignments', StudentFeeAssignmentViewSet, basename='student-fee-assignment')
-router.register(r'finance-ledgers', FinanceLedgerViewSet, basename='finance-ledger')
 
 # Shop Rental
 router.register(r'shops', ShopViewSet, basename='shop')

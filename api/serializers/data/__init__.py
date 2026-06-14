@@ -7,7 +7,6 @@ from api.serializers.data.student_finance import (
     FeeTypeMinimalSerializer,
     StudentFeeAssignmentSerializer,
     StudentPaymentSerializer,
-    FinanceLedgerSerializer,
 )
 
 __all__ = [
@@ -15,5 +14,4 @@ __all__ = [
     'FeeTypeMinimalSerializer',
     'StudentFeeAssignmentSerializer',
     'StudentPaymentSerializer',
-    'FinanceLedgerSerializer',
 ]

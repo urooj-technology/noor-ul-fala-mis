@@ -56,6 +56,31 @@ class FeeType(BaseModel):
 
 
 
+class ClassFee(BaseModel):
+    """
+    Default fee for each class level - base pricing
+    فیس پیشفرض برای هر صنف - قیمت پایه
+    """
+    
+    fee_type = models.ForeignKey(FeeType, on_delete=models.CASCADE, related_name='class_fee_levels')
+    class_level = models.ForeignKey('api.ClassLevel', on_delete=models.CASCADE, related_name='class_fees')
+    
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default=DEFAULT_CURRENCY)
+    
+    is_active = models.BooleanField(default=True)
+    notes = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        unique_together = ['fee_type', 'class_level']
+        ordering = ['class_level__level', 'fee_type__name']
+        verbose_name = 'Class Fee'
+        verbose_name_plural = 'Class Fees'
+    
+    def __str__(self):
+        return f"{self.class_level.name} - {self.fee_type.name}: {self.amount} {self.currency}"
+
+
 class StudentFeeAssignment(BaseModel):
     """
     Student-specific fee assignment - can override ClassFee
@@ -91,25 +116,12 @@ class StudentFeeAssignment(BaseModel):
     @transaction.atomic
     def create_all_for_student(cls, student):
         """
-        Create fee assignments for a student based on class-level defaults.
-        Since ClassFee has been removed, this method now uses fee_type defaults.
-        Use explicit assignment creation via API or admin for custom amounts.
+        Previously this auto-created assignments based on `ClassFee` entries.
+        Since `ClassFee` has been removed, this method is intentionally a no-op
+        to avoid unexpected automatic assignments. Use explicit assignment
+        creation via API or admin instead.
         """
-        if not student.class_level:
-            return []
-        
-        assignments = []
-        for fee_type in FeeType.objects.filter(is_active=True):
-            assignments.append(cls.objects.create(
-                student=student,
-                fee_type=fee_type,
-                class_level=student.class_level,
-                amount=0,
-                currency=DEFAULT_CURRENCY,
-                is_mandatory=fee_type.is_mandatory,
-            ))
-        
-        return assignments
+        return []
 
 
 class StudentPayment(BaseModel):
@@ -254,7 +266,38 @@ class FinanceLedger(BaseModel):
             description=description or f"Invoice for {invoice.fee_type.name}"
         )
     
-
+    @classmethod
+    @transaction.atomic
+    def create_payment_entry(cls, payment, description=None):
+        """Create ledger entry for payment (Debit Cash, Credit Receivable)"""
+        entries = []
+        
+        # Credit Receivable (reduce receivable)
+        entries.append(cls.objects.create(
+            entry_type='payment',
+            reference_id=payment.id,
+            student=payment.student,
+            account='receivable',
+            amount=payment.amount,
+            currency=payment.currency,
+            entry_side='credit',
+            description=description or f"Payment against invoices"
+        ))
+        
+        # Debit Cash/Bank (increase asset)
+        entries.append(cls.objects.create(
+            entry_type='payment',
+            reference_id=payment.id,
+            student=payment.student,
+            account='cash',
+            amount=payment.amount,
+            currency=payment.currency,
+            entry_side='debit',
+            description=description or f"Payment received"
+        ))
+        
+        return entries
+    
     @classmethod
     @transaction.atomic
     def create_refund_entry(cls, payment, description=None):
