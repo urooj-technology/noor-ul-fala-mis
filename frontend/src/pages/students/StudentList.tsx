@@ -11,6 +11,7 @@ import { formatDateByCalendarType } from '@/utils/calendar';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 import StudentPrint from './StudentPrint';
+import StudentBulkPrint from './StudentBulkPrint';
 
 interface FinancialSummary {
   total_fee?: string | number;
@@ -66,6 +67,7 @@ export const StudentList = () => {
   const [pageSize, setPageSize] = useState(25);
   const [selectedStudentIds, setSelectedStudentIds] = useState<Set<number | string>>(new Set());
   const [printStudent, setPrintStudent] = useState<StudentItem | null>(null);
+  const [bulkPrintStudents, setBulkPrintStudents] = useState<(number | string)[]>([]);
 
   const { data: studentsData, isLoading } = useFetchObjects<PaginatedResponse>({
     queryKey: ['students', currentPage.toString(), pageSize.toString(), searchTerm, statusFilter, classLevelFilter],
@@ -300,6 +302,10 @@ export const StudentList = () => {
           <span className="text-sm font-medium">
             {selectedStudentIds.size} {t('students.studentsSelected', 'students selected')}
           </span>
+          <Button size="sm" onClick={() => setBulkPrintStudents(Array.from(selectedStudentIds))}>
+            <Printer className="mr-2 h-4 w-4" />
+            {t('students.printSelected', 'Print Selected')}
+          </Button>
           <Button size="sm" onClick={handleBulkChangeClass}>
             <GraduationCap className="mr-2 h-4 w-4" />
             {t('students.changeClassLevel', 'Change Class Level')}
@@ -363,11 +369,17 @@ export const StudentList = () => {
 
       <ConfirmDialog />
       
-      {/* Print Component */}
+      {/* Print Components */}
       {printStudent && (
         <StudentPrint 
           student={printStudent} 
           onClose={() => setPrintStudent(null)} 
+        />
+      )}
+      {bulkPrintStudents.length > 0 && (
+        <StudentBulkPrint
+          studentIds={bulkPrintStudents}
+          onClose={() => setBulkPrintStudents([])}
         />
       )}
       </CalendarProvider>

@@ -118,11 +118,17 @@ export const ShopRentalPaymentList = () => {
     {
       key: 'period',
       title: t('shop-rental.period'),
-      render: (value, record) => (
-        <span className="text-xs">
-          {record.period_month}/{record.period_year}
-        </span>
-      )
+      render: (value, record) => {
+        const months = record.period_months || [];
+        const monthsDisplay = months.length > 0 
+          ? months.join(', ') 
+          : (record.period_month || '-');
+        return (
+          <span className="text-xs">
+            {monthsDisplay} / {record.period_year || '-'}
+          </span>
+        );
+      }
     },
     {
       key: 'payment_status',

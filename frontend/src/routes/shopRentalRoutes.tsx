@@ -6,6 +6,7 @@ import TenantList from '@/pages/shop-rental/TenantList';
 import AddTenant from '@/pages/shop-rental/AddTenant';
 import EditTenant from '@/pages/shop-rental/EditTenant';
 import ShopRentalListPage from '@/pages/shop-rental/ShopRentalListPage';
+import ShopRentalDetails from '@/pages/shop-rental/ShopRentalDetails';
 import AddShopRental from '@/pages/shop-rental/AddShopRental';
 import EditShopRental from '@/pages/shop-rental/EditShopRental';
 import ShopRentalPaymentList from '@/pages/shop-rental/ShopRentalPaymentList';
@@ -28,6 +29,7 @@ export const shopRentalRoutes = (
     {/* Shop Rentals */}
     <Route path="shop-rentals" element={<ShopRentalListPage />} />
     <Route path="shop-rentals/add" element={<AddShopRental />} />
+    <Route path="shop-rentals/:id" element={<ShopRentalDetails />} />
     <Route path="shop-rentals/:id/edit" element={<EditShopRental />} />
     
     {/* Shop Rental Payments */}

@@ -43,6 +43,7 @@ class StudentFeeAssignmentSerializer(DataRootSerializer):
     
     fee_type_details = serializers.SerializerMethodField()
     class_level_details = serializers.SerializerMethodField()
+    student_details = serializers.SerializerMethodField()
     student_name = serializers.CharField(source='student.full_name', read_only=True)
     student_registration = serializers.CharField(source='student.registration_number', read_only=True)
     paid_amount = serializers.SerializerMethodField()
@@ -51,14 +52,14 @@ class StudentFeeAssignmentSerializer(DataRootSerializer):
     class Meta:
         model = StudentFeeAssignment
         fields = [
-            'id', 'student', 'student_name', 'student_registration',
+            'id', 'student', 'student_name', 'student_registration', 'student_details',
             'fee_type', 'fee_type_details', 'amount', 'currency',
             'is_mandatory', 'is_active', 'notes',
             'class_level', 'class_level_details', 'payment_plan',
             'paid_amount', 'remaining_amount',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['created_at', 'updated_at', 'paid_amount', 'remaining_amount', 'class_level_details']
+        read_only_fields = ['created_at', 'updated_at', 'paid_amount', 'remaining_amount', 'class_level_details', 'student_details']
     
     def get_fee_type_details(self, obj):
         if obj.fee_type:
@@ -72,6 +73,18 @@ class StudentFeeAssignmentSerializer(DataRootSerializer):
                 'id': cl.id,
                 'level': getattr(cl, 'level', None),
                 'name': getattr(cl, 'name', None),
+            }
+        return None
+    
+    def get_student_details(self, obj):
+        if obj.student:
+            return {
+                'id': obj.student.id,
+                'full_name': obj.student.full_name,
+                'registration_number': obj.student.registration_number,
+                'currency': obj.student.currency if hasattr(obj.student, 'currency') else 'AFN',
+                'total_paid': str(obj.student.get_total_payments()) if hasattr(obj.student, 'get_total_payments') else '0',
+                'remaining_balance': str(obj.student.get_remaining_balance()) if hasattr(obj.student, 'get_remaining_balance') else '0',
             }
         return None
     
@@ -116,19 +129,20 @@ class StudentPaymentSerializer(DataRootSerializer):
     # Computed fields (Decimal-safe)
     amount_str = serializers.SerializerMethodField()
     fee_type_details = serializers.SerializerMethodField()
+    period_months = serializers.SerializerMethodField()
     
     class Meta:
         model = StudentPayment
         fields = [
             'id', 'assignment', 'amount', 'amount_str', 'currency', 'payment_date',
-            'payment_status', 'payment_cycle', 'period_year', 'period_month',
+            'payment_status', 'payment_cycle', 'period_year', 'period_month', 'period_months',
             'fee_type', 'fee_type_details',
             'reference_number', 'description', 'receipt',
             'assignment_details', 'currency_details',
             'payment_date_shamsi', 'payment_date_qamari',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['reference_number', 'currency_details', 'payment_date_shamsi', 'payment_date_qamari', 'fee_type_details']
+        read_only_fields = ['reference_number', 'currency_details', 'payment_date_shamsi', 'payment_date_qamari', 'fee_type_details', 'period_months']
     
     def get_assignment_details(self, obj):
         if obj.assignment:
@@ -137,14 +151,29 @@ class StudentPaymentSerializer(DataRootSerializer):
                 'id': obj.assignment.id,
                 'student_id': student.id if student else None,
                 'student_name': student.full_name if student else None,
+                'student_details': {
+                    'id': student.id if student else None,
+                    'full_name': student.full_name if student else None,
+                    'registration_number': student.registration_number if student else None,
+                    'currency': student.currency if student and hasattr(student, 'currency') else 'AFN',
+                    'total_paid': str(student.get_total_payments()) if student and hasattr(student, 'get_total_payments') else '0',
+                    'remaining_balance': str(student.get_remaining_balance()) if student and hasattr(student, 'get_remaining_balance') else '0',
+                } if student else None,
                 'fee_type': obj.assignment.fee_type.id if obj.assignment.fee_type else None,
                 'fee_type_name': obj.assignment.fee_type.name if obj.assignment.fee_type else None,
+                'fee_type_details': FeeTypeMinimalSerializer(obj.assignment.fee_type).data if obj.assignment.fee_type else None,
                 'payment_plan': obj.assignment.payment_plan,
                 'amount': str(obj.assignment.amount),
                 'currency': obj.assignment.currency,
                 'class_level': obj.assignment.class_level.name if obj.assignment.class_level else None,
                 'class_level_id': obj.assignment.class_level.id if obj.assignment.class_level else None,
+                'class_level_details': {
+                    'id': obj.assignment.class_level.id,
+                    'name': obj.assignment.class_level.name,
+                    'level': obj.assignment.class_level.level,
+                } if obj.assignment.class_level else None,
             }
+        return None
     
     def get_currency_details(self, obj):
         from api.models.data.choices import CURRENCY_CHOICES
@@ -177,6 +206,18 @@ class StudentPaymentSerializer(DataRootSerializer):
                 'category': obj.fee_type.category,
             }
         return None
+    
+    def get_period_months(self, obj):
+        """Return period_month as a list for compatibility"""
+        if obj.period_month:
+            return [str(obj.period_month).zfill(2)]
+        return []
+    
+    def get_period_months(self, obj):
+        """Return period_month as a list for compatibility"""
+        if obj.period_month:
+            return [str(obj.period_month).zfill(2)]
+        return []
     
     def validate(self, attrs):
         amount = attrs.get('amount')

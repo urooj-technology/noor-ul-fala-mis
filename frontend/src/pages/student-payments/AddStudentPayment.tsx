@@ -12,15 +12,13 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { RotateCw, ArrowLeft, CreditCard, Calendar as CalendarIcon, DollarSign, Info, FileSpreadsheet, Check, ChevronDown, X } from 'lucide-react';
+import { RotateCw, ArrowLeft, DollarSign, Info, FileSpreadsheet, Check, ChevronDown, X } from 'lucide-react';
 import { useCalendar } from '@/contexts/CalendarContext';
 import { getMonthNames } from '@/utils/calendar';
-import { useToast } from '@/components/ui/use-toast';
 import useFetchObjects from '@/api/useFetchObjects';
 import useFetchObject from '@/api/useFetchObject';
 import useAdd from '@/api/useAdd';
 import DatePicker from '@/components/ui/date-picker-calendar';
-import api from '@/lib/axios';
 
 interface FeeAssignment {
   id: number;
@@ -99,10 +97,7 @@ const MonthMultiSelect: React.FC<MonthMultiSelectProps> = ({
   paymentAmount,
 }) => {
   const [open, setOpen] = useState(false);
-  const selectedLabels = months
-    .filter((m) => selectedMonths.includes(m.value))
-    .map((m) => m.label);
-
+  const selectedLabels = months.filter((m) => selectedMonths.includes(m.value)).map((m) => m.label);
   const totalForEntry = (parseFloat(paymentAmount) || 0) * selectedMonths.length;
 
   return (
@@ -220,7 +215,6 @@ const MonthMultiSelect: React.FC<MonthMultiSelectProps> = ({
 const AddStudentPayment = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { calendarType } = useCalendar();
   const lang = t('language.code') as 'fa' | 'ps';
 
@@ -237,10 +231,9 @@ const AddStudentPayment = () => {
   const [description, setDescription] = useState<string>('');
 
   // Use useAdd hook for creating payments
-  const { handleAdd: handleAddPayment, loading, isSuccess } = useAdd<any>({
+  const { handleAdd, loading, isSuccess } = useAdd<any>({
     queryKey: 'student-payments',
     endpoint: 'student-payments/create_payments',
-    showSuccessToast: false,
   });
 
   // Fetch students by level
@@ -306,6 +299,13 @@ const AddStudentPayment = () => {
     }
   }, [financialSummary]);
 
+  // Handle success - navigate only, toast is handled by useAdd
+  useEffect(() => {
+    if (isSuccess) {
+      navigate('/student-payments');
+    }
+  }, [isSuccess, navigate]);
+
   // Toggle month selection
   const toggleMonth = (entryIndex: number, monthValue: string) => {
     setPaymentEntries((prev) => {
@@ -314,11 +314,6 @@ const AddStudentPayment = () => {
       const hasMonth = entry.selected_months.includes(monthValue);
 
       if (!hasMonth && entry.selected_months.length >= entry.payment_plan) {
-        toast({
-          title: t('common.warning'),
-          description: t('student-payments.limitReached', 'This fee allows maximum {{count}} month(s)', { count: entry.payment_plan }),
-          variant: 'destructive',
-        });
         return prev;
       }
 
@@ -355,25 +350,7 @@ const AddStudentPayment = () => {
     );
 
     if (validEntries.length === 0) {
-      toast({
-        title: t('common.error'),
-        description: t('student-payments.selectFeeWithMonths', 'Please select at least one fee with months and payment amount'),
-        variant: 'destructive',
-      });
       return;
-    }
-
-    for (const entry of validEntries) {
-      const remaining = parseFloat(entry.remaining);
-      const paying = parseFloat(entry.payment_amount) * entry.selected_months.length;
-      if (paying > remaining) {
-        toast({
-          title: 'Overpayment Error',
-          description: `Payment for ${entry.fee_type_name} exceeds remaining balance`,
-          variant: 'destructive',
-        });
-        return;
-      }
     }
 
     // Build payments payload for create_payments endpoint
@@ -394,19 +371,8 @@ const AddStudentPayment = () => {
       payments: paymentsPayload,
     };
 
-    handleAddPayment(payload);
+    handleAdd(payload);
   };
-
-  // Handle success
-  useEffect(() => {
-    if (isSuccess) {
-      toast({
-        title: t('common.success'),
-        description: t('student-payments.paymentsCreated', 'Payments created successfully'),
-      });
-      navigate('/student-payments');
-    }
-  }, [isSuccess, navigate, t, toast]);
 
   const months = getCalendarMonths(calendarType, lang);
 
@@ -764,7 +730,7 @@ const AddStudentPayment = () => {
         </Card>
       )}
 
-      {/* ── Empty State ─────────��──────────────────────────────────────── */}
+      {/* ── Empty State ───────────────────────────────────────────────── */}
       {selectedStudent && feeAssignments.length === 0 && (
         <Card>
           <CardContent className="py-8 text-center">

@@ -9,6 +9,7 @@ import AddFeeType from '@/pages/students/AddFeeType';
 // Student invoices and periodic invoice generation removed — handled via assignments/payments
 import StudentFeeAssignmentList from '@/pages/students/StudentFeeAssignmentList';
 import AddStudentFeeAssignment from '@/pages/students/AddStudentFeeAssignment';
+import EditStudentFeeAssignment from '@/pages/students/EditStudentFeeAssignment';
 
 export const studentRoutes = (
   <>
@@ -29,6 +30,7 @@ export const studentRoutes = (
     {/* Student Fee Assignments */}
     <Route path="student-fee-assignments" element={<StudentFeeAssignmentList />} />
     <Route path="student-fee-assignments/add" element={<AddStudentFeeAssignment />} />
+    <Route path="student-fee-assignments/:id/edit" element={<EditStudentFeeAssignment />} />
 
     {/* Student invoices removed — use Student Fee Assignments and Student Payments for tracking */}
 

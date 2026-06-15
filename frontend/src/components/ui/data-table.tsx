@@ -527,7 +527,7 @@ function DataTable<T extends Record<string, any>>({
                             onSelectionChange?.([]);
                           }
                         }}
-                        className="rounded border-input focus:ring-2 focus:ring-primary/20"
+                        className="w-5 h-5 rounded border-input focus:ring-2 focus:ring-primary/20 cursor-pointer"
                       />
                     </TableHead>
                   )}
@@ -601,7 +601,7 @@ function DataTable<T extends Record<string, any>>({
                               }
                             }}
                             onClick={(e) => e.stopPropagation()}
-                            className="rounded border-gray-300 focus:ring-2 focus:ring-primary/20"
+                            className="w-5 h-5 rounded border-gray-300 focus:ring-2 focus:ring-primary/20 cursor-pointer"
                           />
                         </TableCell>
                       )}

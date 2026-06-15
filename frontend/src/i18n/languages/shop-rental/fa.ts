@@ -171,5 +171,32 @@ export const shopRentalFa = {
   
   // Additional
   selectPaymentStatus: "انتخاب وضعیت پرداخت",
-  allPaymentStatuses: "همه وضعیتهای پرداخت"
+  allPaymentStatuses: "همه وضعیتهای پرداخت",
+  
+  // New fields for details and print
+  shopInfo: "اطلاعات دکان",
+  tenantInfo: "اطلاعات مستأجر",
+  rentalPeriod: "دوره کرایه",
+  yearlySummary: "خلاصه مالی سالانه",
+  totalPaidYear: "پرداخت شده امسال",
+  totalRemainingYear: "باقیمانده امسال",
+  totalExpectedYear: "منتظره امسال",
+  monthsPaid: "ماههای پرداخت شده",
+  monthsPending: "ماههای باقیمانده",
+  monthlyBreakdown: "وضعیت پرداخت ماهانه",
+  rent: "کرایه",
+  paid: "پرداخت شده",
+  unpaid: "پرداخت نشده",
+  partial: "جزئی",
+  progress: "پیشرفت",
+  total: "مجموع",
+  month: "ماه",
+  selectMonths: "انتخاب ماهها",
+  totalAmount: "مبلغ کل",
+  totalPayment: "کل پرداخت",
+  monthsSelected: "ماه انتخاب شده",
+  perMonth: "در ماه",
+  printed: "چاپ شده",
+  signature: "امضا",
+  generatedBy: "این سند توسط سیستم مدیریت کرایه دکانها تولید شده است"
 };

@@ -2,10 +2,14 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Sum, Count
 from django.utils import timezone
+from django.db import transaction
+from rest_framework import status as drf_status
+import json
 from api.models.data.shop_rental_payment import ShopRentalPayment
 from api.models.data.shop_rental import ShopRental
 from api.serializers.data.shop_rental_payment import ShopRentalPaymentSerializer
 from api.views.data.base import DataRootViewSet
+from api.services.shop_rental_payment_service import ShopRentalPaymentService
 from decimal import Decimal
 
 
@@ -40,8 +44,79 @@ class ShopRentalPaymentViewSet(DataRootViewSet):
             queryset = queryset.filter(payment_date__gte=start_date)
         if end_date:
             queryset = queryset.filter(payment_date__lte=end_date)
+        
+        # Filter by calendar type
+        calendar_type = self.request.query_params.get('calendar_type')
+        if calendar_type:
+            queryset = queryset.filter(calendar_type=calendar_type)
+        
+        # Filter by year
+        period_year = self.request.query_params.get('period_year')
+        if period_year:
+            queryset = queryset.filter(period_year=period_year)
 
         return queryset
+    
+    def create(self, request, *args, **kwargs):
+        """Create payment with multi-month support"""
+        rental_id = request.data.get('rental')
+        amount = request.data.get('amount')
+        period_months = request.data.get('period_months', [])
+        period_year = request.data.get('period_year', str(timezone.now().year))
+        calendar_type = request.data.get('calendar_type', 'shamsi')
+        payment_date = request.data.get('payment_date', timezone.now().date().isoformat())
+        payment_status = request.data.get('payment_status', 'completed')
+        description = request.data.get('description', '')
+        
+        # Validate rental
+        if not rental_id:
+            return Response({'error': 'rental is required'}, status=drf_status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            rental = ShopRental.objects.get(id=rental_id)
+        except ShopRental.DoesNotExist:
+            return Response({'error': 'Rental not found'}, status=drf_status.HTTP_404_NOT_FOUND)
+        
+        # Validate amount
+        if not amount or Decimal(str(amount)) <= 0:
+            return Response({'error': 'amount must be positive'}, status=drf_status.HTTP_400_BAD_REQUEST)
+        
+        # Parse period_months if string
+        if isinstance(period_months, str):
+            try:
+                period_months = json.loads(period_months)
+            except:
+                period_months = [period_months]
+        
+        # Normalize months
+        normalized_months = []
+        for m in period_months:
+            try:
+                mi = int(m)
+                if 1 <= mi <= 12:
+                    normalized_months.append(str(mi).zfill(2))
+            except:
+                pass
+        
+        if not normalized_months:
+            return Response({'error': 'At least one valid month (1-12) is required'}, status=drf_status.HTTP_400_BAD_REQUEST)
+        
+        # Create payment
+        with transaction.atomic():
+            payment = ShopRentalPayment.objects.create(
+                rental=rental,
+                amount=Decimal(str(amount)),
+                currency=rental.currency,
+                payment_date=payment_date,
+                payment_status=payment_status,
+                period_months=normalized_months,
+                period_year=str(period_year),
+                calendar_type=calendar_type,
+                description=description,
+            )
+        
+        serializer = self.get_serializer(payment)
+        return Response(serializer.data, status=drf_status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['get'])
     def daily_summary(self, request):
@@ -114,8 +189,9 @@ class ShopRentalPaymentViewSet(DataRootViewSet):
     def rental_financial_info(self, request):
         """Get financial info for a specific rental (monthly rent, payments, remaining)"""
         rental_id = request.query_params.get('rental_id')
-        month = request.query_params.get('month', timezone.now().month)
-        year = request.query_params.get('year', timezone.now().year)
+        month = request.query_params.get('month')
+        year = request.query_params.get('year', str(timezone.now().year))
+        calendar_type = request.query_params.get('calendar_type', 'shamsi')
 
         if not rental_id:
             return Response({'error': 'rental_id is required'}, status=400)
@@ -125,24 +201,92 @@ class ShopRentalPaymentViewSet(DataRootViewSet):
         except ShopRental.DoesNotExist:
             return Response({'error': 'Rental not found'}, status=404)
 
-        # Get payments for the specified month
-        monthly_payments = ShopRentalPayment.objects.filter(
-            rental_id=rental_id,
-            period_month=str(month).zfill(2),
-            period_year=str(year),
-            payment_status='completed'
-        ).aggregate(total_paid=Sum('amount'))['total_paid'] or Decimal('0')
-
-        # Get all payments for this rental
+        monthly_rent = rental.monthly_rent
+        
+        # Get all completed payments for this rental and year
         all_payments = ShopRentalPayment.objects.filter(
             rental_id=rental_id,
             payment_status='completed'
-        ).aggregate(total_paid=Sum('amount'))['total_paid'] or Decimal('0')
-
-        monthly_rent = rental.monthly_rent
-        remaining = monthly_rent - monthly_payments
-        is_overdue = remaining > 0 and timezone.now().date() > rental.end_date
-
+        )
+        
+        year_payments = all_payments.filter(
+            period_year=str(year),
+            calendar_type=calendar_type
+        )
+        
+        # Calculate per-month status
+        # Each payment amount is distributed evenly across all months in period_months
+        month_status = {}
+        for m_num in range(1, 13):
+            m_str = str(m_num).zfill(2)
+            # Get payments that include this month
+            payments_for_month = [p for p in year_payments if m_str in (p.period_months or [])]
+            # Distribute payment amount across months
+            total_paid = Decimal('0')
+            for p in payments_for_month:
+                months_count = len(p.period_months) if p.period_months else 1
+                total_paid += p.amount / months_count
+            
+            remaining = max(Decimal('0'), monthly_rent - total_paid)
+            is_paid = total_paid >= monthly_rent * Decimal('0.99')  # 99% threshold
+            
+            month_status[m_str] = {
+                'month': m_str,
+                'rent': float(monthly_rent),
+                'paid': float(total_paid),
+                'remaining': float(remaining),
+                'is_paid': is_paid,
+                'payment_percentage': float((total_paid / monthly_rent * 100) if monthly_rent > 0 else 0),
+                'payment_count': len(payments_for_month),
+            }
+        
+        # If specific month requested, return detailed info for that month
+        if month:
+            month_str = str(month).zfill(2) if len(str(month)) < 2 else str(month)
+            # Get payments for specific month
+            month_payments = [p for p in year_payments if month_str in (p.period_months or [])]
+            monthly_payments_total = Decimal('0')
+            for p in month_payments:
+                months_count = len(p.period_months) if p.period_months else 1
+                monthly_payments_total += p.amount / months_count
+            remaining = max(Decimal('0'), monthly_rent - monthly_payments_total)
+            
+            return Response({
+                'rental_id': rental.id,
+                'shop': {
+                    'id': rental.shop.id,
+                    'shop_number': rental.shop.shop_number,
+                    'name': rental.shop.name,
+                },
+                'tenant': {
+                    'id': rental.tenant.id,
+                    'full_name': rental.tenant.full_name,
+                },
+                'currency': rental.currency,
+                'monthly_rent': float(monthly_rent),
+                'period': {
+                    'month': month_str,
+                    'year': int(year)
+                },
+                'current_month': {
+                    'total_paid': float(monthly_payments_total),
+                    'remaining': float(remaining),
+                    'is_paid': monthly_payments_total >= monthly_rent * Decimal('0.99'),
+                    'payment_percentage': float((monthly_payments_total / monthly_rent * 100) if monthly_rent > 0 else 0)
+                },
+                'total_paid_all_time': float(all_payments.aggregate(t=Sum('amount'))['t'] or 0),
+                'rental_period': {
+                    'start_date': rental.start_date.isoformat(),
+                    'end_date': rental.end_date.isoformat(),
+                    'is_active': rental.is_active,
+                    'is_expired': rental.is_expired
+                },
+            })
+        
+        # Return full year summary
+        total_paid_year = Decimal(str(sum(m['paid'] for m in month_status.values())))
+        total_remaining_year = Decimal(str(sum(m['remaining'] for m in month_status.values())))
+        
         return Response({
             'rental_id': rental.id,
             'shop': {
@@ -156,25 +300,45 @@ class ShopRentalPaymentViewSet(DataRootViewSet):
             },
             'currency': rental.currency,
             'monthly_rent': float(monthly_rent),
-            'period': {
-                'month': int(month),
-                'year': int(year)
+            'year': int(year),
+            'calendar_type': calendar_type,
+            'months': month_status,
+            'summary': {
+                'total_rent_year': float(monthly_rent * 12),
+                'total_paid_year': float(total_paid_year),
+                'total_remaining_year': float(total_remaining_year),
+                'months_paid_count': sum(1 for m in month_status.values() if m['is_paid']),
+                'months_pending_count': sum(1 for m in month_status.values() if not m['is_paid']),
             },
-            'current_month': {
-                'total_paid': float(monthly_payments),
-                'remaining': float(remaining),
-                'is_paid': monthly_payments >= monthly_rent,
-                'payment_percentage': float((monthly_payments / monthly_rent * 100) if monthly_rent > 0 else 0)
-            },
-            'total_paid_all_time': float(all_payments),
+            'total_paid_all_time': float(all_payments.aggregate(t=Sum('amount'))['t'] or 0),
             'rental_period': {
                 'start_date': rental.start_date.isoformat(),
                 'end_date': rental.end_date.isoformat(),
                 'is_active': rental.is_active,
                 'is_expired': rental.is_expired
             },
-            'is_overdue': is_overdue
         })
+    
+    @action(detail=False, methods=['get'])
+    def rental_monthly_status(self, request):
+        """Get monthly payment status for a rental (shows each month: paid, remaining, rent)"""
+        rental_id = request.query_params.get('rental_id')
+        year = request.query_params.get('year', str(timezone.now().year))
+        calendar_type = request.query_params.get('calendar_type', 'shamsi')
+        
+        if not rental_id:
+            return Response({'error': 'rental_id is required'}, status=400)
+        
+        result = ShopRentalPaymentService.get_monthly_payment_status(
+            rental_id=rental_id,
+            year=year,
+            calendar_type=calendar_type
+        )
+        
+        if 'error' in result:
+            return Response(result, status=404)
+        
+        return Response(result)
 
     @action(detail=False, methods=['get'])
     def tenant_financial_summary(self, request):

@@ -1,19 +1,23 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, Eye, Receipt } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Receipt, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import DataTable, { TableColumn, TableAction } from '@/components/ui/data-table';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
-import { formatDateByCalendarType } from '@/utils/calendar';
+import { getMonthNames } from '@/utils/calendar';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
+import { formatNumber } from '@/lib/formatNumber';
 
 export const ShopRentalListPage = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { calendarType } = useCalendar();
+  const lang = t('language.code') as 'fa' | 'ps';
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [shopFilter, setShopFilter] = useState('');
@@ -45,6 +49,7 @@ export const ShopRentalListPage = () => {
 
   const handleEdit = (rental: any) => navigate(`/shop-rentals/${rental.id}/edit`);
   const handleDetails = (rental: any) => navigate(`/shop-rentals/${rental.id}`);
+  const handleAddPayment = (rental: any) => navigate(`/shop-rental-payments/add?rental_id=${rental.id}`);
 
   const getStatusBadge = (status: string) => {
     const colors: Record<string, string> = {
@@ -60,8 +65,43 @@ export const ShopRentalListPage = () => {
     );
   };
 
-  const { calendarType } = useCalendar();
-  const lang = t('language.code') as 'fa' | 'ps';
+  // Get month names for display
+  const monthNames = getMonthNames(calendarType, lang);
+
+  // Render months status badges
+  const renderMonthBadges = (paymentSummary: any) => {
+    if (!paymentSummary?.months_status) return null;
+    
+    const monthsStatus = paymentSummary.months_status;
+    
+    return (
+      <div className="flex flex-wrap gap-0.5 max-w-[220px]">
+        {['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map((month) => {
+          const status = monthsStatus[month];
+          const isPaid = status?.is_paid || false;
+          const monthIndex = parseInt(month) - 1;
+          const monthLabel = monthNames[monthIndex]?.substring(0, 3) || month;
+          
+          return (
+            <span
+              key={month}
+              className={`text-[9px] px-1 py-0.5 rounded cursor-default ${
+                isPaid
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                  : 'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400'
+              }`}
+              title={isPaid 
+                ? `${monthNames[monthIndex]} - Paid: ${formatNumber(status?.paid || 0)} ${paymentSummary.currency}`
+                : `${monthNames[monthIndex]} - Remaining: ${formatNumber(status?.remaining || 0)} ${paymentSummary.currency}`
+              }
+            >
+              {monthLabel}
+            </span>
+          );
+        })}
+      </div>
+    );
+  };
 
   const columns: TableColumn[] = [
     {
@@ -79,52 +119,52 @@ export const ShopRentalListPage = () => {
       title: t('shop-rental.monthlyRent'),
       render: (value, record) => (
         <span className="text-xs font-bold text-blue-600">
-          {Number(value || 0).toFixed(2)} {record.currency_details?.code || record.currency || ''}
+          {formatNumber(value)} {record.currency_details?.code || record.currency || ''}
         </span>
       )
     },
     {
-      key: 'paid_amount',
-      title: t('shop-rental.paidThisMonth'),
+      key: 'payment_summary',
+      title: t('shop-rental.paidThisYear', 'Paid (Year)'),
       render: (value, record) => {
-        const paid = record.paid_amount || 0;
+        const totalPaid = value?.total_paid_year || 0;
         return (
           <span className="text-xs font-bold text-green-600">
-            {Number(paid).toFixed(2)} {record.currency_details?.code || record.currency || ''}
+            {formatNumber(totalPaid)} {value?.currency || record.currency || ''}
           </span>
         );
       }
     },
     {
-      key: 'remaining_amount',
-      title: t('shop-rental.remaining'),
+      key: 'payment_summary',
+      title: t('shop-rental.remainingYear', 'Remaining (Year)'),
       render: (value, record) => {
-        const remaining = record.remaining_amount || record.monthly_rent || 0;
-        const isPaid = remaining <= 0;
+        const remaining = value?.total_remaining_year || 0;
         return (
-          <span className={`text-xs font-bold ${isPaid ? 'text-green-600' : 'text-red-600'}`}>
-            {Number(remaining).toFixed(2)} {record.currency_details?.code || record.currency || ''}
+          <span className={`text-xs font-bold ${remaining > 0 ? 'text-red-600' : 'text-green-600'}`}>
+            {formatNumber(remaining)} {value?.currency || record.currency || ''}
           </span>
         );
       }
     },
     {
-      key: 'start_date',
-      title: t('shop-rental.startDate'),
-      render: (value) => (
-        <span className="text-xs">
-          {formatDateByCalendarType(value, calendarType, lang)}
-        </span>
-      )
-    },
-    {
-      key: 'end_date',
-      title: t('shop-rental.endDate'),
-      render: (value) => (
-        <span className="text-xs">
-          {formatDateByCalendarType(value, calendarType, lang)}
-        </span>
-      )
+      key: 'payment_summary',
+      title: t('shop-rental.monthlyStatus', 'Monthly Status'),
+      render: (value, record) => {
+        const paidCount = value?.months_paid_count || 0;
+        const pendingCount = value?.months_pending_count || 12;
+        
+        return (
+          <div className="space-y-1">
+            <div className="flex items-center gap-1 text-[10px]">
+              <span className="text-green-600 font-medium">{paidCount}</span>
+              <span className="text-muted-foreground">/ 12</span>
+              <span className="text-muted-foreground text-[9px] ml-1">months</span>
+            </div>
+            {renderMonthBadges(value)}
+          </div>
+        );
+      }
     },
     {
       key: 'rental_status',
@@ -134,6 +174,13 @@ export const ShopRentalListPage = () => {
   ];
 
   const rowActions: TableAction[] = [
+    {
+      key: 'add_payment',
+      label: t('shop-rental.addPayment'),
+      icon: <DollarSign className="h-4 w-4" />,
+      onClick: handleAddPayment,
+      tooltip: t('shop-rental.addPayment')
+    },
     {
       key: 'view',
       label: t('shop-rental.viewDetails'),
@@ -209,45 +256,45 @@ export const ShopRentalListPage = () => {
   return (
     <div className="space-y-6 p-6">
       <CalendarProvider>
-      <DataTable
-        data={rentals}
-        columns={columns}
-        loading={isLoading}
-        title={t('shop-rental.shopRentals')}
-        subtitle={t('shop-rental.manageRentals')}
-        icon={<Receipt className="h-5 w-5" />}
-        headerActions={
-          <Button onClick={() => navigate('/shop-rentals/add')}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('shop-rental.addRental')}
-          </Button>
-        }
-        searchable
-        searchPlaceholder={t('shop-rental.searchRentals')}
-        searchValue={searchTerm}
-        onSearch={(value) => { setSearchTerm(value); setCurrentPage(1); }}
-        customFilters={customFilters}
-        showClearFilters={hasActiveFilters}
-        clearFiltersLabel={t('shop-rental.clearFilters')}
-        onClearFilters={handleClearFilters}
-        rowActions={rowActions}
-        pagination={{
-          current: currentPage,
-          pageSize,
-          total: totalItems,
-          onPageChange: setCurrentPage,
-          showSizeChanger: true,
-          pageSizeOptions: [10, 25, 50, 100],
-          onPageSizeChange: (size) => { setPageSize(size); setCurrentPage(1); }
-        }}
-        emptyIcon={<Receipt className="h-8 w-8 text-muted-foreground" />}
-        emptyTitle={t('shop-rental.noRentalsFound')}
-        emptyDescription={searchTerm ? t('shop-rental.tryAdjustingSearch') : t('shop-rental.addFirstRental')}
-        loadingText={t('shop-rental.loadingRentals')}
-        maxHeight="75vh"
-        stickyHeader={true}
-      />
-      <ConfirmDialog />
+        <DataTable
+          data={rentals}
+          columns={columns}
+          loading={isLoading}
+          title={t('shop-rental.shopRentals')}
+          subtitle={t('shop-rental.manageRentals')}
+          icon={<Receipt className="h-5 w-5" />}
+          headerActions={
+            <Button onClick={() => navigate('/shop-rentals/add')}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t('shop-rental.addRental')}
+            </Button>
+          }
+          searchable
+          searchPlaceholder={t('shop-rental.searchRentals')}
+          searchValue={searchTerm}
+          onSearch={(value) => { setSearchTerm(value); setCurrentPage(1); }}
+          customFilters={customFilters}
+          showClearFilters={hasActiveFilters}
+          clearFiltersLabel={t('shop-rental.clearFilters')}
+          onClearFilters={handleClearFilters}
+          rowActions={rowActions}
+          pagination={{
+            current: currentPage,
+            pageSize,
+            total: totalItems,
+            onPageChange: setCurrentPage,
+            showSizeChanger: true,
+            pageSizeOptions: [10, 25, 50, 100],
+            onPageSizeChange: (size) => { setPageSize(size); setCurrentPage(1); }
+          }}
+          emptyIcon={<Receipt className="h-8 w-8 text-muted-foreground" />}
+          emptyTitle={t('shop-rental.noRentalsFound')}
+          emptyDescription={searchTerm ? t('shop-rental.tryAdjustingSearch') : t('shop-rental.addFirstRental')}
+          loadingText={t('shop-rental.loadingRentals')}
+          maxHeight="75vh"
+          stickyHeader={true}
+        />
+        <ConfirmDialog />
       </CalendarProvider>
     </div>
   );

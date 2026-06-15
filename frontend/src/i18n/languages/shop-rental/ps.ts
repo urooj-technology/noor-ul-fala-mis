@@ -171,5 +171,32 @@ export const shopRentalPs = {
   
   // Additional
   selectPaymentStatus: "د تادیې حالت وټاکئ",
-  allPaymentStatuses: "ټول د تادیې حالتونه"
+  allPaymentStatuses: "ټول د تادیې حالتونه",
+  
+  // New fields for details and print
+  shopInfo: "د دکان معلومات",
+  tenantInfo: "د کرایه کونکي معلومات",
+  rentalPeriod: "د اجارې موده",
+  yearlySummary: "کلنی مالي لنډیز",
+  totalPaidYear: "دا کال تادیه شوی",
+  totalRemainingYear: "دا کال پاتې",
+  totalExpectedYear: "دا کال هیله کېږي",
+  monthsPaid: "تادیه شوي میاشتې",
+  monthsPending: "پاتې میاشتې",
+  monthlyBreakdown: "د میاشتې تادیې حالت",
+  rent: "کرایه",
+  paid: "تادیه شوی",
+  unpaid: "تادیه نشوی",
+  partial: "برخه ییز",
+  progress: "پرمختګ",
+  total: "ټول",
+  month: "میاشت",
+  selectMonths: "میاشتې وټاکئ",
+  totalAmount: "ټول مبلغ",
+  totalPayment: "ټول تادیه",
+  monthsSelected: "میاشتې وټاکل شوې",
+  perMonth: "په میاشت کې",
+  printed: "چاپ شوی",
+  signature: "لاسلیک",
+  generatedBy: "دا سند د دکان اجارو د مدیریت سیسټم لخوا جوړ شوی"
 };

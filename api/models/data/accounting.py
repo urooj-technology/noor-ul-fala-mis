@@ -109,12 +109,11 @@ class Transaction(BaseModel):
         if not self.number:
             # Generate transaction number
             from django.utils import timezone
+            import time
             prefix = self.transaction_type[:3].upper()
-            count = Transaction.objects.filter(
-                transaction_type=self.transaction_type,
-                date__year=timezone.now().year
-            ).count() + 1
-            self.number = f"{prefix}-{timezone.now().year}-{count:06d}"
+            # Use timestamp to ensure uniqueness
+            timestamp = int(time.time() * 1000000) % 1000000
+            self.number = f"{prefix}-{timezone.now().year}-{timestamp:06d}"
         super().save(*args, **kwargs)
 
     @property

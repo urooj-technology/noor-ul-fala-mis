@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, DollarSign, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, DollarSign, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,16 +20,13 @@ interface RentalFinancialInfo {
   tenant: { full_name: string };
   currency: string;
   monthly_rent: number;
-  current_month: {
-    total_paid: number;
-    remaining: number;
-    is_paid: boolean;
-    payment_percentage: number;
-  };
-  rental_period: {
-    start_date: string;
-    end_date: string;
-    is_active: boolean;
+  months?: Record<string, { paid: number; remaining: number; is_paid: boolean; rent: number; payment_percentage: number }>;
+  summary?: {
+    total_paid_year: number;
+    total_remaining_year: number;
+    months_paid_count: number;
+    months_pending_count: number;
+    total_rent_year: number;
   };
 }
 
@@ -39,13 +36,26 @@ const EditShopRentalPayment = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   
+  // Get current Shamsi year for default
+  const getCurrentShamsiYear = () => {
+    const gregorianDate = new Date();
+    const gregorianYear = gregorianDate.getFullYear();
+    const gregorianMonth = gregorianDate.getMonth() + 1;
+    const gregorianDay = gregorianDate.getDate();
+    const shamsiYear = gregorianMonth < 3 || (gregorianMonth === 3 && gregorianDay < 21)
+      ? gregorianYear - 622
+      : gregorianYear - 621;
+    return shamsiYear.toString();
+  };
+
   const [formData, setFormData] = useState({
     rental: '',
     amount: '',
     payment_date: new Date().toISOString().slice(0, 10),
     payment_status: 'completed',
-    period_month: (new Date().getMonth() + 1).toString().padStart(2, '0'),
-    period_year: '',
+    period_months: [] as string[],
+    period_year: getCurrentShamsiYear(),
+    calendar_type: 'shamsi',
     description: '',
     receipt: null as File | null
   });
@@ -65,8 +75,10 @@ const EditShopRentalPayment = () => {
 
   // Fetch rental financial info when rental is selected
   const { data: financialInfo, refetch: refetchFinancialInfo } = useFetchObject<RentalFinancialInfo>({
-    queryKey: ['rental-financial-info', formData.rental, formData.period_month, formData.period_year],
-    endpoint: `shop-rentals/${formData.rental}/financial_info/?month=${formData.period_month}&year=${formData.period_year}`,
+    queryKey: ['rental-financial-info', formData.rental, formData.period_year, calendarType],
+    endpoint: formData.rental
+      ? `shop-rental-payments/rental_financial_info/?rental_id=${formData.rental}&year=${formData.period_year}&calendar_type=${calendarType}`
+      : '',
     enabled: !!formData.rental
   });
 
@@ -77,8 +89,9 @@ const EditShopRentalPayment = () => {
         amount: payment.amount?.toString() || '',
         payment_date: payment.payment_date ? payment.payment_date.slice(0, 10) : new Date().toISOString().slice(0, 10),
         payment_status: payment.payment_status || 'completed',
-        period_month: payment.period_month || (new Date().getMonth() + 1).toString().padStart(2, '0'),
+        period_months: payment.period_months || (payment.period_month ? [payment.period_month] : []),
         period_year: payment.period_year || '',
+        calendar_type: payment.calendar_type || 'shamsi',
         description: payment.description || '',
         receipt: null
       });
@@ -91,12 +104,12 @@ const EditShopRentalPayment = () => {
     }
   }, [financialInfo]);
 
-  // Refetch financial info when month or year changes
+  // Refetch financial info when year changes
   useEffect(() => {
     if (formData.rental) {
       refetchFinancialInfo();
     }
-  }, [formData.period_month, formData.period_year, formData.rental, refetchFinancialInfo]);
+  }, [formData.period_year, formData.rental, refetchFinancialInfo]);
 
   useEffect(() => {
     if (isSuccess) {
@@ -109,6 +122,7 @@ const EditShopRentalPayment = () => {
     if (!formData.rental) newErrors.rental = t('validation.required');
     if (!formData.amount || parseFloat(formData.amount) <= 0) newErrors.amount = t('validation.positive');
     if (!formData.payment_date) newErrors.payment_date = t('validation.required');
+    if (formData.period_months.length === 0) newErrors.period_months = 'Select at least one month';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -122,8 +136,9 @@ const EditShopRentalPayment = () => {
     submitData.append('amount', formData.amount);
     submitData.append('payment_date', formData.payment_date);
     submitData.append('payment_status', formData.payment_status);
-    submitData.append('period_month', formData.period_month);
+    submitData.append('period_months', JSON.stringify(formData.period_months));
     submitData.append('period_year', formData.period_year);
+    submitData.append('calendar_type', formData.calendar_type);
     if (formData.description?.trim()) {
       submitData.append('description', formData.description.trim());
     }
@@ -135,6 +150,16 @@ const EditShopRentalPayment = () => {
     }
 
     handleUpdate(id, submitData);
+  };
+
+  // Toggle month selection
+  const toggleMonth = (monthValue: string) => {
+    setFormData(prev => {
+      const newMonths = prev.period_months.includes(monthValue)
+        ? prev.period_months.filter(m => m !== monthValue)
+        : [...prev.period_months, monthValue].sort();
+      return { ...prev, period_months: newMonths };
+    });
   };
 
   const shamsiMonths = [
@@ -226,54 +251,27 @@ const EditShopRentalPayment = () => {
                       <span className="text-sm font-medium">{selectedRentalInfo.currency}</span>
                     </div>
                     
-                    {/* Financial Summary in One Row */}
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="text-center p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                        <div className="text-xs text-muted-foreground mb-1">{t('shop-rental.monthlyRent')}</div>
-                        <div className="font-bold text-lg">{formatNumber(selectedRentalInfo.monthly_rent)} <span className="text-sm font-normal">{selectedRentalInfo.currency}</span></div>
-                      </div>
-                      
-                      <div className="text-center p-3 bg-green-50 dark:bg-green-950 rounded-lg">
-                        <div className="text-xs text-muted-foreground mb-1">{t('shop-rental.paidThisMonth')}</div>
-                        <div className="font-bold text-lg text-green-600">{formatNumber(selectedRentalInfo.current_month.total_paid)} <span className="text-sm font-normal">{selectedRentalInfo.currency}</span></div>
-                      </div>
-                      
-                      <div className="text-center p-3 bg-red-50 dark:bg-red-950 rounded-lg">
-                        <div className="text-xs text-muted-foreground mb-1">{t('shop-rental.remaining')}</div>
-                        <div className={`font-bold text-lg ${selectedRentalInfo.current_month.remaining > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          {formatNumber(selectedRentalInfo.current_month.remaining)} <span className="text-sm font-normal">{selectedRentalInfo.currency}</span>
+                    {/* Yearly Summary */}
+                    {selectedRentalInfo.summary && (
+                      <div className="grid grid-cols-4 gap-4">
+                        <div className="text-center p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                          <div className="text-xs text-muted-foreground mb-1">{t('shop-rental.monthlyRent')}</div>
+                          <div className="font-bold text-lg">{formatNumber(selectedRentalInfo.monthly_rent)}</div>
+                        </div>
+                        <div className="text-center p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                          <div className="text-xs text-muted-foreground mb-1">Paid ({formData.period_year})</div>
+                          <div className="font-bold text-lg text-green-600">{formatNumber(selectedRentalInfo.summary.total_paid_year)}</div>
+                        </div>
+                        <div className="text-center p-3 bg-red-50 dark:bg-red-950 rounded-lg">
+                          <div className="text-xs text-muted-foreground mb-1">Remaining</div>
+                          <div className="font-bold text-lg text-red-600">{formatNumber(selectedRentalInfo.summary.total_remaining_year)}</div>
+                        </div>
+                        <div className="text-center p-3 bg-purple-50 dark:bg-purple-950 rounded-lg">
+                          <div className="text-xs text-muted-foreground mb-1">Months Paid</div>
+                          <div className="font-bold text-lg">{selectedRentalInfo.summary.months_paid_count}/12</div>
                         </div>
                       </div>
-                    </div>
-                    
-                    {/* Progress Bar */}
-                    <div className="mt-3">
-                      <div className="flex justify-between text-xs mb-1">
-                        <span>{t('shop-rental.paymentProgress')}</span>
-                        <span>{selectedRentalInfo.current_month.payment_percentage.toFixed(0)}%</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full ${selectedRentalInfo.current_month.is_paid ? 'bg-green-500' : 'bg-blue-500'}`}
-                          style={{ width: `${Math.min(selectedRentalInfo.current_month.payment_percentage, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* Status Badge */}
-                    <div className="mt-3 flex items-center justify-center gap-2">
-                      {selectedRentalInfo.current_month.is_paid ? (
-                        <div className="flex items-center gap-1 text-green-600 text-sm">
-                          <CheckCircle className="h-4 w-4" />
-                          <span>{t('shop-rental.monthFullyPaid')}</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1 text-yellow-600 text-sm">
-                          <AlertCircle className="h-4 w-4" />
-                          <span>{t('shop-rental.monthPendingPayment')}</span>
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -314,34 +312,50 @@ const EditShopRentalPayment = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="period_month">{t('shop-rental.periodMonth')} *</Label>
-                <select
-                  id="period_month"
-                  value={formData.period_month}
-                  onChange={(e) => setFormData(prev => ({ ...prev, period_month: e.target.value }))}
-                  className="w-full p-2 border rounded-md bg-background"
-                >
-                  {months.map(month => (
-                    <option key={month.value} value={month.value.toString().padStart(2, '0')}>{month.label}</option>
-                  ))}
-                </select>
-              </div>
+            {/* Period Year */}
+            <div>
+              <Label htmlFor="period_year">{t('shop-rental.periodYear')} *</Label>
+              <select
+                id="period_year"
+                value={formData.period_year}
+                onChange={(e) => setFormData(prev => ({ ...prev, period_year: e.target.value }))}
+                className="w-full p-2 border rounded-md bg-background"
+              >
+                {years.map(year => (
+                  <option key={year} value={year.toString()}>{year}</option>
+                ))}
+              </select>
+            </div>
 
-              <div>
-                <Label htmlFor="period_year">{t('shop-rental.periodYear')} *</Label>
-                <select
-                  id="period_year"
-                  value={formData.period_year}
-                  onChange={(e) => setFormData(prev => ({ ...prev, period_year: e.target.value }))}
-                  className="w-full p-2 border rounded-md bg-background"
-                >
-                  {years.map(year => (
-                    <option key={year} value={year.toString()}>{year}</option>
-                  ))}
-                </select>
+            {/* Multi-Month Selection */}
+            <div>
+              <Label>{t('shop-rental.selectMonths', 'Select Months')} *</Label>
+              <div className="flex flex-wrap gap-2 p-3 border rounded-md bg-background">
+                {months.map(month => {
+                  const monthValue = month.value.toString().padStart(2, '0');
+                  const isSelected = formData.period_months.includes(monthValue);
+                  return (
+                    <button
+                      key={monthValue}
+                      type="button"
+                      onClick={() => toggleMonth(monthValue)}
+                      className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
+                        isSelected
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-muted hover:bg-muted/80'
+                      }`}
+                    >
+                      {month.label}
+                    </button>
+                  );
+                })}
               </div>
+              {errors.period_months && <p className="text-xs text-destructive mt-1">{errors.period_months}</p>}
+              {formData.period_months.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {formData.period_months.length} month(s) selected
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -23,7 +23,8 @@ class StudentViewSet(DataRootViewSet):
     filterset_fields = ['status', 'gender', 'class_level']
     search_fields = [
         'full_name', 'father_name', 'grandfather_name',
-        'registration_number', 'tazkira_number', 'phone'
+        'registration_number', 'tazkira_number',
+        'parent_phone', 'student_phone', 'alternative_phone'
     ]
 
     def perform_create(self, serializer):

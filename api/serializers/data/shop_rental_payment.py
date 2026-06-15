@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from api.models.data.shop_rental_payment import ShopRentalPayment
 from api.serializers.data.base import DataRootSerializer
-from api.utils.calendar import get_calendar_info
+from api.utils.calendar import get_calendar_info, SHAMSI_MONTHS_DARI, SHAMSI_MONTHS_PASHTO, QAMARI_MONTHS
 
 
 class ShopRentalPaymentSerializer(DataRootSerializer):
@@ -11,18 +11,23 @@ class ShopRentalPaymentSerializer(DataRootSerializer):
     # Calendar date fields
     payment_date_shamsi = serializers.SerializerMethodField(read_only=True)
     payment_date_qamari = serializers.SerializerMethodField(read_only=True)
+    # Multi-month display
+    period_months_display = serializers.SerializerMethodField(read_only=True)
+    months_count = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = ShopRentalPayment
         fields = [
             'id', 'rental', 'amount', 'currency', 'payment_date',
-            'payment_status', 'period_month', 'period_year',
+            'payment_status', 'period_months', 'period_months_display', 'months_count',
+            'period_year', 'calendar_type',
+            'period_month',  # Legacy field
             'reference_number', 'description', 'receipt', 'transaction',
             'rental_details', 'currency_details', 'transaction_details',
             'payment_date_shamsi', 'payment_date_qamari',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['reference_number', 'currency_details', 'transaction_details', 'payment_date_shamsi', 'payment_date_qamari']
+        read_only_fields = ['reference_number', 'currency_details', 'transaction_details', 'payment_date_shamsi', 'payment_date_qamari', 'period_months_display', 'months_count']
 
     def get_rental_details(self, obj):
         if obj.rental:
@@ -62,6 +67,37 @@ class ShopRentalPaymentSerializer(DataRootSerializer):
     def get_payment_date_qamari(self, obj):
         """Get payment date in Hijri Qamari calendar"""
         return get_calendar_info(obj.payment_date).get('qamari')
+    
+    def get_period_months_display(self, obj):
+        """Get month names based on calendar type"""
+        if not obj.period_months:
+            return []
+        
+        month_names = []
+        calendar_type = obj.calendar_type or 'shamsi'
+        
+        for m in obj.period_months:
+            try:
+                month_idx = int(m) - 1
+                if calendar_type == 'shamsi':
+                    month_names.append({
+                        'number': m,
+                        'name_dari': SHAMSI_MONTHS_DARI[month_idx],
+                        'name_pashto': SHAMSI_MONTHS_PASHTO[month_idx],
+                    })
+                else:  # qamari
+                    month_names.append({
+                        'number': m,
+                        'name': QAMARI_MONTHS[month_idx],
+                    })
+            except (ValueError, IndexError):
+                month_names.append({'number': m, 'name': m})
+        
+        return month_names
+    
+    def get_months_count(self, obj):
+        """Get number of months in this payment"""
+        return len(obj.period_months) if obj.period_months else 0
 
     def validate(self, attrs):
         amount = attrs.get('amount')
@@ -69,6 +105,19 @@ class ShopRentalPaymentSerializer(DataRootSerializer):
             raise serializers.ValidationError({
                 'amount': 'Payment amount must be greater than zero'
             })
+        
+        # Validate period_months
+        period_months = attrs.get('period_months', [])
+        if period_months:
+            normalized = []
+            for m in period_months:
+                try:
+                    mi = int(m)
+                    if 1 <= mi <= 12:
+                        normalized.append(str(mi).zfill(2))
+                except (ValueError, TypeError):
+                    pass
+            attrs['period_months'] = normalized
         
         # Auto-set currency from rental if not provided
         rental = attrs.get('rental')
@@ -83,15 +132,32 @@ class ShopRentalPaymentSerializer(DataRootSerializer):
         if rental and not validated_data.get('currency'):
             validated_data['currency'] = rental.currency
         
-        # Ensure period_month is zero-padded
+        # Ensure period_month is zero-padded (legacy)
         period_month = validated_data.get('period_month')
         if period_month:
             validated_data['period_month'] = str(period_month).zfill(2)
+            # Also add to period_months if not set
+            if not validated_data.get('period_months'):
+                validated_data['period_months'] = [validated_data['period_month']]
         
         return super().create(validated_data)
     
     def update(self, instance, validated_data):
-        # Ensure period_month is zero-padded
+        # Handle period_months update
+        period_months = validated_data.get('period_months')
+        if period_months is not None:
+            # Normalize months
+            normalized = []
+            for m in period_months:
+                try:
+                    mi = int(m)
+                    if 1 <= mi <= 12:
+                        normalized.append(str(mi).zfill(2))
+                except (ValueError, TypeError):
+                    pass
+            validated_data['period_months'] = normalized
+        
+        # Handle legacy period_month
         period_month = validated_data.get('period_month')
         if period_month:
             validated_data['period_month'] = str(period_month).zfill(2)

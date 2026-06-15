@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from django.db.models import Sum
+from django.utils import timezone
+from decimal import Decimal
 from api.models.data.shop_rental import Shop, Tenant, ShopRental
+from api.models.data.shop_rental_payment import ShopRentalPayment
 from api.serializers.data.base import DataRootSerializer
 from api.utils.calendar import get_calendar_info
 
@@ -24,8 +27,8 @@ class ShopRentalSerializer(DataRootSerializer):
     shop_details = serializers.SerializerMethodField()
     tenant_details = serializers.SerializerMethodField()
     currency_details = serializers.SerializerMethodField()
-    paid_amount = serializers.SerializerMethodField()
-    remaining_amount = serializers.SerializerMethodField()
+    # Payment tracking fields
+    payment_summary = serializers.SerializerMethodField()
     # Calendar date fields
     start_date_shamsi = serializers.SerializerMethodField(read_only=True)
     start_date_qamari = serializers.SerializerMethodField(read_only=True)
@@ -39,10 +42,13 @@ class ShopRentalSerializer(DataRootSerializer):
             'end_date', 'end_date_shamsi', 'end_date_qamari', 'monthly_rent', 
             'currency', 'rental_status', 'security_deposit', 'description',
             'shop_details', 'tenant_details', 'currency_details', 'is_active', 'is_expired',
-            'paid_amount', 'remaining_amount',
+            'payment_summary',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['is_active', 'is_expired', 'currency_details', 'paid_amount', 'remaining_amount', 'start_date_shamsi', 'start_date_qamari', 'end_date_shamsi', 'end_date_qamari']
+        read_only_fields = [
+            'is_active', 'is_expired', 'currency_details', 'payment_summary',
+            'start_date_shamsi', 'start_date_qamari', 'end_date_shamsi', 'end_date_qamari'
+        ]
     
     def get_shop_details(self, obj):
         if obj.shop:
@@ -75,29 +81,94 @@ class ShopRentalSerializer(DataRootSerializer):
             }
         return None
     
-    def get_paid_amount(self, obj):
-        from django.utils import timezone
-        from django.db.models import Q
-        from decimal import Decimal
-        from api.models.data.shop_rental_payment import ShopRentalPayment
+    def get_payment_summary(self, obj):
+        """
+        Get payment summary for this rental.
+        Returns total paid, remaining, and months status.
+        Supports year filtering from request context.
+        """
+        from jdatetime import datetime as jdatetime_datetime
         
-        current_month = timezone.now().month
-        current_year = timezone.now().year
-        month_str = str(current_month).zfill(2)
+        # Try to get year from context (request params)
+        request = self.context.get('request')
+        if request and hasattr(request, 'query_params'):
+            year_param = request.query_params.get('year')
+            if year_param:
+                current_year = str(year_param)
+            else:
+                now_j = jdatetime_datetime.now()
+                current_year = str(now_j.year)
+        else:
+            now_j = jdatetime_datetime.now()
+            current_year = str(now_j.year)
         
-        paid = ShopRentalPayment.objects.filter(
+        # Get all completed payments for this rental for the specified year
+        payments = ShopRentalPayment.objects.filter(
             rental=obj,
-            period_year=str(current_year),
-            payment_status='completed'
-        ).filter(
-            Q(period_month=month_str) | Q(period_month=str(current_month))
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+            payment_status='completed',
+            calendar_type='shamsi',
+            period_year=current_year
+        )
         
-        return float(paid)
-    
-    def get_remaining_amount(self, obj):
-        paid = self.get_paid_amount(obj)
-        return float(obj.monthly_rent) - paid
+        # Initialize month tracking
+        months_status = {}
+        for i in range(1, 13):
+            month_str = str(i).zfill(2)
+            months_status[month_str] = {
+                'month': month_str,
+                'rent': float(obj.monthly_rent),
+                'paid': Decimal('0'),
+                'remaining': float(obj.monthly_rent),
+                'is_paid': False,
+                'payment_percentage': 0,
+                'payment_count': 0,
+            }
+        
+        # Process payments - distribute amount across months
+        for payment in payments:
+            if payment.period_months:
+                months_count = len(payment.period_months)
+                if months_count > 0:
+                    amount_per_month = payment.amount / months_count
+                    for month in payment.period_months:
+                        month_str = str(month).zfill(2) if len(str(month)) < 2 else str(month)
+                        if month_str in months_status:
+                            months_status[month_str]['paid'] += amount_per_month
+                            months_status[month_str]['payment_count'] += 1
+        
+        # Calculate totals and update status
+        total_paid_year = Decimal('0')
+        for month_str in months_status:
+            paid = months_status[month_str]['paid']
+            total_paid_year += paid
+            remaining = max(Decimal('0'), obj.monthly_rent - paid)
+            is_paid = paid >= obj.monthly_rent * Decimal('0.99')
+            payment_percentage = float((paid / obj.monthly_rent * 100) if obj.monthly_rent > 0 else 0)
+            
+            months_status[month_str]['paid'] = float(paid)
+            months_status[month_str]['remaining'] = float(remaining)
+            months_status[month_str]['is_paid'] = is_paid
+            months_status[month_str]['payment_percentage'] = payment_percentage
+        
+        # Calculate summary
+        months_paid = [m for m, status in months_status.items() if status['is_paid']]
+        months_pending = [m for m, status in months_status.items() if not status['is_paid']]
+        total_expected_year = obj.monthly_rent * 12
+        total_remaining_year = max(Decimal('0'), total_expected_year - total_paid_year)
+        
+        return {
+            'total_paid_year': float(total_paid_year),
+            'total_remaining_year': float(total_remaining_year),
+            'total_expected_year': float(total_expected_year),
+            'months_paid_count': len(months_paid),
+            'months_pending_count': len(months_pending),
+            'months_paid': months_paid,
+            'months_pending': months_pending,
+            'months_status': months_status,
+            'monthly_rent': float(obj.monthly_rent),
+            'currency': obj.currency,
+            'year': int(current_year)
+        }
 
     def get_start_date_shamsi(self, obj):
         """Get start date in Afghanistan Shamsi calendar"""

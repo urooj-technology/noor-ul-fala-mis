@@ -151,7 +151,12 @@ const ShopRentalPaymentDetails = () => {
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">{t('shop-rental.period')}</span>
                 </div>
-                <p className="font-semibold">{payment.period_month}/{payment.period_year}</p>
+                <p className="font-semibold">
+                  {payment.period_months && payment.period_months.length > 0
+                    ? payment.period_months.join(', ')
+                    : payment.period_month || '-'}
+                  {' / '}{payment.period_year || '-'}
+                </p>
               </div>
               <div className="p-4 bg-muted/50 rounded-lg space-y-2">
                 <div className="flex items-center gap-2">

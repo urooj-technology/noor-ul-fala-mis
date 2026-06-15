@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, Eye, DollarSign, FileSpreadsheet, Printer, Layers, CheckCircle, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, DollarSign, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
@@ -310,20 +310,10 @@ export const StudentPaymentList = () => {
           subtitle={t('student-payments.managePayments')}
           icon={<DollarSign className="h-5 w-5" />}
           headerActions={
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => window.print()}>
-                <Printer className="mr-2 h-4 w-4" />
-                {t('common.print', 'Print')}
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/student-payments/export')}>
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                {t('student-payments.exportToExcel', 'Export')}
-              </Button>
-              <Button onClick={() => navigate('/student-payments/add')}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t('student-payments.addPayment')}
-              </Button>
-            </div>
+            <Button onClick={() => navigate('/student-payments/add')}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t('student-payments.addPayment')}
+            </Button>
           }
           searchable
           searchPlaceholder={t('student-payments.searchPayments')}
