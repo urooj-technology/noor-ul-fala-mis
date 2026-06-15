@@ -161,6 +161,7 @@ export const accountingEn = {
   
   // Transaction Types
   studentPayment: "Student Payment",
+  expense: "Expense",
   payroll: "Payroll",
   advance: "Advance Salary",
   rentalIncome: "Rental Income",

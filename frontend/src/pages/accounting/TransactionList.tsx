@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, Eye, FileText, Calendar, DollarSign, Tag } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Eye, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import DataTable, { TableColumn, TableAction, FilterOption } from '@/components/ui/data-table';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
 import { formatDateByCalendarType } from '@/utils/calendar';
 import useFetchObjects from '@/api/useFetchObjects';
-import useDelete from '@/api/useDelete';
 
 export const TransactionList = () => {
   const { t } = useLanguage();
@@ -36,24 +34,15 @@ export const TransactionList = () => {
     }
   });
 
-  const { handleDelete, ConfirmDialog } = useDelete({
-    queryKey: ['transactions'],
-    endpoint: 'transactions'
-  });
-
   const transactions = transactionsData?.results || [];
   const totalItems = transactionsData?.count || 0;
-
-  const handleEdit = (transaction: any) => {
-    navigate(`/transactions/${transaction.id}/edit`);
-  };
 
   const handleDetails = (transaction: any) => {
     navigate(`/transactions/${transaction.id}`);
   };
 
   const getTypeBadge = (type: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       student_payment: 'bg-blue-100 text-blue-800',
       expense: 'bg-red-100 text-red-800',
       payroll: 'bg-purple-100 text-purple-800',
@@ -63,9 +52,21 @@ export const TransactionList = () => {
       journal: 'bg-gray-100 text-gray-800',
       opening: 'bg-indigo-100 text-indigo-800',
     };
+    
+    const typeLabels: Record<string, string> = {
+      student_payment: t('accounting.studentPayment'),
+      expense: t('accounting.expense'),
+      payroll: t('accounting.payroll'),
+      advance: t('accounting.advance'),
+      rental_income: t('accounting.rentalIncome'),
+      other_income: t('accounting.other_income'),
+      journal: t('accounting.journal'),
+      opening: t('accounting.opening'),
+    };
+    
     return (
-      <Badge variant={colors[type as keyof typeof colors] ? 'default' : 'secondary'}>
-        {t(`accounting.${type}`) || type}
+      <Badge variant={colors[type] ? 'default' : 'secondary'}>
+        {typeLabels[type] || type}
       </Badge>
     );
   };
@@ -136,22 +137,6 @@ export const TransactionList = () => {
       icon: <Eye className="h-4 w-4" />,
       onClick: handleDetails,
       tooltip: t('accounting.viewDetails')
-    },
-    {
-      key: 'edit',
-      label: t('accounting.edit'),
-      icon: <Edit className="h-4 w-4" />,
-      onClick: handleEdit,
-      tooltip: t('accounting.editTransaction')
-    },
-    {
-      key: 'delete',
-      label: t('accounting.delete'),
-      icon: <Trash2 className="h-4 w-4" />,
-      onClick: (record) => handleDelete(record.id, record.number || 'Transaction'),
-      variant: 'ghost',
-      className: 'text-red-600 hover:text-red-700',
-      tooltip: t('accounting.deleteTransaction')
     }
   ];
 
@@ -205,12 +190,7 @@ export const TransactionList = () => {
         title={t('accounting.transactions')}
         subtitle={t('accounting.journalEntries')}
         icon={<FileText className="h-5 w-5" />}
-        headerActions={
-          <Button onClick={() => navigate('/transactions/add')}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('accounting.addTransaction')}
-          </Button>
-        }
+        headerActions={null}
         searchable
         searchPlaceholder={t('accounting.searchAccounts')}
         searchValue={searchTerm}
@@ -242,8 +222,6 @@ export const TransactionList = () => {
         stickyHeader={true}
       />
       </CalendarProvider>
-
-      <ConfirmDialog />
     </div>
   );
 };

@@ -161,6 +161,7 @@ export const accountingPs = {
   
   // Transaction Types
   studentPayment: "د زده کونکي پیسې",
+  expense: "مصرف",
   payroll: "د کارمندانو پیسې",
   advance: "د پیش پیسې",
   rentalIncome: "د اجارې درېدنه",

@@ -161,6 +161,7 @@ export const accountingFa = {
   
   // Transaction Types
   studentPayment: "پرداخت شاگرد",
+  expense: "مصرف",
   payroll: "حقوق",
   advance: "پیشپرداخت حقوق",
   rentalIncome: "درآمد کرایه",
