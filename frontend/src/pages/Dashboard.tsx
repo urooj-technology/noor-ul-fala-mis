@@ -59,7 +59,7 @@ export const Dashboard = () => {
     );
   }
 
-  // Extract data
+  // Extract data - now from accounting system
   const incomeAFN = report.income?.total?.AFN || 0;
   const incomeUSD = report.income?.total?.USD || 0;
   const studentIncomeAFN = report.income?.student_payments?.AFN || 0;
@@ -73,7 +73,7 @@ export const Dashboard = () => {
   const profitAFN = report.profit?.AFN || 0;
   const profitUSD = report.profit?.USD || 0;
 
-  // Expense breakdown data
+  // Expense breakdown data - from accounting system
   const generalExpensesAFN = report.expenses?.breakdown?.general_expenses?.AFN || 0;
   const generalExpensesUSD = report.expenses?.breakdown?.general_expenses?.USD || 0;
   const payrollAFN = report.expenses?.breakdown?.payroll?.AFN || 0;
@@ -99,16 +99,16 @@ export const Dashboard = () => {
     { name: t('reports.advances'), AFN: advancesAFN, USD: advancesUSD }
   ].filter(item => item.AFN > 0 || item.USD > 0);
 
-  // Aggregate expense by category - combine AFN and USD for same category
-  const expenseByCategoryRaw = (report.expenses?.by_category || []).reduce((acc: any[], item: any) => {
-    const existing = acc.find(e => e.name === item.category);
+  // Aggregate expense by category from expense_breakdown - combine AFN and USD for same category
+  const expenseByCategoryRaw = (report.expense_breakdown || []).reduce((acc: any[], item: any) => {
+    const existing = acc.find(e => e.name === item.name);
     if (existing) {
       if (item.currency === 'AFN') existing.AFN = Number(item.amount) || 0;
       else existing.USD = Number(item.amount) || 0;
       existing.value = (existing.AFN || 0) + (existing.USD || 0);
     } else {
       acc.push({
-        name: item.category,
+        name: item.name,
         AFN: item.currency === 'AFN' ? (Number(item.amount) || 0) : 0,
         USD: item.currency === 'USD' ? (Number(item.amount) || 0) : 0,
         value: Number(item.amount) || 0

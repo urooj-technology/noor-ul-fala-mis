@@ -12,8 +12,8 @@ class ShopSerializer(DataRootSerializer):
     class Meta:
         model = Shop
         fields = [
-            'id', 'shop_number', 'name', 'location', 'area', 'monthly_rent', 
-            'currency', 'status', 'description', 'created_at', 'updated_at'
+            'id', 'shop_number', 'name', 'location', 'area',
+            'status', 'description', 'created_at', 'updated_at'
         ]
 
 
@@ -40,7 +40,7 @@ class ShopRentalSerializer(DataRootSerializer):
         fields = [
             'id', 'shop', 'tenant', 'start_date', 'start_date_shamsi', 'start_date_qamari', 
             'end_date', 'end_date_shamsi', 'end_date_qamari', 'monthly_rent', 
-            'currency', 'rental_status', 'security_deposit', 'description',
+            'currency', 'rental_status', 'description',
             'shop_details', 'tenant_details', 'currency_details', 'is_active', 'is_expired',
             'payment_summary',
             'created_at', 'updated_at'
@@ -56,8 +56,7 @@ class ShopRentalSerializer(DataRootSerializer):
                 'id': obj.shop.id,
                 'shop_number': obj.shop.shop_number,
                 'name': obj.shop.name,
-                'location': obj.shop.location,
-                'monthly_rent': float(obj.shop.monthly_rent)
+                'location': obj.shop.location
             }
         return None
     

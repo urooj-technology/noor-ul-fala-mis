@@ -193,17 +193,40 @@ def create_other_income_journal(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=ShopRentalPayment)
 def create_rental_payment_journal(sender, instance, created, **kwargs):
-    """Create journal entry when rental payment is created or marked as completed"""
+    """Create journal entry when rental payment is created or marked as completed
+    
+    This uses the accrual method:
+    1. Creates accrual entry for the months being paid (Dr Rental Receivable, Cr Rental Income)
+    2. Records the payment (Dr Cash, Cr Rental Receivable)
+    """
     # Create journal entry when payment is created and status is completed
     if created and instance.payment_status == 'completed':
         try:
-            AccountingService.record_rental_payment(
-                tenant_name=instance.rental.tenant.full_name,
-                amount=instance.amount,
-                date=instance.payment_date,
-                reference=instance.reference_number,
-                rental_id=instance.rental.id
-            )
+            # Get period info from the payment
+            period_months = instance.period_months or []
+            period_year = instance.period_year or str(timezone.now().year)
+            
+            if not period_months:
+                # Fallback to old behavior if no period info
+                AccountingService.record_rental_payment(
+                    tenant_name=instance.rental.tenant.full_name,
+                    amount=instance.amount,
+                    date=instance.payment_date,
+                    reference=instance.reference_number,
+                    rental_id=instance.rental.id
+                )
+            else:
+                # Use the new accrual method
+                AccountingService.record_rental_payment_with_accrual(
+                    rental_id=instance.rental.id,
+                    tenant_name=instance.rental.tenant.full_name,
+                    amount=instance.amount,
+                    date=instance.payment_date,
+                    period_months=period_months,
+                    period_year=period_year,
+                    currency=instance.currency,
+                    reference=instance.reference_number
+                )
         except Exception as e:
             import logging
             logger = logging.getLogger(__name__)
@@ -214,13 +237,31 @@ def create_rental_payment_journal(sender, instance, created, **kwargs):
         try:
             old_instance = ShopRentalPayment.objects.get(pk=instance.pk)
             if old_instance.payment_status != 'completed' and instance.payment_status == 'completed':
-                AccountingService.record_rental_payment(
-                    tenant_name=instance.rental.tenant.full_name,
-                    amount=instance.amount,
-                    date=instance.payment_date,
-                    reference=instance.reference_number,
-                    rental_id=instance.rental.id
-                )
+                # Get period info from the payment
+                period_months = instance.period_months or []
+                period_year = instance.period_year or str(timezone.now().year)
+                
+                if not period_months:
+                    # Fallback to old behavior if no period info
+                    AccountingService.record_rental_payment(
+                        tenant_name=instance.rental.tenant.full_name,
+                        amount=instance.amount,
+                        date=instance.payment_date,
+                        reference=instance.reference_number,
+                        rental_id=instance.rental.id
+                    )
+                else:
+                    # Use the new accrual method
+                    AccountingService.record_rental_payment_with_accrual(
+                        rental_id=instance.rental.id,
+                        tenant_name=instance.rental.tenant.full_name,
+                        amount=instance.amount,
+                        date=instance.payment_date,
+                        period_months=period_months,
+                        period_year=period_year,
+                        currency=instance.currency,
+                        reference=instance.reference_number
+                    )
         except ShopRentalPayment.DoesNotExist:
             pass
         except Exception as e:

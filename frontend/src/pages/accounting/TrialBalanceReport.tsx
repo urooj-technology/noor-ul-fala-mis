@@ -1,26 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCalendar } from '@/contexts/CalendarContext';
 import { RefreshCw } from 'lucide-react';
 import useFetchObject from '@/api/useFetchObject';
 import { formatNumber } from '@/lib/formatNumber';
+import { DatePicker } from '@/components/ui/date-picker-calendar';
 
 const TrialBalanceReport = () => {
   const { t } = useLanguage();
+  const { calendarType } = useCalendar();
   const [asOfDate, setAsOfDate] = useState(new Date().toISOString().split('T')[0]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const { data, loading, refetch } = useFetchObject({
-    queryKey: ['trial-balance', asOfDate],
+    queryKey: ['trial-balance', asOfDate, refreshKey],
     endpoint: `transactions/trial_balance/?as_of_date=${asOfDate}`,
   });
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
+    setRefreshKey(prev => prev + 1);
     refetch();
-  };
+  }, [refetch]);
+
+  const handleDateChange = useCallback((date: string) => {
+    setAsOfDate(date);
+    setRefreshKey(prev => prev + 1);
+  }, []);
 
   const trialBalance = data as any;
   const byCurrency = trialBalance?.by_currency || {};
@@ -28,17 +37,14 @@ const TrialBalanceReport = () => {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <h1 className="text-2xl font-bold tracking-tight">{t('accounting.trialBalance')}</h1>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
             <Label htmlFor="as-of-date" className="text-sm whitespace-nowrap">{t('accounting.reportDate')}</Label>
-            <Input
-              id="as-of-date"
-              type="date"
+            <DatePicker
               value={asOfDate}
-              onChange={(e) => setAsOfDate(e.target.value)}
-              className="w-40"
+              onChange={handleDateChange}
             />
           </div>
           <Button variant="outline" onClick={handleRefresh} disabled={loading}>

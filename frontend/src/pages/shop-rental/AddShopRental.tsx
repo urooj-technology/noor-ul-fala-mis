@@ -19,7 +19,6 @@ interface ShopRentalFormData {
   monthly_rent: string;
   currency: string;
   rental_status: string;
-  security_deposit: string;
   description?: string;
 }
 
@@ -31,7 +30,6 @@ const defaultForm: ShopRentalFormData = {
   monthly_rent: '',
   currency: 'AFN',
   rental_status: 'active',
-  security_deposit: '',
   description: '',
 };
 
@@ -58,6 +56,7 @@ const AddShopRental = () => {
     if (!formData.tenant) newErrors.tenant = t('shop-rental.validation.tenant');
     if (!formData.start_date) newErrors.start_date = t('shop-rental.validation.startDate');
     if (!formData.end_date) newErrors.end_date = t('shop-rental.validation.endDate');
+    if (!formData.monthly_rent || parseFloat(formData.monthly_rent) <= 0) newErrors.monthly_rent = t('shop-rental.validation.monthlyRent');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -93,7 +92,14 @@ const AddShopRental = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="shop" className="font-semibold flex items-center gap-2"><Building2 className="h-4 w-4" />{t("shop-rental.shop")} <span className="text-destructive">*</span></Label>
-              <Autocomplete endpoint="shops/" value={formData.shop} onChange={(value) => { setFormData((prev) => ({ ...prev, shop: value })); if (errors.shop) setErrors((prev) => ({ ...prev, shop: "" })); }} placeholder={t("shop-rental.selectShop")} getOptionLabel={(s) => s.name} getOptionValue={(s) => s.id.toString()} />
+              <Autocomplete 
+                endpoint="shops/" 
+                value={formData.shop} 
+                onChange={(value) => { setFormData((prev) => ({ ...prev, shop: value })); if (errors.shop) setErrors((prev) => ({ ...prev, shop: "" })); }} 
+                placeholder={t("shop-rental.selectShop")} 
+                getOptionLabel={(s) => `${s.shop_number} - ${s.name}`} 
+                getOptionValue={(s) => s.id.toString()} 
+              />
               {errors.shop && <p className="text-xs text-destructive">{errors.shop}</p>}
             </div>
             <div className="space-y-2">
@@ -127,7 +133,8 @@ const AddShopRental = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="monthly_rent" className="font-semibold flex items-center gap-2"><DollarSign className="h-4 w-4" />{t("shop-rental.monthlyRent")} <span className="text-destructive">*</span></Label>
-              <Input id="monthly_rent" type="number" step="0.01" value={formData.monthly_rent} onChange={(e) => setFormData((prev) => ({ ...prev, monthly_rent: e.target.value }))} placeholder={t("shop-rental.monthlyRent")} className="h-10" />
+              <Input id="monthly_rent" type="number" step="0.01" value={formData.monthly_rent} onChange={(e) => { setFormData((prev) => ({ ...prev, monthly_rent: e.target.value })); if (errors.monthly_rent) setErrors((prev) => ({ ...prev, monthly_rent: "" })); }} placeholder={t("shop-rental.monthlyRent")} className="h-10" />
+              {errors.monthly_rent && <p className="text-xs text-destructive">{errors.monthly_rent}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="currency" className="font-semibold">{t("shop-rental.currency")} <span className="text-destructive">*</span></Label>
@@ -141,23 +148,17 @@ const AddShopRental = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="rental_status" className="font-semibold">{t("shop-rental.rentalStatus")} <span className="text-destructive">*</span></Label>
-              <Select value={formData.rental_status} onValueChange={(value) => setFormData((prev) => ({ ...prev, rental_status: value }))}>
-                <SelectTrigger className="h-10"><SelectValue placeholder={t("shop-rental.selectRentalStatus")} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">{t("shop-rental.rentalStatusOptions.active")}</SelectItem>
-                  <SelectItem value="expired">{t("shop-rental.rentalStatusOptions.expired")}</SelectItem>
-                  <SelectItem value="cancelled">{t("shop-rental.rentalStatusOptions.cancelled")}</SelectItem>
-                  <SelectItem value="renewed">{t("shop-rental.rentalStatusOptions.renewed")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="security_deposit" className="font-semibold">{t("shop-rental.securityDeposit")}</Label>
-              <Input id="security_deposit" type="number" step="0.01" value={formData.security_deposit} onChange={(e) => setFormData((prev) => ({ ...prev, security_deposit: e.target.value }))} placeholder={t("shop-rental.securityDeposit")} className="h-10" />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="rental_status" className="font-semibold">{t("shop-rental.rentalStatus")} <span className="text-destructive">*</span></Label>
+            <Select value={formData.rental_status} onValueChange={(value) => setFormData((prev) => ({ ...prev, rental_status: value }))}>
+              <SelectTrigger className="h-10"><SelectValue placeholder={t("shop-rental.selectRentalStatus")} /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">{t("shop-rental.rentalStatusOptions.active")}</SelectItem>
+                <SelectItem value="expired">{t("shop-rental.rentalStatusOptions.expired")}</SelectItem>
+                <SelectItem value="cancelled">{t("shop-rental.rentalStatusOptions.cancelled")}</SelectItem>
+                <SelectItem value="renewed">{t("shop-rental.rentalStatusOptions.renewed")}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

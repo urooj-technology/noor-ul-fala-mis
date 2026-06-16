@@ -1,18 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.db.models import Sum, Count
 from datetime import datetime, timedelta
 from django.utils import timezone
-from api.models.data.expenses import Expense
-from api.models.data.payroll import Payroll
-from api.models.data.advance import Advance
-from api.models.data.student_finance import StudentPayment
 from api.models.data.shop_rental import ShopRental
-from api.models.data.other_income import OtherIncome
 from api.services.accounting_service import AccountingService
 from api.utils.excel_export import export_to_excel
 from api.utils.pdf_export import export_to_pdf
+from api.utils.calendar import shamsi_to_gregorian, qamari_to_gregorian, parse_shamsi_date, parse_qamari_date
 
 
 class ComprehensiveReportView(APIView):
@@ -24,6 +19,32 @@ class ComprehensiveReportView(APIView):
         start_date = request.query_params.get('start_date')
         end_date = request.query_params.get('end_date')
         export_format = request.query_params.get('export')  # 'pdf' or 'excel'
+        calendar_type = request.query_params.get('calendar_type', 'gregorian')
+        
+        # Convert dates if using Shamsi or Qamari calendar
+        if calendar_type in ['shamsi', 'qamari']:
+            if start_date:
+                if calendar_type == 'shamsi':
+                    parsed = parse_shamsi_date(start_date)
+                    if parsed:
+                        greg_date = shamsi_to_gregorian(*parsed)
+                        start_date = greg_date.isoformat() if greg_date else start_date
+                elif calendar_type == 'qamari':
+                    parsed = parse_qamari_date(start_date)
+                    if parsed:
+                        greg_date = qamari_to_gregorian(*parsed)
+                        start_date = greg_date.isoformat() if greg_date else start_date
+            if end_date:
+                if calendar_type == 'shamsi':
+                    parsed = parse_shamsi_date(end_date)
+                    if parsed:
+                        greg_date = shamsi_to_gregorian(*parsed)
+                        end_date = greg_date.isoformat() if greg_date else end_date
+                elif calendar_type == 'qamari':
+                    parsed = parse_qamari_date(end_date)
+                    if parsed:
+                        greg_date = qamari_to_gregorian(*parsed)
+                        end_date = greg_date.isoformat() if greg_date else end_date
         
         data = self._generate_report(report_type, period, start_date, end_date)
         
@@ -52,105 +73,89 @@ class ComprehensiveReportView(APIView):
         else:
             return self._summary_report(period, start_date, end_date)
     
-    def _get_date_filter(self, period, start_date, end_date, date_field='date'):
-        """
-        Get date filter for queries.
-        
-        If period results in no data (empty result set), returns empty dict
-        to show all available data instead of zeros.
-        """
+    def _get_date_range(self, period, start_date, end_date):
+        """Get date range for reports"""
         today = timezone.now().date()
         
         if period == 'custom' and start_date and end_date:
-            return {
-                f'{date_field}__gte': datetime.strptime(start_date, '%Y-%m-%d').date(),
-                f'{date_field}__lte': datetime.strptime(end_date, '%Y-%m-%d').date()
-            }
+            return {'start': start_date, 'end': end_date}
         elif period == 'daily':
-            return {date_field: today}
+            return {'start': today.isoformat(), 'end': today.isoformat()}
         elif period == 'weekly':
             week_start = today - timedelta(days=today.weekday())
-            return {f'{date_field}__gte': week_start, f'{date_field}__lte': today}
+            return {'start': week_start.isoformat(), 'end': today.isoformat()}
         elif period == 'monthly':
-            # Show all data instead of just current month
-            # This makes reports more useful when testing or when data spans multiple months
-            return {}
+            # Show all data
+            return {'start': None, 'end': None}
         elif period == 'yearly':
             year_start = today.replace(month=1, day=1)
-            return {f'{date_field}__gte': year_start, f'{date_field}__lte': today}
+            return {'start': year_start.isoformat(), 'end': today.isoformat()}
         else:
-            # Default: show all data
-            return {}
+            return {'start': None, 'end': None}
     
     def _summary_report(self, period, start_date, end_date):
-        """Generate comprehensive summary report"""
-        # If no specific period requested, show all data
-        if not period or period == 'all':
-            payment_filter = {}
-            expense_filter = {}
-            income_filter = {}
-        else:
-            payment_filter = self._get_date_filter(period, start_date, end_date, 'payment_date')
-            expense_filter = self._get_date_filter(period, start_date, end_date, 'expense_date')
-            income_filter = self._get_date_filter(period, start_date, end_date, 'income_date')
+        """Generate comprehensive summary report using accounting system"""
+        # Get date range
+        date_range = self._get_date_range(period, start_date, end_date)
         
-        # Student Payments
-        student_payments = StudentPayment.objects.filter(**payment_filter)
-        student_income_afn = student_payments.filter(currency='AFN').aggregate(total=Sum('amount'))['total'] or 0
-        student_income_usd = student_payments.filter(currency='USD').aggregate(total=Sum('amount'))['total'] or 0
+        # Get income statement from accounting system
+        income_statement = AccountingService.get_income_statement(
+            date_range['start'], date_range['end']
+        )
         
-        # Rental Income - Get actual payments received, not expected monthly rent
-        from api.models.data.shop_rental_payment import ShopRentalPayment
-        rental_payments = ShopRentalPayment.objects.filter(**payment_filter, payment_status='completed')
-        rental_income_afn = rental_payments.filter(currency='AFN').aggregate(total=Sum('amount'))['total'] or 0
-        rental_income_usd = rental_payments.filter(currency='USD').aggregate(total=Sum('amount'))['total'] or 0
+        # Process data by currency
+        income_by_type = {'AFN': {}, 'USD': {}}
+        expense_by_type = {'AFN': {}, 'USD': {}}
+        total_income = {'AFN': 0, 'USD': 0}
+        total_expenses = {'AFN': 0, 'USD': 0}
         
-        # Other Income
-        other_incomes = OtherIncome.objects.filter(**income_filter)
-        other_income_afn = other_incomes.filter(currency='AFN').aggregate(total=Sum('amount'))['total'] or 0
-        other_income_usd = other_incomes.filter(currency='USD').aggregate(total=Sum('amount'))['total'] or 0
+        for currency, data in income_statement.get('by_currency', {}).items():
+            # Process income accounts
+            for item in data.get('income', []):
+                name = item['name']
+                amount = item['amount']
+                total_income[currency] += amount
+                
+                # Categorize income by type
+                if 'student' in name.lower():
+                    income_by_type[currency]['student'] = income_by_type[currency].get('student', 0) + amount
+                elif 'rental' in name.lower():
+                    income_by_type[currency]['rental'] = income_by_type[currency].get('rental', 0) + amount
+                else:
+                    income_by_type[currency]['other'] = income_by_type[currency].get('other', 0) + amount
+            
+            # Process expense accounts
+            for item in data.get('expenses', []):
+                name = item['name']
+                amount = item['amount']
+                total_expenses[currency] += amount
+                
+                # Categorize expense by type
+                if 'salary' in name.lower():
+                    expense_by_type[currency]['payroll'] = expense_by_type[currency].get('payroll', 0) + amount
+                elif 'advance' in name.lower():
+                    expense_by_type[currency]['advances'] = expense_by_type[currency].get('advances', 0) + amount
+                else:
+                    expense_by_type[currency]['general'] = expense_by_type[currency].get('general', 0) + amount
         
-        # Total Income
-        total_income_afn = float(student_income_afn) + float(rental_income_afn) + float(other_income_afn)
-        total_income_usd = float(student_income_usd) + float(rental_income_usd) + float(other_income_usd)
-        
-        # Expenses
-        expenses = Expense.objects.filter(**expense_filter)
-        expense_afn = expenses.filter(currency='AFN').aggregate(total=Sum('amount'))['total'] or 0
-        expense_usd = expenses.filter(currency='USD').aggregate(total=Sum('amount'))['total'] or 0
-        
-        # Payroll
-        payrolls = Payroll.objects.filter(**payment_filter)
-        payroll_afn = payrolls.filter(currency='AFN').aggregate(total=Sum('salary'))['total'] or 0
-        payroll_usd = payrolls.filter(currency='USD').aggregate(total=Sum('salary'))['total'] or 0
-        
-        # Advances
-        advances = Advance.objects.filter(**payment_filter)
-        advance_afn = advances.filter(currency='AFN').aggregate(total=Sum('amount'))['total'] or 0
-        advance_usd = advances.filter(currency='USD').aggregate(total=Sum('amount'))['total'] or 0
-        
-        # Total Expenses
-        total_expense_afn = float(expense_afn) + float(payroll_afn) + float(advance_afn)
-        total_expense_usd = float(expense_usd) + float(payroll_usd) + float(advance_usd)
-        
-        # Profit
-        profit_afn = total_income_afn - total_expense_afn
-        profit_usd = total_income_usd - total_expense_usd
+        # Calculate profit
+        profit_afn = total_income['AFN'] - total_expenses['AFN']
+        profit_usd = total_income['USD'] - total_expenses['USD']
         
         return {
             'period': period,
             'generated_at': timezone.now().isoformat(),
             'income': {
-                'student': {'AFN': float(student_income_afn), 'USD': float(student_income_usd)},
-                'rental': {'AFN': float(rental_income_afn), 'USD': float(rental_income_usd)},
-                'other': {'AFN': float(other_income_afn), 'USD': float(other_income_usd)},
-                'total': {'AFN': total_income_afn, 'USD': total_income_usd}
+                'student': {'AFN': income_by_type['AFN'].get('student', 0), 'USD': income_by_type['USD'].get('student', 0)},
+                'rental': {'AFN': income_by_type['AFN'].get('rental', 0), 'USD': income_by_type['USD'].get('rental', 0)},
+                'other': {'AFN': income_by_type['AFN'].get('other', 0), 'USD': income_by_type['USD'].get('other', 0)},
+                'total': total_income
             },
             'expenses': {
-                'general': {'AFN': float(expense_afn), 'USD': float(expense_usd)},
-                'payroll': {'AFN': float(payroll_afn), 'USD': float(payroll_usd)},
-                'advances': {'AFN': float(advance_afn), 'USD': float(advance_usd)},
-                'total': {'AFN': total_expense_afn, 'USD': total_expense_usd}
+                'general': {'AFN': expense_by_type['AFN'].get('general', 0), 'USD': expense_by_type['USD'].get('general', 0)},
+                'payroll': {'AFN': expense_by_type['AFN'].get('payroll', 0), 'USD': expense_by_type['USD'].get('payroll', 0)},
+                'advances': {'AFN': expense_by_type['AFN'].get('advances', 0), 'USD': expense_by_type['USD'].get('advances', 0)},
+                'total': total_expenses
             },
             'profit': {
                 'AFN': profit_afn,
@@ -159,108 +164,165 @@ class ComprehensiveReportView(APIView):
         }
     
     def _financial_report(self, period, start_date, end_date):
-        """Detailed financial report with breakdowns"""
+        """Detailed financial report with breakdowns using accounting system"""
         base_report = self._summary_report(period, start_date, end_date)
         
-        # Add expense breakdown by category
-        expense_filter = self._get_date_filter(period, start_date, end_date, 'expense_date')
-        expense_by_category = Expense.objects.filter(**expense_filter).values(
-            'category__name', 'currency'
-        ).annotate(total=Sum('amount'))
+        # Get detailed income statement for breakdowns
+        date_range = self._get_date_range(period, start_date, end_date)
+        income_statement = AccountingService.get_income_statement(
+            date_range['start'], date_range['end']
+        )
         
-        base_report['expense_breakdown'] = list(expense_by_category)
+        # Add detailed expense breakdown
+        expense_breakdown = []
+        for currency, data in income_statement.get('by_currency', {}).items():
+            for item in data.get('expenses', []):
+                expense_breakdown.append({
+                    'name': item['name'],
+                    'currency': item['currency'],
+                    'amount': item['amount']
+                })
+        base_report['expense_breakdown'] = expense_breakdown
         
-        # Add income by category
-        income_filter = self._get_date_filter(period, start_date, end_date, 'income_date')
-        income_by_category = OtherIncome.objects.filter(**income_filter).values(
-            'income_category__name', 'currency'
-        ).annotate(total=Sum('amount'))
-        
-        base_report['other_income_breakdown'] = list(income_by_category)
+        # Add detailed income breakdown
+        income_breakdown = []
+        for currency, data in income_statement.get('by_currency', {}).items():
+            for item in data.get('income', []):
+                income_breakdown.append({
+                    'name': item['name'],
+                    'currency': item['currency'],
+                    'amount': item['amount']
+                })
+        base_report['income_breakdown'] = income_breakdown
         
         return base_report
     
     def _student_payments_report(self, period, start_date, end_date):
-        """Student payments detailed report"""
-        payment_filter = self._get_date_filter(period, start_date, end_date, 'payment_date')
+        """Student payments detailed report using accounting system"""
+        from api.models.data.accounting import Account, JournalEntry
         
-        payments = StudentPayment.objects.filter(**payment_filter).select_related('student')
-
-        total_afn = payments.filter(currency='AFN').aggregate(total=Sum('amount'))['total'] or 0
-        total_usd = payments.filter(currency='USD').aggregate(total=Sum('amount'))['total'] or 0
-
-        by_status = payments.values('payment_status', 'currency').annotate(
-            total=Sum('amount'),
-            count=Count('id')
-        )
-
-        # FIXED: Remove payment_cycle aggregation since it's deprecated
-        # Keeping the structure for backward compatibility but with empty data
-        by_payment_cycle = []
-
+        date_range = self._get_date_range(period, start_date, end_date)
+        
+        # Get student income from journal entries
+        result = {'AFN': 0, 'USD': 0}
+        by_currency = {'AFN': [], 'USD': []}
+        
+        for currency in ['AFN', 'USD']:
+            # Find student income accounts
+            accounts = Account.objects.filter(
+                account_type='income',
+                code__endswith=f'_{currency}',
+                name__icontains='student'
+            )
+            
+            for account in accounts:
+                entries = JournalEntry.objects.filter(account=account)
+                if date_range['start']:
+                    entries = entries.filter(date__gte=date_range['start'])
+                if date_range['end']:
+                    entries = entries.filter(date__lte=date_range['end'])
+                
+                from django.db.models import Sum
+                total = entries.aggregate(total=Sum('credit'))['total'] or 0
+                result[currency] = float(total)
+                
+                # Get breakdown by transaction
+                for entry in entries.filter(credit__gt=0).select_related('transaction'):
+                    by_currency[currency].append({
+                        'date': str(entry.date),
+                        'description': entry.description,
+                        'amount': float(entry.credit)
+                    })
+        
         return {
             'period': period,
             'generated_at': timezone.now().isoformat(),
-            'total': {'AFN': float(total_afn), 'USD': float(total_usd)},
-            'by_status': list(by_status),
-            'by_payment_cycle': by_payment_cycle,
-            'payment_count': payments.count()
+            'total': result,
+            'by_status': [],  # Not applicable from journal entries
+            'by_payment_cycle': [],
+            'payment_count': sum(len(v) for v in by_currency.values()),
+            'details': by_currency
         }
     
     def _payroll_report(self, period, start_date, end_date):
-        """Payroll detailed report"""
-        payment_filter = self._get_date_filter(period, start_date, end_date, 'payment_date')
+        """Payroll detailed report using accounting system"""
+        from api.models.data.accounting import Account, JournalEntry
+        from django.db.models import Sum
         
-        payrolls = Payroll.objects.filter(**payment_filter).select_related('employee')
-        advances = Advance.objects.filter(**payment_filter).select_related('employee')
+        date_range = self._get_date_range(period, start_date, end_date)
         
-        payroll_afn = payrolls.filter(currency='AFN').aggregate(total=Sum('salary'))['total'] or 0
-        payroll_usd = payrolls.filter(currency='USD').aggregate(total=Sum('salary'))['total'] or 0
-        
-        advance_afn = advances.filter(currency='AFN').aggregate(total=Sum('amount'))['total'] or 0
-        advance_usd = advances.filter(currency='USD').aggregate(total=Sum('amount'))['total'] or 0
-        
-        by_employee = payrolls.values(
-            'employee__full_name', 'currency'
-        ).annotate(total=Sum('salary'))
-        
-        advances_by_employee = advances.values(
-            'employee__full_name', 'currency'
-        ).annotate(total=Sum('amount'))
-        
-        return {
-            'period': period,
-            'generated_at': timezone.now().isoformat(),
-            'payroll': {
-                'total': {'AFN': float(payroll_afn), 'USD': float(payroll_usd)},
-                'by_employee': list(by_employee)
-            },
-            'advances': {
-                'total': {'AFN': float(advance_afn), 'USD': float(advance_usd)},
-                'by_employee': list(advances_by_employee)
-            }
+        result = {
+            'payroll': {'total': {'AFN': 0, 'USD': 0}, 'by_employee': []},
+            'advances': {'total': {'AFN': 0, 'USD': 0}, 'by_employee': []}
         }
+        
+        for currency in ['AFN', 'USD']:
+            # Salary expense accounts
+            salary_accounts = Account.objects.filter(
+                account_type='expense',
+                code__endswith=f'_{currency}',
+                name__icontains='salary'
+            )
+            
+            for account in salary_accounts:
+                entries = JournalEntry.objects.filter(account=account)
+                if date_range['start']:
+                    entries = entries.filter(date__gte=date_range['start'])
+                if date_range['end']:
+                    entries = entries.filter(date__lte=date_range['end'])
+                
+                total = entries.aggregate(total=Sum('debit'))['total'] or 0
+                result['payroll']['total'][currency] = float(total)
+            
+            # Advance accounts
+            advance_accounts = Account.objects.filter(
+                account_type='asset',
+                code__endswith=f'_{currency}',
+                name__icontains='advance'
+            )
+            
+            for account in advance_accounts:
+                entries = JournalEntry.objects.filter(account=account)
+                if date_range['start']:
+                    entries = entries.filter(date__gte=date_range['start'])
+                if date_range['end']:
+                    entries = entries.filter(date__lte=date_range['end'])
+                
+                total = entries.aggregate(total=Sum('debit'))['total'] or 0
+                result['advances']['total'][currency] = float(total)
+        
+        result['period'] = period
+        result['generated_at'] = timezone.now().isoformat()
+        return result
     
     def _rental_report(self, period, start_date, end_date):
-        """Rental income detailed report - shows actual payments received"""
-        from api.models.data.shop_rental_payment import ShopRentalPayment
+        """Rental income detailed report using accounting system"""
+        from api.models.data.accounting import Account, JournalEntry
+        from django.db.models import Sum
         
         today = timezone.now().date()
-        payment_filter = self._get_date_filter(period, start_date, end_date, 'payment_date')
+        date_range = self._get_date_range(period, start_date, end_date)
         
-        # Get actual rental payments received
-        rental_payments = ShopRentalPayment.objects.filter(
-            **payment_filter,
-            payment_status='completed'
-        ).select_related('rental__shop', 'rental__tenant')
+        result = {'AFN': 0, 'USD': 0}
+        details = {'AFN': [], 'USD': []}
         
-        total_afn = rental_payments.filter(currency='AFN').aggregate(total=Sum('amount'))['total'] or 0
-        total_usd = rental_payments.filter(currency='USD').aggregate(total=Sum('amount'))['total'] or 0
-        
-        # Group by shop
-        by_shop = rental_payments.values('rental__shop__shop_number', 'rental__shop__name', 'currency').annotate(
-            total=Sum('amount')
-        )
+        for currency in ['AFN', 'USD']:
+            # Rental income accounts
+            accounts = Account.objects.filter(
+                account_type='income',
+                code__endswith=f'_{currency}',
+                name__icontains='rental'
+            )
+            
+            for account in accounts:
+                entries = JournalEntry.objects.filter(account=account)
+                if date_range['start']:
+                    entries = entries.filter(date__gte=date_range['start'])
+                if date_range['end']:
+                    entries = entries.filter(date__lte=date_range['end'])
+                
+                total = entries.aggregate(total=Sum('credit'))['total'] or 0
+                result[currency] = float(total)
         
         # Active rentals info (for reference)
         active_rentals = ShopRental.objects.filter(
@@ -278,10 +340,10 @@ class ComprehensiveReportView(APIView):
         return {
             'period': period,
             'generated_at': timezone.now().isoformat(),
-            'total_received': {'AFN': float(total_afn), 'USD': float(total_usd)},
-            'payment_count': rental_payments.count(),
+            'total_received': result,
+            'payment_count': 0,  # Not tracked in journal entries
             'active_rentals': active_rentals,
-            'by_shop': list(by_shop),
+            'by_shop': [],  # Would need additional tracking
             'expiring_within_30_days': expiring_soon
         }
     
@@ -388,55 +450,89 @@ class DailyReportView(APIView):
         return Response(report, status=status.HTTP_200_OK)
     
     def _generate_daily_report(self, date):
-        """Generate daily report"""
+        """Generate daily report using accounting system"""
+        from api.models.data.accounting import Account, JournalEntry
+        from django.db.models import Sum
+        
         try:
             report_date = datetime.strptime(date, '%Y-%m-%d').date()
         except ValueError:
             report_date = timezone.now().date()
         
-        # Student payments
-        student_payments = StudentPayment.objects.filter(payment_date=report_date)
-        student_total_afn = student_payments.filter(currency='AFN').aggregate(total=Sum('amount'))['total'] or 0
-        student_total_usd = student_payments.filter(currency='USD').aggregate(total=Sum('amount'))['total'] or 0
+        result = {
+            'student_payments': {'total': {'AFN': 0, 'USD': 0}, 'count': 0},
+            'expenses': {'total': {'AFN': 0, 'USD': 0}, 'count': 0},
+            'other_income': {'total': {'AFN': 0, 'USD': 0}, 'count': 0},
+            'payroll': {'total': {'AFN': 0, 'USD': 0}, 'count': 0}
+        }
         
-        # Expenses
-        expenses = Expense.objects.filter(expense_date=report_date)
-        expense_total_afn = expenses.filter(currency='AFN').aggregate(total=Sum('amount'))['total'] or 0
-        expense_total_usd = expenses.filter(currency='USD').aggregate(total=Sum('amount'))['total'] or 0
+        for currency in ['AFN', 'USD']:
+            # Student income
+            student_accounts = Account.objects.filter(
+                account_type='income', code__endswith=f'_{currency}', name__icontains='student'
+            )
+            for acc in student_accounts:
+                entries = JournalEntry.objects.filter(account=acc, date=report_date)
+                total = entries.aggregate(total=Sum('credit'))['total'] or 0
+                result['student_payments']['total'][currency] = float(total)
+                result['student_payments']['count'] += entries.count()
+            
+            # Rental income
+            rental_accounts = Account.objects.filter(
+                account_type='income', code__endswith=f'_{currency}', name__icontains='rental'
+            )
+            for acc in rental_accounts:
+                entries = JournalEntry.objects.filter(account=acc, date=report_date)
+                total = entries.aggregate(total=Sum('credit'))['total'] or 0
+                result['other_income']['total'][currency] += float(total)
+                result['other_income']['count'] += entries.count()
+            
+            # Other income (not student/rental)
+            other_income_accounts = Account.objects.filter(
+                account_type='income', code__endswith=f'_{currency}'
+            ).exclude(name__icontains='student').exclude(name__icontains='rental')
+            for acc in other_income_accounts:
+                entries = JournalEntry.objects.filter(account=acc, date=report_date)
+                total = entries.aggregate(total=Sum('credit'))['total'] or 0
+                result['other_income']['total'][currency] += float(total)
+                result['other_income']['count'] += entries.count()
+            
+            # Expenses (general)
+            expense_accounts = Account.objects.filter(
+                account_type='expense', code__endswith=f'_{currency}'
+            ).exclude(name__icontains='salary')
+            for acc in expense_accounts:
+                entries = JournalEntry.objects.filter(account=acc, date=report_date)
+                total = entries.aggregate(total=Sum('debit'))['total'] or 0
+                result['expenses']['total'][currency] += float(total)
+                result['expenses']['count'] += entries.count()
+            
+            # Salary/Payroll
+            salary_accounts = Account.objects.filter(
+                account_type='expense', code__endswith=f'_{currency}', name__icontains='salary'
+            )
+            for acc in salary_accounts:
+                entries = JournalEntry.objects.filter(account=acc, date=report_date)
+                total = entries.aggregate(total=Sum('debit'))['total'] or 0
+                result['payroll']['total'][currency] += float(total)
+                result['payroll']['count'] += entries.count()
         
-        # Other income
-        other_income = OtherIncome.objects.filter(income_date=report_date)
-        income_total_afn = other_income.filter(currency='AFN').aggregate(total=Sum('amount'))['total'] or 0
-        income_total_usd = other_income.filter(currency='USD').aggregate(total=Sum('amount'))['total'] or 0
-        
-        # Payroll payments
-        payrolls = Payroll.objects.filter(payment_date=report_date)
-        payroll_total_afn = payrolls.filter(currency='AFN').aggregate(total=Sum('salary'))['total'] or 0
-        payroll_total_usd = payrolls.filter(currency='USD').aggregate(total=Sum('salary'))['total'] or 0
+        # Calculate net position
+        result['net_position'] = {
+            'AFN': (result['student_payments']['total']['AFN'] + 
+                    result['other_income']['total']['AFN'] - 
+                    result['expenses']['total']['AFN'] - 
+                    result['payroll']['total']['AFN']),
+            'USD': (result['student_payments']['total']['USD'] + 
+                    result['other_income']['total']['USD'] - 
+                    result['expenses']['total']['USD'] - 
+                    result['payroll']['total']['USD'])
+        }
         
         return {
             'date': date,
             'generated_at': timezone.now().isoformat(),
-            'student_payments': {
-                'total': {'AFN': float(student_total_afn), 'USD': float(student_total_usd)},
-                'count': student_payments.count()
-            },
-            'expenses': {
-                'total': {'AFN': float(expense_total_afn), 'USD': float(expense_total_usd)},
-                'count': expenses.count()
-            },
-            'other_income': {
-                'total': {'AFN': float(income_total_afn), 'USD': float(income_total_usd)},
-                'count': other_income.count()
-            },
-            'payroll': {
-                'total': {'AFN': float(payroll_total_afn), 'USD': float(payroll_total_usd)},
-                'count': payrolls.count()
-            },
-            'net_position': {
-                'AFN': float(student_total_afn) + float(income_total_afn) - float(expense_total_afn) - float(payroll_total_afn),
-                'USD': float(student_total_usd) + float(income_total_usd) - float(expense_total_usd) - float(payroll_total_usd)
-            }
+            **result
         }
     
     def _export_excel(self, report, date):

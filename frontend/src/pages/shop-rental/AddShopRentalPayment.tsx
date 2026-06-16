@@ -346,7 +346,7 @@ const AddShopRentalPayment = () => {
                     if (errors.rental) setErrors(prev => ({ ...prev, rental: '' }));
                   }}
                   placeholder={t('shop-rental.selectRental')}
-                  getOptionLabel={(r: any) => `${r.shop?.shop_number || ''} - ${r.tenant?.full_name || ''}`}
+                  getOptionLabel={(r: any) => `${r.shop?.shop_number || ''} - ${r.shop?.name || ''} | ${r.tenant?.full_name || ''}`}
                   getOptionValue={(r: any) => r.id.toString()}
                 />
                 {errors.rental && <p className="text-xs text-destructive mt-1">{errors.rental}</p>}

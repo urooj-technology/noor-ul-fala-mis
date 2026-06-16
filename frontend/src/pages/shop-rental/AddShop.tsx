@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { RotateCw, ArrowLeft, Building2, MapPin, DollarSign, FileText } from 'lucide-react';
+import { RotateCw, ArrowLeft, Building2, MapPin, FileText } from 'lucide-react';
 import useAdd from '@/api/useAdd';
 
 interface ShopFormData {
@@ -14,8 +14,6 @@ interface ShopFormData {
   name: string;
   location: string;
   area: string;
-  monthly_rent: string;
-  currency: string;
   status: string;
   description?: string;
 }
@@ -25,8 +23,6 @@ const defaultForm: ShopFormData = {
   name: '',
   location: '',
   area: '',
-  monthly_rent: '',
-  currency: 'AFN',
   status: 'available',
   description: '',
 };
@@ -53,7 +49,6 @@ const AddShop = () => {
     if (!formData.shop_number.trim()) newErrors.shop_number = t('shop-rental.validation.shopNumber');
     if (!formData.name.trim()) newErrors.name = t('shop-rental.validation.name');
     if (!formData.location.trim()) newErrors.location = t('shop-rental.validation.location');
-    if (!formData.monthly_rent || parseFloat(formData.monthly_rent) <= 0) newErrors.monthly_rent = t('shop-rental.validation.monthlyRent');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -109,24 +104,6 @@ const AddShop = () => {
             <div className="space-y-2">
               <Label htmlFor="area" className="font-semibold">{t("shop-rental.area")}</Label>
               <Input id="area" type="number" step="0.01" value={formData.area} onChange={(e) => setFormData((prev) => ({ ...prev, area: e.target.value }))} placeholder={t("shop-rental.area")} className="h-10" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="monthly_rent" className="font-semibold flex items-center gap-2"><DollarSign className="h-4 w-4" />{t("shop-rental.monthlyRent")} <span className="text-destructive">*</span></Label>
-              <Input id="monthly_rent" type="number" step="0.01" value={formData.monthly_rent} onChange={(e) => { setFormData((prev) => ({ ...prev, monthly_rent: e.target.value })); if (errors.monthly_rent) setErrors((prev) => ({ ...prev, monthly_rent: "" })); }} placeholder={t("shop-rental.monthlyRent")} className="h-10" />
-              {errors.monthly_rent && <p className="text-xs text-destructive">{errors.monthly_rent}</p>}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="currency" className="font-semibold">{t("shop-rental.currency")} <span className="text-destructive">*</span></Label>
-              <Select value={formData.currency} onValueChange={(value) => setFormData((prev) => ({ ...prev, currency: value }))}>
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="AFN">{t("shop-rental.afn")}</SelectItem>
-                  <SelectItem value="USD">{t("shop-rental.usd")}</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="status" className="font-semibold">{t("shop-rental.status")} <span className="text-destructive">*</span></Label>

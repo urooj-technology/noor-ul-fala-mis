@@ -1,26 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCalendar } from '@/contexts/CalendarContext';
 import { RefreshCw } from 'lucide-react';
 import useFetchObject from '@/api/useFetchObject';
 import { formatNumber } from '@/lib/formatNumber';
+import { DatePicker } from '@/components/ui/date-picker-calendar';
 
 const IncomeStatementReport = () => {
   const { t } = useLanguage();
+  const { calendarType } = useCalendar();
   const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const { data, loading, refetch } = useFetchObject({
-    queryKey: ['income-statement', startDate, endDate],
-    endpoint: `transactions/income_statement/?start_date=${startDate}&end_date=${endDate}`,
+    queryKey: ['income-statement', startDate, endDate, refreshKey],
+    endpoint: `transactions/income_statement/?start_date=${startDate}&end_date=${endDate}&calendar_type=${calendarType}`,
   });
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
+    setRefreshKey(prev => prev + 1);
     refetch();
-  };
+  }, [refetch]);
+
+  const handleStartDateChange = useCallback((date: string) => {
+    setStartDate(date);
+    setRefreshKey(prev => prev + 1);
+  }, []);
+
+  const handleEndDateChange = useCallback((date: string) => {
+    setEndDate(date);
+    setRefreshKey(prev => prev + 1);
+  }, []);
 
   const incomeStatement = data as any;
   const byCurrency = incomeStatement?.by_currency || {};
@@ -32,20 +46,16 @@ const IncomeStatementReport = () => {
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <Label className="text-sm whitespace-nowrap">{t('accounting.startDate')}</Label>
-            <Input
-              type="date"
+            <DatePicker
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-40"
+              onChange={handleStartDateChange}
             />
           </div>
           <div className="flex items-center gap-2">
             <Label className="text-sm whitespace-nowrap">{t('accounting.endDate')}</Label>
-            <Input
-              type="date"
+            <DatePicker
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-40"
+              onChange={handleEndDateChange}
             />
           </div>
           <Button variant="outline" onClick={handleRefresh} disabled={loading}>

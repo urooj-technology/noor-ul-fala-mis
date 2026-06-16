@@ -196,6 +196,127 @@ class AccountingService:
     
     @staticmethod
     @transaction.atomic
+    def record_rental_accrual(rental_id, period_months, period_year, amount, currency='AFN'):
+        """
+        Record rental income accrual for specific month(s).
+        This recognizes the income when rent is due, not when it's paid.
+        
+        Dr Rental Receivable
+        Cr Rental Income
+        
+        Args:
+            rental_id: ShopRental ID
+            period_months: List of month strings ['01', '02', etc.]
+            period_year: Year string
+            amount: Monthly rent amount
+            currency: Currency code
+        
+        Returns:
+            Transaction object or None if already accrued
+        """
+        from api.models.data.shop_rental import ShopRental
+        
+        rental = ShopRental.objects.get(id=rental_id)
+        
+        # Check if accrual already exists for these months
+        reference = f"RENTAL-ACCRUAL-{rental_id}-{period_year}-{'-'.join(period_months)}"
+        existing = Transaction.objects.filter(reference=reference).exists()
+        if existing:
+            return None  # Already accrued
+        
+        rental_receivable_account = Account.objects.filter(code=f'1220_{currency}').first()
+        rental_income_account = Account.objects.filter(code=f'4100_{currency}').first()
+        
+        if not rental_receivable_account or not rental_income_account:
+            raise ValueError(f"Rental accounts not configured for {currency}. Please run init_chart_of_accounts.")
+        
+        # Calculate total amount for all months
+        total_amount = Decimal(str(amount)) * len(period_months)
+        
+        months_str = ', '.join(period_months)
+        description = f"Rental Accrual - {rental.shop.shop_number} - {rental.tenant.full_name} - {period_year}/{months_str}"
+        
+        return AccountingService.create_journal_entry(
+            date=timezone.now().date(),
+            description=description,
+            lines=[
+                {'account_id': rental_receivable_account.id, 'debit': total_amount, 'credit': 0},
+                {'account_id': rental_income_account.id, 'debit': 0, 'credit': total_amount}
+            ],
+            transaction_type='rental_income',
+            reference=reference
+        )
+    
+    @staticmethod
+    @transaction.atomic
+    def record_rental_payment_with_accrual(rental_id, tenant_name, amount, date, period_months, period_year, currency='AFN', reference=None):
+        """
+        Record rental payment with automatic accrual.
+        
+        This method:
+        1. Checks if accrual exists for the months being paid
+        2. Creates accrual entries if not (Dr Receivable, Cr Income)
+        3. Records the payment (Dr Cash, Cr Receivable)
+        
+        Args:
+            rental_id: ShopRental ID
+            tenant_name: Tenant's full name
+            amount: Payment amount
+            date: Payment date
+            period_months: List of month strings ['01', '02', etc.]
+            period_year: Year string
+            currency: Currency code
+            reference: Optional reference number
+        
+        Returns:
+            List of Transaction objects created
+        """
+        from api.models.data.shop_rental import ShopRental
+        
+        rental = ShopRental.objects.get(id=rental_id)
+        monthly_rent = rental.monthly_rent
+        
+        transactions = []
+        
+        # Step 1: Create accrual for any months that don't have one
+        accrual_reference = f"RENTAL-ACCRUAL-{rental_id}-{period_year}-{'-'.join(period_months)}"
+        if not Transaction.objects.filter(reference=accrual_reference).exists():
+            accrual_txn = AccountingService.record_rental_accrual(
+                rental_id=rental_id,
+                period_months=period_months,
+                period_year=period_year,
+                amount=monthly_rent,
+                currency=currency
+            )
+            if accrual_txn:
+                transactions.append(accrual_txn)
+        
+        # Step 2: Record the payment (Dr Cash, Cr Rental Receivable)
+        cash_account = Account.objects.filter(code=f'1000_{currency}').first()
+        rental_receivable_account = Account.objects.filter(code=f'1220_{currency}').first()
+        
+        if not cash_account or not rental_receivable_account:
+            raise ValueError(f"Accounts not configured for {currency}. Please run init_chart_of_accounts.")
+        
+        months_str = ', '.join(period_months)
+        payment_description = f"Rental Payment - {tenant_name} - {rental.shop.shop_number} - {period_year}/{months_str}"
+        
+        payment_txn = AccountingService.create_journal_entry(
+            date=date,
+            description=payment_description,
+            lines=[
+                {'account_id': cash_account.id, 'debit': amount, 'credit': 0},
+                {'account_id': rental_receivable_account.id, 'debit': 0, 'credit': amount}
+            ],
+            transaction_type='rental_income',
+            reference=reference
+        )
+        transactions.append(payment_txn)
+        
+        return transactions
+    
+    @staticmethod
+    @transaction.atomic
     def record_rental_income(tenant_name, amount, date, reference=None):
         """Record rental income"""
         from api.models.data.shop_rental import ShopRental

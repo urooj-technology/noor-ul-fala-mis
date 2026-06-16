@@ -29,8 +29,6 @@ class Shop(BaseModel):
     name = models.CharField(max_length=100)
     location = models.CharField(max_length=200)
     area = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    monthly_rent = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default=DEFAULT_CURRENCY)
     status = models.CharField(max_length=20, default='available')
     description = models.TextField(blank=True, null=True)
     
@@ -81,7 +79,6 @@ class ShopRental(BaseModel):
     monthly_rent = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default=DEFAULT_CURRENCY)
     rental_status = models.CharField(max_length=20, choices=RENTAL_STATUSES, default='active')
-    security_deposit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     description = models.TextField(blank=True, null=True)
     
     class Meta:

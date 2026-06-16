@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCalendar } from '@/contexts/CalendarContext';
 import { RefreshCw } from 'lucide-react';
+import { DatePicker } from '@/components/ui/date-picker-calendar';
 import useFetchObject from '@/api/useFetchObject';
 import { formatNumber } from '@/lib/formatNumber';
 import {
@@ -20,17 +21,32 @@ type ReportType = 'summary' | 'financial' | 'student_payments' | 'payroll' | 're
 
 const ComprehensiveReports = () => {
   const { t } = useLanguage();
+  const { calendarType } = useCalendar();
   const [activeTab, setActiveTab] = useState<ReportType>('summary');
   const [period, setPeriod] = useState('monthly');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const { data, loading, refetch } = useFetchObject({
-    queryKey: ['comprehensive-report', activeTab, period, startDate, endDate],
-    endpoint: `reports/comprehensive/?type=${activeTab}&period=${period}${startDate ? `&start_date=${startDate}` : ''}${endDate ? `&end_date=${endDate}` : ''}`,
+    queryKey: ['comprehensive-report', activeTab, period, startDate, endDate, refreshKey],
+    endpoint: `reports/comprehensive/?type=${activeTab}&period=${period}${startDate ? `&start_date=${startDate}` : ''}${endDate ? `&end_date=${endDate}` : ''}&calendar_type=${calendarType}`,
   });
 
-  const handleRefresh = () => refetch();
+  const handleRefresh = useCallback(() => {
+    setRefreshKey(prev => prev + 1);
+    refetch();
+  }, [refetch]);
+
+  const handleStartDateChange = useCallback((date: string) => {
+    setStartDate(date);
+    setRefreshKey(prev => prev + 1);
+  }, []);
+
+  const handleEndDateChange = useCallback((date: string) => {
+    setEndDate(date);
+    setRefreshKey(prev => prev + 1);
+  }, []);
 
   const report = data as any;
 
@@ -39,7 +55,7 @@ const ComprehensiveReports = () => {
     if (!report) return null;
     const { income, expenses, profit } = report;
     
-    // Chart data
+    // Chart data - from accounting system
     const incomeComparisonData = [
       { name: t('reports.studentPaymentsIncome'), AFN: income?.student?.AFN || 0, USD: income?.student?.USD || 0 },
       { name: t('reports.rentalIncome'), AFN: income?.rental?.AFN || 0, USD: income?.rental?.USD || 0 },
@@ -533,51 +549,28 @@ const ComprehensiveReports = () => {
   // Rental Report
   const renderRentalReport = () => {
     if (!report) return null;
-    const { total_monthly_income, active_rentals, by_shop, expiring_within_30_days } = report;
+    const { total_received, active_rentals, expiring_within_30_days } = report;
     
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 rounded-lg bg-green-50 border border-green-200">
-            <div className="text-sm text-muted-foreground">{t('reports.totalAFN', 'Monthly AFN')}</div>
-            <div className="text-2xl font-bold text-green-700">{formatNumber(total_monthly_income?.AFN || 0)}</div>
+            <div className="text-sm text-muted-foreground">{t('reports.totalAFN', 'Total AFN')}</div>
+            <div className="text-2xl font-bold text-green-700">{formatNumber(total_received?.AFN || 0)}</div>
           </div>
           <div className="p-4 rounded-lg bg-amber-50 border border-amber-200">
-            <div className="text-sm text-muted-foreground">{t('reports.totalUSD', 'Monthly USD')}</div>
-            <div className="text-2xl font-bold text-amber-700">{formatNumber(total_monthly_income?.USD || 0)}</div>
+            <div className="text-sm text-muted-foreground">{t('reports.totalUSD', 'Total USD')}</div>
+            <div className="text-2xl font-bold text-amber-700">{formatNumber(total_received?.USD || 0)}</div>
           </div>
           <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
             <div className="text-sm text-muted-foreground">{t('reports.activeRentals', 'Active Rentals')}</div>
             <div className="text-2xl font-bold text-blue-700">{active_rentals || 0}</div>
           </div>
+        </div>
+        {expiring_within_30_days > 0 && (
           <div className="p-4 rounded-lg bg-red-50 border border-red-200">
             <div className="text-sm text-muted-foreground">{t('reports.expiringSoon', 'Expiring Soon')}</div>
             <div className="text-2xl font-bold text-red-700">{expiring_within_30_days || 0}</div>
-          </div>
-        </div>
-
-        {by_shop && by_shop.length > 0 && (
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('reports.shopNumber', 'Shop')}</TableHead>
-                  <TableHead>{t('reports.shopName', 'Name')}</TableHead>
-                  <TableHead>{t('reports.currency', 'Currency')}</TableHead>
-                  <TableHead className="text-right">{t('reports.monthlyRent', 'Monthly Rent')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {by_shop.map((item: any, index: number) => (
-                  <TableRow key={index}>
-                    <TableCell>{item.shop__shop_number}</TableCell>
-                    <TableCell>{item.shop__name}</TableCell>
-                    <TableCell>{item.currency}</TableCell>
-                    <TableCell className="text-right">{formatNumber(item.total)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
           </div>
         )}
       </div>
@@ -773,19 +766,15 @@ const ComprehensiveReports = () => {
                 
                 {period === 'custom' && (
                   <>
-                    <Input
-                      type="date"
+                    <DatePicker
                       value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
+                      onChange={handleStartDateChange}
                       placeholder={t('reports.startDate')}
-                      className="w-36"
                     />
-                    <Input
-                      type="date"
+                    <DatePicker
                       value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
+                      onChange={handleEndDateChange}
                       placeholder={t('reports.endDate')}
-                      className="w-36"
                     />
                   </>
                 )}

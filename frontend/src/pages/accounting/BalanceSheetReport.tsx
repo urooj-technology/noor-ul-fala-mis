@@ -1,26 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCalendar } from '@/contexts/CalendarContext';
 import { RefreshCw } from 'lucide-react';
 import useFetchObject from '@/api/useFetchObject';
 import { formatNumber } from '@/lib/formatNumber';
+import { DatePicker } from '@/components/ui/date-picker-calendar';
 
 const BalanceSheetReport = () => {
   const { t } = useLanguage();
+  const { calendarType } = useCalendar();
   const [asOfDate, setAsOfDate] = useState(new Date().toISOString().split('T')[0]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const { data, loading, refetch } = useFetchObject({
-    queryKey: ['balance-sheet', asOfDate],
-    endpoint: `transactions/balance_sheet/?as_of_date=${asOfDate}`,
+    queryKey: ['balance-sheet', asOfDate, refreshKey],
+    endpoint: `transactions/balance_sheet/?as_of_date=${asOfDate}&calendar_type=${calendarType}`,
   });
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
+    setRefreshKey(prev => prev + 1);
     refetch();
-  };
+  }, [refetch]);
+
+  const handleDateChange = useCallback((date: string) => {
+    setAsOfDate(date);
+    setRefreshKey(prev => prev + 1);
+  }, []);
 
   const balanceSheet = data as any;
   const byCurrency = balanceSheet?.by_currency || {};
@@ -32,11 +41,9 @@ const BalanceSheetReport = () => {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Label className="text-sm whitespace-nowrap">{t('accounting.reportDate')}</Label>
-            <Input
-              type="date"
+            <DatePicker
               value={asOfDate}
-              onChange={(e) => setAsOfDate(e.target.value)}
-              className="w-40"
+              onChange={handleDateChange}
             />
           </div>
           <Button variant="outline" onClick={handleRefresh} disabled={loading}>
