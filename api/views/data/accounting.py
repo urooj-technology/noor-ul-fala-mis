@@ -5,24 +5,18 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from api.views.data.base import DataRootViewSet
 from api.models.data.accounting import (
-    AccountCategory, Account, JournalEntry, Transaction, FiscalYear
+    Account, JournalEntry, Transaction, FiscalYear
 )
 from api.serializers.data.accounting import (
-    AccountCategorySerializer, AccountSerializer, JournalEntrySerializer,
+    AccountSerializer, JournalEntrySerializer,
     TransactionSerializer, TransactionCreateSerializer, FiscalYearSerializer
 )
-
-
-class AccountCategoryViewSet(DataRootViewSet):
-    queryset = AccountCategory.objects.all().order_by('code')
-    serializer_class = AccountCategorySerializer
-    search_fields = ['name', 'code']
 
 
 class AccountViewSet(DataRootViewSet):
     queryset = Account.objects.all().order_by('code')
     serializer_class = AccountSerializer
-    filterset_fields = ['category', 'is_active', 'is_detail']
+    filterset_fields = ['account_type', 'is_active', 'is_detail']
     search_fields = ['name', 'code']
 
 

@@ -11,25 +11,11 @@ class AccountType(models.TextChoices):
     EXPENSE = 'expense', 'Expense'
 
 
-class AccountCategory(BaseModel):
-    """Category model for organizing accounts (e.g., Assets, Liabilities, Income, Expenses)"""
-    name = models.CharField(max_length=100)
-    code = models.CharField(max_length=10, unique=True)
-    account_type = models.CharField(max_length=20, choices=AccountType.choices)
-    description = models.CharField(max_length=200, blank=True, null=True)
-
-    class Meta:
-        ordering = ['code']
-
-    def __str__(self):
-        return f"{self.code} - {self.name}"
-
-
 class Account(BaseModel):
     """Chart of Accounts - Each account in the double-entry system"""
     name = models.CharField(max_length=200)
     code = models.CharField(max_length=20, unique=True)
-    category = models.ForeignKey(AccountCategory, on_delete=models.PROTECT, related_name='accounts')
+    account_type = models.CharField(max_length=20, choices=AccountType.choices)
     parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='children')
     is_active = models.BooleanField(default=True)
     is_detail = models.BooleanField(default=True, help_text="Can post entries to this account")
@@ -49,7 +35,7 @@ class Account(BaseModel):
         credits = self.journal_entries.aggregate(total=Sum('credit'))['total'] or 0
 
         # Asset/Expense: Debit increases, Credit decreases
-        if self.category.account_type in ['asset', 'expense']:
+        if self.account_type in ['asset', 'expense']:
             return debits - credits
         # Liability/Equity/Income: Credit increases, Debit decreases
         return credits - debits

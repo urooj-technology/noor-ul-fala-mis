@@ -1,29 +1,20 @@
 from rest_framework import serializers
 from api.serializers.data.base import DataRootSerializer
 from api.models.data.accounting import (
-    AccountCategory, Account, JournalEntry, Transaction, FiscalYear
+    Account, JournalEntry, Transaction, FiscalYear, AccountType
 )
 from api.utils.calendar import get_calendar_info
-
-
-class AccountCategorySerializer(DataRootSerializer):
-    account_type_display = serializers.CharField(source='get_account_type_display', read_only=True)
-
-    class Meta:
-        model = AccountCategory
-        fields = ['id', 'name', 'code', 'account_type', 'account_type_display', 'description',
-                  'created_at', 'updated_at']
+from decimal import Decimal
 
 
 class AccountSerializer(DataRootSerializer):
-    account_type = serializers.CharField(source='category.account_type', read_only=True)
-    category_name = serializers.CharField(source='category.name', read_only=True)
+    account_type_display = serializers.CharField(source='get_account_type_display', read_only=True)
     parent_name = serializers.CharField(source='parent.name', read_only=True)
     current_balance = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
-        fields = ['id', 'name', 'code', 'category', 'category_name', 'account_type',
+        fields = ['id', 'name', 'code', 'account_type', 'account_type_display',
                   'parent', 'parent_name', 'is_active', 'is_detail', 'balance',
                   'current_balance', 'currency', 'created_at', 'updated_at']
 
@@ -52,6 +43,13 @@ class JournalEntrySerializer(DataRootSerializer):
         return get_calendar_info(obj.date).get('qamari')
 
 
+class JournalEntryCreateSerializer(DataRootSerializer):
+    """Serializer for creating journal entries within a transaction (no transaction field required)"""
+    class Meta:
+        model = JournalEntry
+        fields = ['account', 'debit', 'credit', 'description', 'reference']
+
+
 class TransactionSerializer(DataRootSerializer):
     total_debit = serializers.ReadOnlyField()
     total_credit = serializers.ReadOnlyField()
@@ -75,7 +73,7 @@ class TransactionSerializer(DataRootSerializer):
 
 
 class TransactionCreateSerializer(DataRootSerializer):
-    entries = JournalEntrySerializer(many=True)
+    entries = JournalEntryCreateSerializer(many=True)
     # Calendar date fields
     date_shamsi = serializers.SerializerMethodField(read_only=True)
     date_qamari = serializers.SerializerMethodField(read_only=True)
@@ -103,19 +101,24 @@ class TransactionCreateSerializer(DataRootSerializer):
         return data
 
     def create(self, validated_data):
-        from decimal import Decimal
         entries_data = validated_data.pop('entries')
         transaction = Transaction.objects.create(**validated_data)
 
         for entry_data in entries_data:
-            account = Account.objects.get(id=entry_data['account'])
+            account = entry_data['account']
+            # If account is already an Account object, use it directly
+            if isinstance(account, Account):
+                account_obj = account
+            else:
+                account_obj = Account.objects.get(id=account)
+            
             JournalEntry.objects.create(
                 date=transaction.date,
-                account=account,
+                account=account_obj,
                 debit=Decimal(str(entry_data.get('debit', 0))),
                 credit=Decimal(str(entry_data.get('credit', 0))),
-                description=validated_data.get('description'),
-                reference=validated_data.get('reference'),
+                description=entry_data.get('description') or validated_data.get('description'),
+                reference=entry_data.get('reference') or validated_data.get('reference'),
                 transaction=transaction
             )
 

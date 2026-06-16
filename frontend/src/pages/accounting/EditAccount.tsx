@@ -13,12 +13,20 @@ import useFetchObject from '@/api/useFetchObject';
 interface AccountFormData {
   name: string;
   code: string;
-  category: string;
+  account_type: string;
   parent?: string;
   is_active: boolean;
   is_detail: boolean;
   currency: string;
 }
+
+const ACCOUNT_TYPES = [
+  { value: 'asset', labelKey: 'accounting.asset' },
+  { value: 'liability', labelKey: 'accounting.liability' },
+  { value: 'equity', labelKey: 'accounting.equity' },
+  { value: 'income', labelKey: 'accounting.income' },
+  { value: 'expense', labelKey: 'accounting.expense' },
+];
 
 const EditAccount = () => {
   const { t } = useLanguage();
@@ -27,7 +35,7 @@ const EditAccount = () => {
   const [formData, setFormData] = useState<AccountFormData>({
     name: '',
     code: '',
-    category: '',
+    account_type: '',
     parent: undefined,
     is_active: true,
     is_detail: true,
@@ -47,7 +55,7 @@ const EditAccount = () => {
       setFormData({
         name: data.name || '',
         code: data.code || '',
-        category: data.category || '',
+        account_type: data.account_type || '',
         parent: data.parent || undefined,
         is_active: data.is_active ?? true,
         is_detail: data.is_detail ?? true,
@@ -64,7 +72,7 @@ const EditAccount = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.name.trim()) newErrors.name = t('validation.required');
     if (!formData.code.trim()) newErrors.code = t('validation.required');
-    if (!formData.category) newErrors.category = t('validation.required');
+    if (!formData.account_type) newErrors.account_type = t('validation.required');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -114,18 +122,16 @@ const EditAccount = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="category" className="font-semibold flex items-center gap-2"><FolderTree className="h-4 w-4" />{t("accounting.accountCategory")} <span className="text-destructive">*</span></Label>
-              <Select value={formData.category} onValueChange={(value) => { setFormData((prev) => ({ ...prev, category: value })); if (errors.category) setErrors((prev) => ({ ...prev, category: "" })); }}>
-                <SelectTrigger className="h-10"><SelectValue placeholder={t("accounting.accountCategoryPlaceholder")} /></SelectTrigger>
+              <Label htmlFor="account_type" className="font-semibold flex items-center gap-2"><FolderTree className="h-4 w-4" />{t("accounting.accountType")} <span className="text-destructive">*</span></Label>
+              <Select value={formData.account_type} onValueChange={(value) => { setFormData((prev) => ({ ...prev, account_type: value })); if (errors.account_type) setErrors((prev) => ({ ...prev, account_type: "" })); }}>
+                <SelectTrigger className="h-10"><SelectValue placeholder={t("accounting.accountTypePlaceholder", "Select account type")} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">{t("accounting.asset")}</SelectItem>
-                  <SelectItem value="2">{t("accounting.liability")}</SelectItem>
-                  <SelectItem value="3">{t("accounting.equity")}</SelectItem>
-                  <SelectItem value="4">{t("accounting.income")}</SelectItem>
-                  <SelectItem value="5">{t("accounting.expense")}</SelectItem>
+                  {ACCOUNT_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>{t(type.labelKey)}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              {errors.category && <p className="text-xs text-destructive">{errors.category}</p>}
+              {errors.account_type && <p className="text-xs text-destructive">{errors.account_type}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="parent" className="font-semibold">{t("accounting.parentAccount")}</Label>
@@ -133,8 +139,6 @@ const EditAccount = () => {
                 <SelectTrigger className="h-10"><SelectValue placeholder={t("accounting.parentAccountPlaceholder")} /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">{t("common.none")}</SelectItem>
-                  <SelectItem value="1">{t("accounting.currentAssets")}</SelectItem>
-                  <SelectItem value="2">{t("accounting.fixedAssets")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -156,8 +160,8 @@ const EditAccount = () => {
               <Select value={formData.is_active.toString()} onValueChange={(value) => setFormData((prev) => ({ ...prev, is_active: value === "true" }))}>
                 <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="true">{t("accounting.yes")}</SelectItem>
-                  <SelectItem value="false">{t("accounting.no")}</SelectItem>
+                  <SelectItem value="true">{t("common.yes")}</SelectItem>
+                  <SelectItem value="false">{t("common.no")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -166,8 +170,8 @@ const EditAccount = () => {
               <Select value={formData.is_detail.toString()} onValueChange={(value) => setFormData((prev) => ({ ...prev, is_detail: value === "true" }))}>
                 <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="true">{t("accounting.yes")}</SelectItem>
-                  <SelectItem value="false">{t("accounting.no")}</SelectItem>
+                  <SelectItem value="true">{t("common.yes")}</SelectItem>
+                  <SelectItem value="false">{t("common.no")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

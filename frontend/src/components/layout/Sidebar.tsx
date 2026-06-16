@@ -79,10 +79,12 @@ const navigationItems = [
     section: 'finance',
     subItems: [
       { key: 'accounts', icon: BookOpen, path: '/accounts' },
-      { key: 'accountCategories', icon: Tag, path: '/categories' },
       { key: 'transactions', icon: FileText, path: '/transactions' },
       { key: 'fiscalYears', icon: Calendar, path: '/fiscal-years' },
-      { key: 'journalEntries', icon: FileText, path: '/journal-entries' }
+      { key: 'journalEntries', icon: FileText, path: '/journal-entries' },
+      { key: 'trialBalance', icon: PieChart, path: '/reports/trial-balance' },
+      { key: 'incomeStatement', icon: BarChart3, path: '/reports/income-statement' },
+      { key: 'balanceSheet', icon: FileBarChart, path: '/reports/balance-sheet' }
     ]
   },
   { 
@@ -215,7 +217,7 @@ export const Sidebar: React.FC = () => {
   };
 
   const isAccountingRoute = (path: string) => {
-    const accountingRoutes = ['/accounts', '/categories', '/transactions', '/fiscal-years', '/journal-entries'];
+    const accountingRoutes = ['/accounts', '/transactions', '/fiscal-years', '/journal-entries', '/reports/trial-balance', '/reports/income-statement', '/reports/balance-sheet'];
     return accountingRoutes.some(route => path.startsWith(route));
   };
 

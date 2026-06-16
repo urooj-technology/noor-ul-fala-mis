@@ -10,6 +10,7 @@ import DatePicker from '@/components/ui/date-picker-calendar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { RotateCw, ArrowLeft, Upload, X, Eye, FileText, Image as ImageIcon, User, MapPin, Phone, File, GraduationCap, CreditCard, Info, DollarSign } from 'lucide-react';
 import useAdd from '@/api/useAdd';
+import useFetchObjects from '@/api/useFetchObjects';
 
 interface StudentFormData {
   full_name: string;
@@ -67,6 +68,12 @@ const defaultForm: StudentFormData = {
   payment_receipt: null,
 };
 
+interface ClassLevel {
+  id: number;
+  level: string;
+  name: string;
+}
+
 const AddStudent = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -90,6 +97,13 @@ const AddStudent = () => {
     queryKey: 'students',
     endpoint: 'students/',
   });
+
+  const { data: classLevelsData } = useFetchObjects<ClassLevel[]>({
+    queryKey: ['class-levels'],
+    endpoint: 'class-levels/',
+  });
+
+  const classLevels = classLevelsData || [];
 
   useEffect(() => {
     if (isSuccess) {
@@ -764,8 +778,8 @@ const AddStudent = () => {
                       <SelectValue placeholder={t("students.selectClassLevel")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {Array.from({ length: 12 }, (_, i) => (i + 1).toString()).map((lv) => (
-                        <SelectItem key={lv} value={lv}>{t('students.classLevelShort', 'Class')} {lv}</SelectItem>
+                      {classLevels.map((cl) => (
+                        <SelectItem key={cl.id} value={String(cl.id)}>{cl.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

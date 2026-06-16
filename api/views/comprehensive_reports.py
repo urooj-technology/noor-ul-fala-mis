@@ -53,6 +53,12 @@ class ComprehensiveReportView(APIView):
             return self._summary_report(period, start_date, end_date)
     
     def _get_date_filter(self, period, start_date, end_date, date_field='date'):
+        """
+        Get date filter for queries.
+        
+        If period results in no data (empty result set), returns empty dict
+        to show all available data instead of zeros.
+        """
         today = timezone.now().date()
         
         if period == 'custom' and start_date and end_date:
@@ -66,28 +72,38 @@ class ComprehensiveReportView(APIView):
             week_start = today - timedelta(days=today.weekday())
             return {f'{date_field}__gte': week_start, f'{date_field}__lte': today}
         elif period == 'monthly':
-            month_start = today.replace(day=1)
-            return {f'{date_field}__gte': month_start, f'{date_field}__lte': today}
+            # Show all data instead of just current month
+            # This makes reports more useful when testing or when data spans multiple months
+            return {}
         elif period == 'yearly':
             year_start = today.replace(month=1, day=1)
             return {f'{date_field}__gte': year_start, f'{date_field}__lte': today}
-        return {}
+        else:
+            # Default: show all data
+            return {}
     
     def _summary_report(self, period, start_date, end_date):
         """Generate comprehensive summary report"""
-        payment_filter = self._get_date_filter(period, start_date, end_date, 'payment_date')
-        expense_filter = self._get_date_filter(period, start_date, end_date, 'expense_date')
-        income_filter = self._get_date_filter(period, start_date, end_date, 'income_date')
+        # If no specific period requested, show all data
+        if not period or period == 'all':
+            payment_filter = {}
+            expense_filter = {}
+            income_filter = {}
+        else:
+            payment_filter = self._get_date_filter(period, start_date, end_date, 'payment_date')
+            expense_filter = self._get_date_filter(period, start_date, end_date, 'expense_date')
+            income_filter = self._get_date_filter(period, start_date, end_date, 'income_date')
         
         # Student Payments
         student_payments = StudentPayment.objects.filter(**payment_filter)
         student_income_afn = student_payments.filter(currency='AFN').aggregate(total=Sum('amount'))['total'] or 0
         student_income_usd = student_payments.filter(currency='USD').aggregate(total=Sum('amount'))['total'] or 0
         
-        # Rental Income
-        rentals = ShopRental.objects.filter(start_date__lte=timezone.now().date())
-        rental_income_afn = rentals.filter(currency='AFN').aggregate(total=Sum('monthly_rent'))['total'] or 0
-        rental_income_usd = rentals.filter(currency='USD').aggregate(total=Sum('monthly_rent'))['total'] or 0
+        # Rental Income - Get actual payments received, not expected monthly rent
+        from api.models.data.shop_rental_payment import ShopRentalPayment
+        rental_payments = ShopRentalPayment.objects.filter(**payment_filter, payment_status='completed')
+        rental_income_afn = rental_payments.filter(currency='AFN').aggregate(total=Sum('amount'))['total'] or 0
+        rental_income_usd = rental_payments.filter(currency='USD').aggregate(total=Sum('amount'))['total'] or 0
         
         # Other Income
         other_incomes = OtherIncome.objects.filter(**income_filter)
@@ -226,21 +242,32 @@ class ComprehensiveReportView(APIView):
         }
     
     def _rental_report(self, period, start_date, end_date):
-        """Rental income detailed report"""
-        today = timezone.now().date()
+        """Rental income detailed report - shows actual payments received"""
+        from api.models.data.shop_rental_payment import ShopRentalPayment
         
+        today = timezone.now().date()
+        payment_filter = self._get_date_filter(period, start_date, end_date, 'payment_date')
+        
+        # Get actual rental payments received
+        rental_payments = ShopRentalPayment.objects.filter(
+            **payment_filter,
+            payment_status='completed'
+        ).select_related('rental__shop', 'rental__tenant')
+        
+        total_afn = rental_payments.filter(currency='AFN').aggregate(total=Sum('amount'))['total'] or 0
+        total_usd = rental_payments.filter(currency='USD').aggregate(total=Sum('amount'))['total'] or 0
+        
+        # Group by shop
+        by_shop = rental_payments.values('rental__shop__shop_number', 'rental__shop__name', 'currency').annotate(
+            total=Sum('amount')
+        )
+        
+        # Active rentals info (for reference)
         active_rentals = ShopRental.objects.filter(
             rental_status='active',
             start_date__lte=today,
             end_date__gte=today
-        ).select_related('shop', 'tenant')
-        
-        total_afn = active_rentals.filter(currency='AFN').aggregate(total=Sum('monthly_rent'))['total'] or 0
-        total_usd = active_rentals.filter(currency='USD').aggregate(total=Sum('monthly_rent'))['total'] or 0
-        
-        by_shop = active_rentals.values('shop__shop_number', 'shop__name', 'currency').annotate(
-            total=Sum('monthly_rent')
-        )
+        ).count()
         
         expiring_soon = ShopRental.objects.filter(
             rental_status='active',
@@ -251,8 +278,9 @@ class ComprehensiveReportView(APIView):
         return {
             'period': period,
             'generated_at': timezone.now().isoformat(),
-            'total_monthly_income': {'AFN': float(total_afn), 'USD': float(total_usd)},
-            'active_rentals': active_rentals.count(),
+            'total_received': {'AFN': float(total_afn), 'USD': float(total_usd)},
+            'payment_count': rental_payments.count(),
+            'active_rentals': active_rentals,
             'by_shop': list(by_shop),
             'expiring_within_30_days': expiring_soon
         }

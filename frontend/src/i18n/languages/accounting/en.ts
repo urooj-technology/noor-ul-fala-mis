@@ -25,6 +25,7 @@ export const accountingEn = {
   accountDetails: "Account Details",
   accountName: "Account Name",
   accountCode: "Account Code",
+  accountType: "Account Type",
   accountCategory: "Category",
   parentAccount: "Parent Account",
   isActive: "Is Active",
@@ -185,5 +186,8 @@ export const accountingEn = {
   total: "Total",
   totalIncome: "Total Income",
   totalExpenses: "Total Expenses",
-  expenses: "Expenses"
+  expenses: "Expenses",
+  grandTotal: "Grand Total",
+  balance: "Balance",
+  difference: "Difference"
 };

@@ -11,6 +11,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { RotateCw, ArrowLeft, Upload, X, FileText, Image as ImageIcon, User, MapPin, Phone, File, GraduationCap, Info, ExternalLink } from 'lucide-react';
 import useUpdate from '@/api/useUpdate';
 import useFetchObject from '@/api/useFetchObject';
+import useFetchObjects from '@/api/useFetchObjects';
 
 interface StudentFormData {
   full_name: string;
@@ -46,6 +47,12 @@ interface ExistingFiles {
   parent_tazkira_copy?: string;
   previous_result_card?: string;
   payment_receipt?: string;
+}
+
+interface ClassLevel {
+  id: number;
+  level: string;
+  name: string;
 }
 
 const EditStudent = () => {
@@ -101,6 +108,13 @@ const EditStudent = () => {
     endpoint: `students/${id}/`,
   });
 
+  const { data: classLevelsData } = useFetchObjects<ClassLevel[]>({
+    queryKey: ['class-levels'],
+    endpoint: 'class-levels/',
+  });
+
+  const classLevels = classLevelsData || [];
+
   const { handleUpdate, loading, isSuccess } = useUpdate({
     queryKey: ['students'],
   });
@@ -133,7 +147,7 @@ const EditStudent = () => {
         registration_date: data.registration_date ? data.registration_date.slice(0, 10) : new Date().toISOString().split('T')[0],
         status: data.status || 'active',
         transportation: data.transportation || 'school_bus',
-        class_level: data.class_level ? String(data.class_level) : '',
+        class_level: data.class_level_details ? String(data.class_level_details.id) : '',
         photo: null,
         tazkira_copy: null,
         parent_tazkira_copy: null,
@@ -490,7 +504,7 @@ const EditStudent = () => {
                   <Select value={formData.class_level} onValueChange={(value) => setFormData((prev) => ({ ...prev, class_level: value }))}>
                     <SelectTrigger className="h-10"><SelectValue placeholder={t("students.selectClassLevel")} /></SelectTrigger>
                     <SelectContent>
-                      {Array.from({ length: 12 }, (_, i) => (i + 1).toString()).map((lv) => (<SelectItem key={lv} value={lv}>{t('students.classLevelShort', 'Class')} {lv}</SelectItem>))}
+                      {classLevels.map((cl) => (<SelectItem key={cl.id} value={String(cl.id)}>{cl.name}</SelectItem>))}
                     </SelectContent>
                   </Select>
                 </div>

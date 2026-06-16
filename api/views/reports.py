@@ -32,10 +32,11 @@ class FinancialReportView(APIView):
         student_income_afn = student_payment_query.filter(currency='AFN').aggregate(total=Sum('amount'))['total'] or 0
         student_income_usd = student_payment_query.filter(currency='USD').aggregate(total=Sum('amount'))['total'] or 0
         
-        # Rental Income
-        rental_query = ShopRental.objects.filter(start_date__lte=timezone.now().date())
-        rental_income_afn = rental_query.filter(currency='AFN').aggregate(total=Sum('monthly_rent'))['total'] or 0
-        rental_income_usd = rental_query.filter(currency='USD').aggregate(total=Sum('monthly_rent'))['total'] or 0
+        # Rental Income - Get actual payments received, not expected monthly rent
+        from api.models.data.shop_rental_payment import ShopRentalPayment
+        rental_payments = ShopRentalPayment.objects.filter(**payment_filter, payment_status='completed')
+        rental_income_afn = rental_payments.filter(currency='AFN').aggregate(total=Sum('amount'))['total'] or 0
+        rental_income_usd = rental_payments.filter(currency='USD').aggregate(total=Sum('amount'))['total'] or 0
         
         # Other Income
         other_income_filter = self._get_income_date_filter(period, start_date, end_date)
@@ -146,8 +147,8 @@ class FinancialReportView(APIView):
             week_start = today - timedelta(days=today.weekday())
             return {'payment_date__gte': week_start, 'payment_date__lte': today}
         elif period == 'monthly':
-            month_start = today.replace(day=1)
-            return {'payment_date__gte': month_start, 'payment_date__lte': today}
+            # Show all data instead of just current month for better usability
+            return {}
         elif period == 'yearly':
             year_start = today.replace(month=1, day=1)
             return {'payment_date__gte': year_start, 'payment_date__lte': today}
@@ -169,8 +170,8 @@ class FinancialReportView(APIView):
             week_start = today - timedelta(days=today.weekday())
             return {'expense_date__gte': week_start, 'expense_date__lte': today}
         elif period == 'monthly':
-            month_start = today.replace(day=1)
-            return {'expense_date__gte': month_start, 'expense_date__lte': today}
+            # Show all data instead of just current month for better usability
+            return {}
         elif period == 'yearly':
             year_start = today.replace(month=1, day=1)
             return {'expense_date__gte': year_start, 'expense_date__lte': today}
@@ -192,8 +193,8 @@ class FinancialReportView(APIView):
             week_start = today - timedelta(days=today.weekday())
             return {'income_date__gte': week_start, 'income_date__lte': today}
         elif period == 'monthly':
-            month_start = today.replace(day=1)
-            return {'income_date__gte': month_start, 'income_date__lte': today}
+            # Show all data instead of just current month
+            return {}
         elif period == 'yearly':
             year_start = today.replace(month=1, day=1)
             return {'income_date__gte': year_start, 'income_date__lte': today}

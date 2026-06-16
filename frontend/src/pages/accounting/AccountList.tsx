@@ -32,7 +32,7 @@ export const AccountList = () => {
       page: currentPage,
       page_size: pageSize,
       search: searchTerm,
-      ...(typeFilter !== 'all' && { category__account_type: typeFilter })
+      ...(typeFilter !== 'all' && { account_type: typeFilter })
     }
   });
 
@@ -84,14 +84,9 @@ export const AccountList = () => {
       render: (value) => <span className="text-xs">{value || 'N/A'}</span>
     },
     {
-      key: 'category_name',
-      title: t('accounting.accountCategory'),
-      render: (value) => <span className="text-xs">{value || 'N/A'}</span>
-    },
-    {
       key: 'account_type',
-      title: t('accounting.accountCategoryType'),
-      render: (value, record) => getTypeBadge(value || record.category?.account_type || '')
+      title: t('accounting.accountType'),
+      render: (value) => getTypeBadge(value || '')
     },
     {
       key: 'current_balance',
@@ -142,7 +137,7 @@ export const AccountList = () => {
   const filters: FilterOption[] = [
     {
       key: 'type',
-      label: t('accounting.accountCategoryType'),
+      label: t('accounting.accountType'),
       placeholder: t('accounting.filterByType'),
       width: 'sm:w-40',
       options: [

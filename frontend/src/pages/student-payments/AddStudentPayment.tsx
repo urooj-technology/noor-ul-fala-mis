@@ -98,7 +98,6 @@ const MonthMultiSelect: React.FC<MonthMultiSelectProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const selectedLabels = months.filter((m) => selectedMonths.includes(m.value)).map((m) => m.label);
-  const totalForEntry = (parseFloat(paymentAmount) || 0) * selectedMonths.length;
 
   return (
     <div className="space-y-1">
@@ -200,11 +199,6 @@ const MonthMultiSelect: React.FC<MonthMultiSelectProps> = ({
           <span>
             {selectedMonths.length} / {maxMonths} months
           </span>
-          {paymentAmount && (
-            <span className="font-medium text-emerald-700 dark:text-emerald-400">
-              = {formatCurrency(totalForEntry, currency)}
-            </span>
-          )}
         </div>
       )}
     </div>
@@ -338,8 +332,7 @@ const AddStudentPayment = () => {
   const totalPayment = useMemo(() => {
     return paymentEntries.reduce((sum, entry) => {
       const amount = parseFloat(entry.payment_amount) || 0;
-      const months = entry.selected_months.length || 1;
-      return sum + amount * months;
+      return sum + amount;
     }, 0);
   }, [paymentEntries]);
 
@@ -529,7 +522,8 @@ const AddStudentPayment = () => {
                     const remaining = parseFloat(entry.remaining);
                     const isPaid = remaining <= 0;
                     const monthCount = entry.selected_months.length;
-                    const totalForEntry = (parseFloat(entry.payment_amount) || 0) * monthCount;
+                    // Amount is the payment amount (not multiplied or divided by months)
+                    const totalForEntry = parseFloat(entry.payment_amount) || 0;
 
                     return (
                       <tr
@@ -600,8 +594,7 @@ const AddStudentPayment = () => {
                           />
                           {monthCount > 0 && entry.payment_amount && (
                             <div className="text-[10px] text-muted-foreground mt-1 text-right font-medium">
-                              {formatCurrency(totalForEntry, entry.currency)} ({monthCount} ×{' '}
-                              {formatCurrency(parseFloat(entry.payment_amount) || 0, entry.currency)})
+                              {formatCurrency(totalForEntry, entry.currency)}
                             </div>
                           )}
                         </td>

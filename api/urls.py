@@ -35,7 +35,7 @@ from api.views.data.activity_log import ActivityLogViewSet
 
 # ====================== ACCOUNTING ======================
 from api.views.data.accounting import (
-    AccountCategoryViewSet, AccountViewSet, JournalEntryViewSet,
+    AccountViewSet, JournalEntryViewSet,
     TransactionViewSet, FiscalYearViewSet
 )
 
@@ -90,7 +90,6 @@ router.register(r'users/(?P<user_id>[^/.]+)/permissions', UserPermissionViewSet,
 router.register(r'activity-logs', ActivityLogViewSet, basename='activity-log')
 
 # Accounting
-router.register(r'account-categories', AccountCategoryViewSet, basename='account-category')
 router.register(r'accounts', AccountViewSet, basename='account')
 router.register(r'journal-entries', JournalEntryViewSet, basename='journal-entry')
 router.register(r'transactions', TransactionViewSet, basename='transaction')

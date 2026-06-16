@@ -25,6 +25,7 @@ export const accountingFa = {
   accountDetails: "جزئیات حساب",
   accountName: "نام حساب",
   accountCode: "کد حساب",
+  accountType: "نوع حساب",
   accountCategory: "کتگوری",
   parentAccount: "حساب والد",
   isActive: "فعال است",
@@ -185,5 +186,8 @@ export const accountingFa = {
   total: "مجموع",
   totalIncome: "مجموع درآمد",
   totalExpenses: "مجموع مصارف ها",
-  expenses: "مصارف ها"
+  expenses: "مصارف ها",
+  grandTotal: "مجموع کل",
+  balance: "بیلانس",
+  difference: "تفاوت"
 };

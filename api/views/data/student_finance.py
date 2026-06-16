@@ -361,6 +361,20 @@ class StudentPaymentViewSet(DataRootViewSet):
                 norm_months.append(str(mi).zfill(2))
             except Exception:
                 continue
+        
+        # Use provided period_month if period_months not provided
+        if not norm_months and request.data.get('period_month'):
+            try:
+                pm = int(request.data.get('period_month'))
+                if 1 <= pm <= 12:
+                    norm_months = [str(pm).zfill(2)]
+            except (ValueError, TypeError):
+                pass
+        
+        # Default to current month if still no months
+        if not norm_months:
+            norm_months = [str(timezone.now().month).zfill(2)]
+        
         if not norm_months:
             return Response({'error': 'No valid period_months provided (1-12 expected).'}, status=drf_status.HTTP_400_BAD_REQUEST)
 
@@ -1306,13 +1320,13 @@ class StudentPaymentViewSet(DataRootViewSet):
                     continue
 
                 # Validate not overpaying
+                # The amount entered is the payment amount (NOT divided by months)
+                # Months are just for tracking which period this payment covers
                 try:
-                    per_month_amount = Decimal(str(amount))
+                    payment_amount = Decimal(str(amount))
                 except Exception:
                     errors.append(f"Payment {idx + 1}: Invalid amount")
                     continue
-
-                total_payment = per_month_amount * len(period_months)
 
                 paid_so_far = StudentPayment.objects.filter(
                     assignment=assignment,
@@ -1320,9 +1334,9 @@ class StudentPaymentViewSet(DataRootViewSet):
                 ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
 
                 remaining = (assignment.amount or Decimal('0')) - paid_so_far
-                if total_payment > remaining:
+                if payment_amount > remaining:
                     errors.append(
-                        f"Payment {idx + 1}: Total ({total_payment}) exceeds remaining "
+                        f"Payment {idx + 1}: Amount ({payment_amount}) exceeds remaining "
                         f"balance ({remaining}) for {assignment.fee_type.name}"
                     )
                     continue
@@ -1354,21 +1368,21 @@ class StudentPaymentViewSet(DataRootViewSet):
                     except (ValueError, TypeError):
                         continue
 
-                # Create a payment for each month
-                for month_str in norm_months:
-                    payment = StudentPayment.objects.create(
-                        assignment=assignment,
-                        amount=per_month_amount,
-                        currency=currency,
-                        payment_date=payment_date,
-                        payment_status=payment_status,
-                        period_year=str(period_year),
-                        period_month=month_str,
-                        fee_type_id=assignment.fee_type_id,
-                        reference_number=reference_number,
-                        description=description,
-                    )
-                    created_payments.append(payment)
+                # Create ONE payment record with the full amount
+                # The months are just for tracking purposes - amount is NOT divided
+                payment = StudentPayment.objects.create(
+                    assignment=assignment,
+                    amount=payment_amount,
+                    currency=currency,
+                    payment_date=payment_date,
+                    payment_status=payment_status,
+                    period_year=str(period_year),
+                    period_month=norm_months[0] if norm_months else None,
+                    fee_type_id=assignment.fee_type_id,
+                    reference_number=reference_number,
+                    description=description,
+                )
+                created_payments.append(payment)
 
         serializer = StudentPaymentSerializer(
             created_payments, many=True, context={'request': request}

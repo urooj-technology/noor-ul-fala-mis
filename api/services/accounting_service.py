@@ -56,14 +56,25 @@ class AccountingService:
         return txn
     
     @staticmethod
-    def _get_account_balance(account):
-        """Calculate account balance from journal entries"""
+    def _get_account_balance(account, as_of_date=None, start_date=None, end_date=None):
+        """Calculate account balance from journal entries with optional date filtering"""
         from django.db.models import Sum
-        debits = account.journal_entries.aggregate(total=Sum('debit'))['total'] or Decimal('0')
-        credits = account.journal_entries.aggregate(total=Sum('credit'))['total'] or Decimal('0')
+        
+        entries = account.journal_entries.all()
+        
+        # Filter by date range if provided
+        if as_of_date:
+            entries = entries.filter(date__lte=as_of_date)
+        if start_date:
+            entries = entries.filter(date__gte=start_date)
+        if end_date:
+            entries = entries.filter(date__lte=end_date)
+        
+        debits = entries.aggregate(total=Sum('debit'))['total'] or Decimal('0')
+        credits = entries.aggregate(total=Sum('credit'))['total'] or Decimal('0')
         
         # Asset/Expense: Debit increases, Credit decreases
-        if account.category.account_type in ['asset', 'expense']:
+        if account.account_type in ['asset', 'expense']:
             return debits - credits
         # Liability/Equity/Income: Credit increases, Debit decreases
         return credits - debits
@@ -111,9 +122,9 @@ class AccountingService:
     @staticmethod
     @transaction.atomic
     def record_expense(amount, date, description, expense_category, reference=None, currency='AFN'):
-        """Record an expense as a journal entry"""
+        """Record an expense as a journal entry - defaults to Other Expenses account"""
         cash_account = Account.objects.filter(code=f'1000_{currency}').first()
-        expense_account = Account.objects.filter(code=f'5000_{currency}').first()
+        expense_account = Account.objects.filter(code=f'5900_{currency}').first()
         
         if not cash_account or not expense_account:
             raise ValueError(f"Default accounts not configured for {currency}. Please run init_chart_of_accounts.")
@@ -251,20 +262,32 @@ class AccountingService:
             accounts = Account.objects.filter(is_active=True, is_detail=True, code__endswith=f'_{currency}')
             
             for account in accounts:
-                balance = AccountingService._get_account_balance(account)
+                # Get balance with date filter
+                balance = AccountingService._get_account_balance(account, as_of_date=as_of_date)
                 if balance != 0:
-                    # Normalize balance for display
-                    if account.category.account_type in ['asset', 'expense']:
-                        debit = balance if balance > 0 else Decimal('0')
-                        credit = abs(balance) if balance < 0 else Decimal('0')
-                    else:  # liability, equity, income
-                        credit = balance if balance > 0 else Decimal('0')
-                        debit = abs(balance) if balance < 0 else Decimal('0')
+                    # For trial balance, we show the balance in debit/credit columns
+                    # based on the normal balance of the account type
+                    if account.account_type in ['asset', 'expense']:
+                        # Normal balance is debit
+                        if balance > 0:
+                            debit = balance
+                            credit = Decimal('0')
+                        else:
+                            debit = Decimal('0')
+                            credit = abs(balance)
+                    else:
+                        # Liability/Equity/Income - normal balance is credit
+                        if balance > 0:
+                            credit = balance
+                            debit = Decimal('0')
+                        else:
+                            credit = Decimal('0')
+                            debit = abs(balance)
                     
                     trial_balance[currency]['accounts'].append({
                         'code': account.code,
                         'name': account.name.replace(f' - {currency}', ''),
-                        'type': account.category.get_account_type_display(),
+                        'type': account.get_account_type_display(),
                         'currency': currency,
                         'debit': float(debit),
                         'credit': float(credit)
@@ -299,12 +322,12 @@ class AccountingService:
         
         for currency in AccountingService.CURRENCIES:
             income_accounts = Account.objects.filter(
-                category__account_type='income',
+                account_type='income',
                 is_active=True,
                 code__endswith=f'_{currency}'
             )
             expense_accounts = Account.objects.filter(
-                category__account_type='expense',
+                account_type='expense',
                 is_active=True,
                 code__endswith=f'_{currency}'
             )
@@ -312,11 +335,15 @@ class AccountingService:
             total_income = Decimal('0')
             income_items = []
             for account in income_accounts:
-                balance = AccountingService._get_account_balance(account)
+                # Use date range filter for income statement
+                balance = AccountingService._get_account_balance(
+                    account, start_date=start_date, end_date=end_date
+                )
                 if balance != 0:
                     income_items.append({
                         'code': account.code,
                         'name': account.name.replace(f' - {currency}', ''),
+                        'type': account.get_account_type_display(),
                         'currency': currency,
                         'amount': float(balance)
                     })
@@ -325,11 +352,15 @@ class AccountingService:
             total_expenses = Decimal('0')
             expense_items = []
             for account in expense_accounts:
-                balance = AccountingService._get_account_balance(account)
+                # Use date range filter for income statement
+                balance = AccountingService._get_account_balance(
+                    account, start_date=start_date, end_date=end_date
+                )
                 if balance != 0:
                     expense_items.append({
                         'code': account.code,
                         'name': account.name.replace(f' - {currency}', ''),
+                        'type': account.get_account_type_display(),
                         'currency': currency,
                         'amount': float(balance)
                     })
@@ -367,17 +398,17 @@ class AccountingService:
         
         for currency in AccountingService.CURRENCIES:
             asset_accounts = Account.objects.filter(
-                category__account_type='asset',
+                account_type='asset',
                 is_active=True,
                 code__endswith=f'_{currency}'
             )
             liability_accounts = Account.objects.filter(
-                category__account_type='liability',
+                account_type='liability',
                 is_active=True,
                 code__endswith=f'_{currency}'
             )
             equity_accounts = Account.objects.filter(
-                category__account_type='equity',
+                account_type='equity',
                 is_active=True,
                 code__endswith=f'_{currency}'
             )
@@ -385,11 +416,13 @@ class AccountingService:
             total_assets = Decimal('0')
             assets = []
             for account in asset_accounts:
-                balance = AccountingService._get_account_balance(account)
+                # Use as_of_date filter
+                balance = AccountingService._get_account_balance(account, as_of_date=as_of_date)
                 if balance != 0:
                     assets.append({
                         'code': account.code,
                         'name': account.name.replace(f' - {currency}', ''),
+                        'type': account.get_account_type_display(),
                         'currency': currency,
                         'amount': float(balance)
                     })
@@ -398,11 +431,12 @@ class AccountingService:
             total_liabilities = Decimal('0')
             liabilities = []
             for account in liability_accounts:
-                balance = AccountingService._get_account_balance(account)
+                balance = AccountingService._get_account_balance(account, as_of_date=as_of_date)
                 if balance != 0:
                     liabilities.append({
                         'code': account.code,
                         'name': account.name.replace(f' - {currency}', ''),
+                        'type': account.get_account_type_display(),
                         'currency': currency,
                         'amount': float(balance)
                     })
@@ -411,15 +445,48 @@ class AccountingService:
             total_equity = Decimal('0')
             equity = []
             for account in equity_accounts:
-                balance = AccountingService._get_account_balance(account)
+                balance = AccountingService._get_account_balance(account, as_of_date=as_of_date)
                 if balance != 0:
                     equity.append({
                         'code': account.code,
                         'name': account.name.replace(f' - {currency}', ''),
+                        'type': account.get_account_type_display(),
                         'currency': currency,
                         'amount': float(balance)
                     })
                     total_equity += balance
+            
+            # Calculate retained earnings (net income from income accounts)
+            # For balance sheet, we need to add net income to equity
+            income_accounts = Account.objects.filter(
+                account_type='income',
+                is_active=True,
+                code__endswith=f'_{currency}'
+            )
+            expense_accounts = Account.objects.filter(
+                account_type='expense',
+                is_active=True,
+                code__endswith=f'_{currency}'
+            )
+            
+            total_income = Decimal('0')
+            for acc in income_accounts:
+                total_income += AccountingService._get_account_balance(acc, as_of_date=as_of_date)
+            
+            total_expenses = Decimal('0')
+            for acc in expense_accounts:
+                total_expenses += AccountingService._get_account_balance(acc, as_of_date=as_of_date)
+            
+            retained_earnings = total_income - total_expenses
+            if retained_earnings != 0:
+                equity.append({
+                    'code': 'RE',
+                    'name': 'Retained Earnings',
+                    'type': 'Equity',
+                    'currency': currency,
+                    'amount': float(retained_earnings)
+                })
+                total_equity += retained_earnings
             
             result['by_currency'][currency] = {
                 'assets': assets,

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, Eye, FileText, Calendar, DollarSign } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import DataTable, { TableColumn, TableAction, FilterOption } from '@/components/ui/data-table';
@@ -46,6 +46,10 @@ export const JournalEntryList = () => {
 
   const handleDetails = (entry: any) => {
     navigate(`/journal-entries/${entry.id}`);
+  };
+
+  const handleEdit = (entry: any) => {
+    navigate(`/journal-entries/${entry.id}/edit`);
   };
 
   const columns: TableColumn[] = [
@@ -111,6 +115,13 @@ export const JournalEntryList = () => {
       tooltip: t('accounting.viewDetails')
     },
     {
+      key: 'edit',
+      label: t('accounting.edit'),
+      icon: <Edit className="h-4 w-4" />,
+      onClick: handleEdit,
+      tooltip: t('accounting.edit')
+    },
+    {
       key: 'delete',
       label: t('accounting.delete'),
       icon: <Trash2 className="h-4 w-4" />,
@@ -164,7 +175,7 @@ export const JournalEntryList = () => {
         subtitle={t('accounting.doubleEntryBookkeeping')}
         icon={<FileText className="h-5 w-5" />}
         headerActions={
-          <Button onClick={() => navigate('/transactions/add')}>
+          <Button onClick={() => navigate('/journal-entries/add')}>
             <Plus className="mr-2 h-4 w-4" />
             {t('accounting.addTransaction')}
           </Button>

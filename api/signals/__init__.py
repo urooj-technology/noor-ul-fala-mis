@@ -97,13 +97,36 @@ def create_expense_journal(sender, instance, created, **kwargs):
     """Create journal entry when expense is created"""
     if created:
         try:
-            AccountingService.record_expense(
-                amount=instance.amount,
+            from api.models.data.accounting import Account
+            
+            currency = instance.currency or 'AFN'
+            category_name = instance.category.name.lower() if instance.category else ''
+            
+            # Determine expense account based on category name
+            expense_account = None
+            if 'salary' in category_name or 'wage' in category_name:
+                expense_account = Account.objects.filter(code=f'5000_{currency}').first()
+            else:
+                # Default to Other Expenses for all other categories
+                expense_account = Account.objects.filter(code=f'5900_{currency}').first()
+            
+            if not expense_account:
+                expense_account = Account.objects.filter(code=f'5900_{currency}').first()
+            
+            cash_account = Account.objects.filter(code=f'1000_{currency}').first()
+            
+            if not cash_account or not expense_account:
+                raise ValueError(f"Default accounts not configured for {currency}. Please run init_chart_of_accounts.")
+            
+            AccountingService.create_journal_entry(
                 date=instance.expense_date,
-                description=instance.description or instance.category.name,
-                expense_category=instance.category.name,
-                reference=f"EXPENSE-{instance.id}",
-                currency=instance.currency
+                description=f"Expense - {instance.category.name}: {instance.description or ''}",
+                lines=[
+                    {'account_id': expense_account.id, 'debit': instance.amount, 'credit': 0},
+                    {'account_id': cash_account.id, 'debit': 0, 'credit': instance.amount}
+                ],
+                transaction_type='expense',
+                reference=f"EXPENSE-{instance.id}"
             )
         except Exception as e:
             import logging

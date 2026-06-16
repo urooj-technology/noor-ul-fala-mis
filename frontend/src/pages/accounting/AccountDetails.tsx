@@ -89,11 +89,7 @@ const AccountDetails = () => {
                 <p className="text-lg font-bold">{account.code}</p>
               </div>
               <div>
-                <p className="text-sm opacity-75">{t('accounting.accountCategory')}</p>
-                <p className="text-lg font-bold">{account.category_name || '-'}</p>
-              </div>
-              <div>
-                <p className="text-sm opacity-75">{t('accounting.accountCategoryType')}</p>
+                <p className="text-sm opacity-75">{t('accounting.accountType')}</p>
                 <p className="text-lg font-bold">{getTypeBadge(account.account_type || '')}</p>
               </div>
               <div>
