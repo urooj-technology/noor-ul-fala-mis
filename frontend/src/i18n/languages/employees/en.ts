@@ -27,8 +27,17 @@ export const employeeEn = {
   financialSummary: "Financial Summary",
   monthlySalary: "Monthly Salary",
   totalAdvances: "Total Advances",
+  advancePaid: "Advance Paid",
   paidSalary: "Paid Salary",
+  payrollPaid: "Payroll Paid",
+  totalPaid: "Total Paid",
   remaining: "Remaining",
+  month: "Month",
+  year: "Year",
+  selectMonth: "Select Month",
+  selectYear: "Select Year",
+  financeForPeriod: "Finance for {month} {year}",
+  financeInfo: "Finance Info",
   
   // Messages
   addSuccess: "Employee added successfully",

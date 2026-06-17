@@ -1,36 +1,51 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, Eye, Users, Calendar, DollarSign, MapPin } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Autocomplete } from '@/components/ui/autocomplete';
 import DataTable, { TableColumn, TableAction, FilterOption } from '@/components/ui/data-table';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCalendar } from '@/contexts/CalendarContext';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
+import { getCurrentYear, getYearsArray, SHAMSI_MONTHS_DARI, SHAMSI_MONTHS_PASHTO, gregorianToShamsi } from '@/utils/calendar';
+import {
+  EmployeeFinanceSummaryCards,
+  aggregateFinanceSummaries,
+  EmployeeFinancialSummary,
+  formatFinanceAmount,
+} from '@/components/ui/employee-finance-summary';
+import { Employee } from '@/types/employee';
 
-
+const getCurrentShamsiMonth = () => {
+  const now = new Date();
+  const shamsi = gregorianToShamsi(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  return shamsi.month;
+};
 
 export const EmployeeList = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { calendarType } = useCalendar();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-  
-  // Get current month and year
-  const now = new Date();
-  const [selectedMonth, setSelectedMonth] = useState(now.toLocaleString('default', { month: 'long' }).toLowerCase());
-  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+
+  const currentYear = getCurrentYear(calendarType);
+  const months = language === 'ps' ? SHAMSI_MONTHS_PASHTO : SHAMSI_MONTHS_DARI;
+  const years = getYearsArray(calendarType, 10);
+
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentShamsiMonth);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
 
   const { data: employeesData, isLoading } = useFetchObjects<{
-    results: any[];
+    results: Employee[];
     count: number;
     next: string | null;
     previous: string | null;
   }>({
-    queryKey: ['employees', currentPage.toString(), pageSize.toString(), searchTerm, statusFilter, selectedMonth, selectedYear.toString()],
+    queryKey: ['employees', currentPage.toString(), pageSize.toString(), searchTerm, statusFilter, selectedMonth.toString(), selectedYear.toString()],
     endpoint: 'employees',
     params: {
       page: currentPage,
@@ -42,8 +57,6 @@ export const EmployeeList = () => {
     }
   });
 
-
-
   const { handleDelete, ConfirmDialog } = useDelete({
     queryKey: ['employees'],
     endpoint: 'employees'
@@ -52,11 +65,20 @@ export const EmployeeList = () => {
   const employees = employeesData?.results || [];
   const totalItems = employeesData?.count || 0;
 
-  const handleEdit = (employee: any) => {
+  const financeSummaries = employees
+    .map((emp) => emp.financial_summary)
+    .filter((s): s is EmployeeFinancialSummary => !!s);
+
+  const totals = aggregateFinanceSummaries(financeSummaries);
+
+  const selectedMonthName = months[selectedMonth - 1] || selectedMonth.toString();
+  const periodLabel = `${selectedMonthName} ${selectedYear}`;
+
+  const handleEdit = (employee: Employee) => {
     navigate(`/employees/${employee.id}/edit`);
   };
 
-  const handleDetails = (employee: any) => {
+  const handleDetails = (employee: Employee) => {
     navigate(`/employees/${employee.id}`);
   };
 
@@ -66,15 +88,10 @@ export const EmployeeList = () => {
       title: t('employees.name'),
       render: (value) => (
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+          <div className="w-2 h-2 bg-blue-500 rounded-full" />
           <span className="font-semibold text-xs">{value || 'N/A'}</span>
         </div>
       )
-    },
-    {
-      key: 'phone',
-      title: t('employees.phone'),
-      render: (value) => <span className="text-xs">{value || 'N/A'}</span>
     },
     {
       key: 'position',
@@ -82,40 +99,70 @@ export const EmployeeList = () => {
       render: (value) => <span className="text-xs">{value || 'N/A'}</span>
     },
     {
-      key: 'salary',
-      title: t('employees.salary'),
-      render: (value, record) => (
-        <span className="font-bold text-xs text-green-600">
-          {Number(value || 0).toFixed(2)} {record.currency_details?.code || record.currency || ''}
-        </span>
-      )
+      key: 'financial_summary_salary',
+      title: t('employees.monthlySalary'),
+      render: (_, record) => {
+        const summary = record.financial_summary;
+        const currency = summary?.currency?.code || record.currency || '';
+        return (
+          <span className="font-bold text-xs text-blue-600 whitespace-nowrap">
+            {formatFinanceAmount(summary?.total_salary ?? record.salary, currency)}
+          </span>
+        );
+      }
     },
     {
-      key: 'financial_summary',
-      title: 'Paid Salary',
-      render: (value, record) => (
-        <span className="font-semibold text-xs text-green-600">
-          {Number(value?.total_salary_paid || 0).toFixed(2)} {record.currency_details?.code || record.currency || ''}
-        </span>
-      )
+      key: 'financial_summary_payroll',
+      title: t('employees.paidSalary'),
+      render: (_, record) => {
+        const summary = record.financial_summary;
+        const currency = summary?.currency?.code || record.currency || '';
+        return (
+          <span className="font-semibold text-xs text-green-600 whitespace-nowrap">
+            {formatFinanceAmount(summary?.payroll_paid, currency)}
+          </span>
+        );
+      }
     },
     {
-      key: 'financial_summary',
-      title: 'Advances',
-      render: (value, record) => (
-        <span className="font-semibold text-xs text-orange-600">
-          {Number(value?.total_advances_paid || 0).toFixed(2)} {record.currency_details?.code || record.currency || ''}
-        </span>
-      )
+      key: 'financial_summary_advance',
+      title: t('employees.advancePaid'),
+      render: (_, record) => {
+        const summary = record.financial_summary;
+        const currency = summary?.currency?.code || record.currency || '';
+        return (
+          <span className="font-semibold text-xs text-orange-600 whitespace-nowrap">
+            {formatFinanceAmount(summary?.advance_paid, currency)}
+          </span>
+        );
+      }
     },
     {
-      key: 'financial_summary',
-      title: 'Remaining',
-      render: (value, record) => (
-        <span className={`font-semibold text-xs ${Number(value?.remaining_amount || 0) >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-          {Number(value?.remaining_amount || 0).toFixed(2)} {record.currency_details?.code || record.currency || ''}
-        </span>
-      )
+      key: 'financial_summary_total',
+      title: t('employees.totalPaid'),
+      render: (_, record) => {
+        const summary = record.financial_summary;
+        const currency = summary?.currency?.code || record.currency || '';
+        return (
+          <span className="font-semibold text-xs text-red-600 whitespace-nowrap">
+            {formatFinanceAmount(summary?.overall_paid, currency)}
+          </span>
+        );
+      }
+    },
+    {
+      key: 'financial_summary_remaining',
+      title: t('employees.remaining'),
+      render: (_, record) => {
+        const summary = record.financial_summary;
+        const currency = summary?.currency?.code || record.currency || '';
+        const remaining = Number(summary?.remaining_amount ?? 0);
+        return (
+          <span className={`font-semibold text-xs whitespace-nowrap ${remaining < 0 ? 'text-red-600' : 'text-purple-600'}`}>
+            {formatFinanceAmount(remaining, currency)}
+          </span>
+        );
+      }
     },
     {
       key: 'is_active',
@@ -157,33 +204,17 @@ export const EmployeeList = () => {
   const filters: FilterOption[] = [
     {
       key: 'month',
-      label: 'Month',
-      placeholder: 'Select Month',
-      width: 'sm:w-40',
-      options: [
-        { value: 'january', label: 'January' },
-        { value: 'february', label: 'February' },
-        { value: 'march', label: 'March' },
-        { value: 'april', label: 'April' },
-        { value: 'may', label: 'May' },
-        { value: 'june', label: 'June' },
-        { value: 'july', label: 'July' },
-        { value: 'august', label: 'August' },
-        { value: 'september', label: 'September' },
-        { value: 'october', label: 'October' },
-        { value: 'november', label: 'November' },
-        { value: 'december', label: 'December' }
-      ]
+      label: t('employees.month'),
+      placeholder: t('employees.selectMonth'),
+      width: 'sm:w-32',
+      options: months.map((month, idx) => ({ value: (idx + 1).toString(), label: month }))
     },
     {
       key: 'year',
-      label: 'Year',
-      placeholder: 'Select Year',
-      width: 'sm:w-32',
-      options: Array.from({ length: 5 }, (_, i) => {
-        const year = new Date().getFullYear() - i;
-        return { value: year.toString(), label: year.toString() };
-      })
+      label: t('employees.year'),
+      placeholder: t('employees.selectYear'),
+      width: 'sm:w-28',
+      options: years.map((year) => ({ value: year.toString(), label: year.toString() }))
     },
     {
       key: 'status',
@@ -198,7 +229,7 @@ export const EmployeeList = () => {
   ];
 
   const filterValues = {
-    month: selectedMonth,
+    month: selectedMonth.toString(),
     year: selectedYear.toString(),
     status: statusFilter
   };
@@ -208,7 +239,7 @@ export const EmployeeList = () => {
       setStatusFilter(value);
       setCurrentPage(1);
     } else if (key === 'month') {
-      setSelectedMonth(value);
+      setSelectedMonth(parseInt(value));
       setCurrentPage(1);
     } else if (key === 'year') {
       setSelectedYear(parseInt(value));
@@ -222,22 +253,37 @@ export const EmployeeList = () => {
   };
 
   const handleClearFilters = () => {
-    const now = new Date();
-    setSelectedMonth(now.toLocaleString('default', { month: 'long' }).toLowerCase());
-    setSelectedYear(now.getFullYear());
+    setSelectedMonth(getCurrentShamsiMonth());
+    setSelectedYear(currentYear);
     setStatusFilter('all');
     setSearchTerm('');
     setCurrentPage(1);
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 p-6">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          {t('employees.financeForPeriod').replace('{month}', selectedMonthName).replace('{year}', selectedYear.toString())}
+        </p>
+      </div>
+
+      <EmployeeFinanceSummaryCards
+        summary={{
+          total_salary: totals.total_salary,
+          payroll_paid: totals.payroll_paid,
+          advance_paid: totals.advance_paid,
+          overall_paid: totals.overall_paid,
+          remaining_amount: totals.remaining_amount,
+        }}
+      />
+
       <DataTable
         data={employees}
         columns={columns}
         loading={isLoading}
         title={t('employees.title')}
-        subtitle={t('employees.manageEmployeeRecords')}
+        subtitle={`${t('employees.manageEmployeeRecords')} — ${periodLabel}`}
         icon={<Users className="h-5 w-5" />}
         headerActions={
           <Button onClick={() => navigate('/employees/add')}>
@@ -272,7 +318,7 @@ export const EmployeeList = () => {
         emptyTitle={t('employees.noEmployeesFound')}
         emptyDescription={searchTerm ? t('employees.tryAdjustingSearch') : t('employees.addFirstEmployee')}
         loadingText={t('employees.loadingEmployees')}
-        maxHeight="75vh"
+        maxHeight="70vh"
         stickyHeader={true}
       />
 

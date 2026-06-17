@@ -27,8 +27,17 @@ export const employeePs = {
   financialSummary: "مالي لنډیز",
   monthlySalary: "میاشتنی معاش",
   totalAdvances: "ټول پیشکي",
+  advancePaid: "تادیه شوې پیشکي",
   paidSalary: "تادیه شوی معاش",
+  payrollPaid: "تادیه شوی معاش",
+  totalPaid: "ټول تادیه شوی",
   remaining: "پاتې",
+  month: "میاشت",
+  year: "کال",
+  selectMonth: "میاشت وټاکئ",
+  selectYear: "کال وټاکئ",
+  financeForPeriod: "مالي {month} {year}",
+  financeInfo: "مالي معلومات",
   
   // Messages
   addSuccess: "کارمند په بریالیتوب سره اضافه شو",

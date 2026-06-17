@@ -1,6 +1,7 @@
 export interface Employee {
   id: string;
-  employee_id?: string; // For ZKTeco device integration
+  full_name?: string;
+  employee_id?: string;
   user_details?: {
     id: string;
     username: string;
@@ -27,11 +28,23 @@ export interface Employee {
     code: string;
     symbol?: string;
   };
+  financial_summary?: EmployeeFinancialSummary;
   notes?: string;
   contract_start_date?: string;
   contract_end_date?: string;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface EmployeeFinancialSummary {
+  total_salary: number;
+  payroll_paid: number;
+  advance_paid: number;
+  overall_paid: number;
+  remaining_amount: number;
+  currency?: { code: string; symbol?: string };
+  month?: number;
+  year?: number;
 }
 
 export interface EmployeeFormData {

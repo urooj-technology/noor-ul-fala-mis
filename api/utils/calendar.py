@@ -266,3 +266,26 @@ def parse_qamari_date(qamari_str):
     except Exception:
         pass
     return None
+
+
+def matches_shamsi_period(stored_month, stored_year, payment_date, target_month, target_year):
+    """Check if a record belongs to the given Shamsi month/year period."""
+    try:
+        if int(stored_month) == int(target_month) and int(stored_year) == int(target_year):
+            return True
+    except (TypeError, ValueError):
+        pass
+
+    if payment_date:
+        shamsi = gregorian_to_shamsi(payment_date)
+        if shamsi and shamsi.get('month') == int(target_month) and shamsi.get('year') == int(target_year):
+            return True
+    return False
+
+
+def shamsi_period_from_payment_date(payment_date):
+    """Return Shamsi month/year from a payment date, or None."""
+    shamsi = gregorian_to_shamsi(payment_date)
+    if not shamsi:
+        return None
+    return shamsi['month'], shamsi['year']

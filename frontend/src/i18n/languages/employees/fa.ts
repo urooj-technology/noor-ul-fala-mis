@@ -27,8 +27,17 @@ export const employeeFa = {
   financialSummary: "خلاصه مالی",
   monthlySalary: "حقوق ماهانه",
   totalAdvances: "کل پیشپرداختها",
+  advancePaid: "پیشپرداخت پرداخت شده",
   paidSalary: "حقوق پرداخت شده",
+  payrollPaid: "حقوق پرداختی",
+  totalPaid: "مجموع پرداخت شده",
   remaining: "باقیمانده",
+  month: "ماه",
+  year: "سال",
+  selectMonth: "انتخاب ماه",
+  selectYear: "انتخاب سال",
+  financeForPeriod: "مالی {month} {year}",
+  financeInfo: "اطلاعات مالی",
   
   // Messages
   addSuccess: "کارمند با موفقیت اضافه شد",

@@ -39,3 +39,38 @@ class Employee(BaseModel):
             'monthly_salary': self.salary,
             'currency': self.currency
         }
+
+    def get_period_financial_summary(self, month, year):
+        """Get financial summary for a specific month/year period"""
+        from decimal import Decimal
+        from api.utils.calendar import matches_shamsi_period
+
+        month = int(month)
+        year = int(year)
+
+        payroll_paid = Decimal('0.00')
+        for payroll in self.payrolls.filter(is_deleted=False):
+            if matches_shamsi_period(payroll.month, payroll.year, payroll.payment_date, month, year):
+                payroll_paid += payroll.salary or Decimal('0.00')
+
+        advance_paid = Decimal('0.00')
+        for advance in self.advances.filter(is_deleted=False):
+            if matches_shamsi_period(advance.month, advance.year, advance.payment_date, month, year):
+                advance_paid += advance.amount or Decimal('0.00')
+
+        monthly_salary = self.salary or Decimal('0.00')
+        overall_paid = payroll_paid + advance_paid
+        remaining_amount = monthly_salary - overall_paid
+
+        return {
+            'total_salary': float(monthly_salary),
+            'payroll_paid': float(payroll_paid),
+            'advance_paid': float(advance_paid),
+            'overall_paid': float(overall_paid),
+            'remaining_amount': float(remaining_amount),
+            'currency': {
+                'code': self.currency or 'USD',
+            },
+            'month': month,
+            'year': year,
+        }

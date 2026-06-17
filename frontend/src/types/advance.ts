@@ -37,7 +37,7 @@ export interface Advance extends BaseEntity {
   currency_details?: Currency;
   reason?: string;
   year: number;
-  month: string;
+  month: number;  // 1-12 for Shamsi months
   payment_date: string;
 }
 
@@ -47,6 +47,6 @@ export interface AdvanceFormData {
   currency: string;
   reason?: string;
   year: number;
-  month: string;
+  month: number;  // 1-12 for Shamsi months
   payment_date: string;
 }

@@ -9,6 +9,7 @@ import { Autocomplete } from '@/components/ui/autocomplete';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCalendar } from '@/contexts/CalendarContext';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { ArrowLeft, DollarSign, User } from 'lucide-react';
 import DatePicker from '@/components/ui/date-picker-calendar';
@@ -16,33 +17,33 @@ import useUpdate from '@/api/useUpdate';
 import useFetchObjects from '@/api/useFetchObjects';
 import { AdvanceFormData, Employee } from '@/types/advance';
 import { Currency } from '@/types/common';
+import { getCurrentYear, getYearsArray, SHAMSI_MONTHS_DARI, SHAMSI_MONTHS_PASHTO } from '@/utils/calendar';
 
 interface EmployeeFinancialSummary {
   total_salary: number;
-  advanced_paid: number;
+  advance_paid: number;
   payroll_paid: number;
   overall_paid: number;
   remaining_amount: number;
   currency?: { id: string; code: string; symbol?: string; };
 }
 
-const getCurrentMonth = () => {
-  const months = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
-  return months[new Date().getMonth()];
-};
-
 const EditAdvance = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { calendarType } = useCalendar();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  
+  const currentCalendarYear = getCurrentYear(calendarType);
+  
   const [formData, setFormData] = useState<AdvanceFormData>({
     employee: '',
     amount: 0,
     currency: '',
     reason: '',
-    year: new Date().getFullYear(),
-    month: getCurrentMonth(),
+    year: currentCalendarYear,
+    month: 1,
     payment_date: new Date().toISOString().slice(0, 10),
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -58,20 +59,11 @@ const EditAdvance = () => {
     queryKey: ['advances'],
   });
 
-  const months = [
-    { value: 'january', label: t('advance.months.january') },
-    { value: 'february', label: t('advance.months.february') },
-    { value: 'march', label: t('advance.months.march') },
-    { value: 'april', label: t('advance.months.april') },
-    { value: 'may', label: t('advance.months.may') },
-    { value: 'june', label: t('advance.months.june') },
-    { value: 'july', label: t('advance.months.july') },
-    { value: 'august', label: t('advance.months.august') },
-    { value: 'september', label: t('advance.months.september') },
-    { value: 'october', label: t('advance.months.october') },
-    { value: 'november', label: t('advance.months.november') },
-    { value: 'december', label: t('advance.months.december') },
-  ];
+  // Get months based on language
+  const months = language === 'ps' ? SHAMSI_MONTHS_PASHTO : SHAMSI_MONTHS_DARI;
+  
+  // Years based on calendar type
+  const years = getYearsArray(calendarType, 10);
 
   useEffect(() => {
     if (advance) {
@@ -80,8 +72,8 @@ const EditAdvance = () => {
         amount: advance.amount || 0,
         currency: advance.currency?.toString() || '',
         reason: advance.reason || '',
-        year: advance.year || new Date().getFullYear(),
-        month: advance.month || '',
+        year: advance.year || currentCalendarYear,
+        month: typeof advance.month === 'number' ? advance.month : parseInt(advance.month) || 1,
         payment_date: advance.payment_date ? advance.payment_date.slice(0, 10) : new Date().toISOString().slice(0, 10),
       });
     }
@@ -110,7 +102,7 @@ const EditAdvance = () => {
     
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/employees/${formData.employee}/financial_summary/?month=${formData.month}&year=${formData.year}`,
+        `${import.meta.env.VITE_API_URL}/employees/${formData.employee}/financial_summary/?month=${formData.month}&year=${formData.year}&calendar_type=${calendarType}`,
         {
           headers: {
             'Authorization': `Token ${user?.token}`,
@@ -121,22 +113,9 @@ const EditAdvance = () => {
       if (response.ok) {
         const data = await response.json();
         setFinancialSummary(data);
-      } else {
-        setFinancialSummary({
-          salary: employee.salary || 0,
-          totalAdvances: 0,
-          totalPayrolls: 0,
-          remainingAmount: employee.salary || 0,
-        });
       }
     } catch (error) {
       console.error('Error fetching financial summary:', error);
-      setFinancialSummary({
-        salary: employee.salary || 0,
-        totalAdvances: 0,
-        totalPayrolls: 0,
-        remainingAmount: employee.salary || 0,
-      });
     }
   };
 
@@ -154,7 +133,14 @@ const EditAdvance = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm() || !advance) return;
-    handleUpdate(advance.id, formData);
+    
+    const payload = {
+      ...formData,
+      month: formData.month,
+      calendar_type: calendarType,
+    };
+    
+    handleUpdate(advance.id, payload);
   };
 
   if (advanceLoading) {
@@ -197,9 +183,9 @@ const EditAdvance = () => {
               <div>
                 <Label htmlFor="month">{t('advance.month')} *</Label>
                 <Select
-                  value={formData.month}
+                  value={formData.month?.toString()}
                   onValueChange={(value) => {
-                    setFormData((prev) => ({ ...prev, month: value }));
+                    setFormData((prev) => ({ ...prev, month: parseInt(value) }));
                     if (errors.month) setErrors((prev) => ({ ...prev, month: '' }));
                   }}
                 >
@@ -207,9 +193,9 @@ const EditAdvance = () => {
                     <SelectValue placeholder={t('advance.selectMonth')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {months.map((month) => (
-                      <SelectItem key={month.value} value={month.value}>
-                        {month.label}
+                    {months.map((month, idx) => (
+                      <SelectItem key={idx + 1} value={(idx + 1).toString()}>
+                        {month}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -218,17 +204,24 @@ const EditAdvance = () => {
               </div>
               <div>
                 <Label htmlFor="year">{t('advance.year')} *</Label>
-                <Input
-                  id="year"
-                  type="number"
-                  min="2020"
-                  max="2030"
-                  value={formData.year}
-                  onChange={(e) => {
-                    setFormData((prev) => ({ ...prev, year: parseInt(e.target.value) || new Date().getFullYear() }));
+                <Select
+                  value={formData.year?.toString()}
+                  onValueChange={(value) => {
+                    setFormData((prev) => ({ ...prev, year: parseInt(value) }));
                     if (errors.year) setErrors((prev) => ({ ...prev, year: '' }));
                   }}
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('advance.selectYear')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {errors.year && <p className="text-base text-destructivetext-xs">{errors.year}</p>}
               </div>
             </div>
@@ -246,7 +239,7 @@ const EditAdvance = () => {
                     <div className="text-center">
                       <div className="text-xs text-gray-600">Advanced Paid</div>
                       <div className="text-sm font-semibold text-orange-600">
-                        {financialSummary.currency?.code || ''} {Number(financialSummary.advanced_paid || 0).toFixed(2)}
+                        {financialSummary.currency?.code || ''} {Number(financialSummary.advance_paid || 0).toFixed(2)}
                       </div>
                     </div>
                     <div className="text-center">
@@ -310,7 +303,7 @@ const EditAdvance = () => {
                 <Label htmlFor="payment_date">{t('advance.paymentDate')} *</Label>
                 <DatePicker
                   value={formData.payment_date}
-                  onChange={(date) => setFormData((prev) => ({ ...prev, payment_date: date?.toISOString().slice(0, 10) || '' }))}
+                  onChange={(date) => setFormData((prev) => ({ ...prev, payment_date: date || '' }))}
                 />
               </div>
             </div>

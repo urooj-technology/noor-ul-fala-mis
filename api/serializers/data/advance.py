@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from api.models.data.advance import Advance
 from api.serializers.data.base import DataRootSerializer
-from api.utils.calendar import get_calendar_info
+from api.utils.calendar import get_calendar_info, shamsi_period_from_payment_date
 
 class AdvanceSerializer(DataRootSerializer):
     employee_details = serializers.SerializerMethodField()
@@ -47,4 +47,14 @@ class AdvanceSerializer(DataRootSerializer):
             employee = validated_data.get('employee')
             if employee and employee.currency:
                 validated_data['currency'] = employee.currency
+        period = shamsi_period_from_payment_date(validated_data.get('payment_date'))
+        if period:
+            validated_data['month'], validated_data['year'] = period
         return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        payment_date = validated_data.get('payment_date', instance.payment_date)
+        period = shamsi_period_from_payment_date(payment_date)
+        if period:
+            validated_data['month'], validated_data['year'] = period
+        return super().update(instance, validated_data)
