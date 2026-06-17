@@ -8,7 +8,7 @@ from api.views.data.payroll import PayrollViewSet
 from api.views.data.advance import AdvanceViewSet
 
 # ====================== STUDENT MANAGEMENT ======================
-from api.views.data.student import StudentViewSet, ClassLevelViewSet
+from api.views.data.student import StudentViewSet
 
 # ====================== STUDENT FINANCE (FEE) ======================
 from api.views.data.student_finance import (
@@ -60,7 +60,6 @@ router.register(r'payrolls', PayrollViewSet, basename='payroll')
 router.register(r'advances', AdvanceViewSet, basename='advance')
 
 # Student Management
-router.register(r'class-levels', ClassLevelViewSet, basename='class-level')
 router.register(r'students', StudentViewSet, basename='student')
 router.register(r'student-payments', StudentPaymentViewSet, basename='student-payment')
 

@@ -12,7 +12,7 @@ from api.models.data.expenses import ExpenseCategory, Expense
 from api.models.data.payroll import Payroll
 from api.models.data.activity_log import ActivityLog
 from api.models.data.permissions import Permission, UserPermission
-from api.models.data.student import Student, ClassLevel
+from api.models.data.student import Student, CLASS_LEVEL_CHOICES
 from api.models.data.student_finance import FeeType, StudentFeeAssignment, StudentPayment, FinanceLedger
 from api.models.data.shop_rental import Shop, Tenant, ShopRental
 from api.models.data.shop_rental_payment import ShopRentalPayment
@@ -53,7 +53,7 @@ class Command(BaseCommand):
         expenses = self.create_expenses(100, expense_categories, users)
         
         # Student & Education
-        class_levels = self.create_class_levels()
+        class_levels = self.get_class_levels()
         students = self.create_students(200, class_levels)
         fee_types = self.create_fee_types()
         fee_assignments = self.create_fee_assignments(students, fee_types, class_levels)
@@ -265,28 +265,9 @@ Data insertion completed!
         self.stdout.write(f"Created {len(user_permissions)} user permissions")
         return user_permissions
 
-    def create_class_levels(self):
-        levels = []
-        class_names = [
-            'Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5',
-            'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10',
-            'Class 11', 'Class 12'
-        ]
-        
-        for i in range(1, 13):
-            level, created = ClassLevel.objects.get_or_create(
-                level=str(i),
-                defaults={
-                    'name': class_names[i-1],
-                    'description': f'Grade {i} students',
-                    'is_active': True
-                }
-            )
-            if created:
-                levels.append(level)
-        
-        self.stdout.write(f"Created {len(levels)} class levels")
-        return ClassLevel.objects.all()
+    def get_class_levels(self):
+        """Return static class level choices as strings"""
+        return [choice[0] for choice in CLASS_LEVEL_CHOICES]
 
     def create_students(self, count, class_levels):
         students = []
@@ -575,7 +556,6 @@ Data insertion completed!
         Shop.objects.all().delete()
         
         Student.objects.all().delete()
-        ClassLevel.objects.all().delete()
         
         # Clear transactions and journal entries (but keep accounts)
         JournalEntry.objects.all().delete()

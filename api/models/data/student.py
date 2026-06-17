@@ -6,36 +6,21 @@ from api.models.data.choices import CURRENCY_CHOICES, DEFAULT_CURRENCY
 from decimal import Decimal
 
 
-class ClassLevel(models.Model):
-    """Class levels for students from 1 to 12"""
-
-    CLASS_CHOICES = [
-        ('1', 'Class 1'),
-        ('2', 'Class 2'),
-        ('3', 'Class 3'),
-        ('4', 'Class 4'),
-        ('5', 'Class 5'),
-        ('6', 'Class 6'),
-        ('7', 'Class 7'),
-        ('8', 'Class 8'),
-        ('9', 'Class 9'),
-        ('10', 'Class 10'),
-        ('11', 'Class 11'),
-        ('12', 'Class 12'),
-    ]
-
-    level = models.CharField(max_length=2, choices=CLASS_CHOICES, unique=True)
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True, null=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = [models.functions.Cast('level', output_field=models.IntegerField())]
-
-    def __str__(self):
-        return self.name
+# Static class level choices
+CLASS_LEVEL_CHOICES = [
+    ('1', 'Class 1'),
+    ('2', 'Class 2'),
+    ('3', 'Class 3'),
+    ('4', 'Class 4'),
+    ('5', 'Class 5'),
+    ('6', 'Class 6'),
+    ('7', 'Class 7'),
+    ('8', 'Class 8'),
+    ('9', 'Class 9'),
+    ('10', 'Class 10'),
+    ('11', 'Class 11'),
+    ('12', 'Class 12'),
+]
 
 
 class Student(BaseModel):
@@ -88,12 +73,11 @@ class Student(BaseModel):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
 
     # Class & Fee Information
-    class_level = models.ForeignKey(
-        ClassLevel,
-        on_delete=models.SET_NULL,
+    class_level = models.CharField(
+        max_length=2,
+        choices=CLASS_LEVEL_CHOICES,
         null=True,
         blank=True,
-        related_name='students',
         help_text='Class level the student is enrolled in'
     )
     # DEPRECATED fields - kept for backward compatibility only
@@ -223,8 +207,8 @@ class Student(BaseModel):
                 'paid_amount': str(paid),
                 'remaining_amount': str(amount - paid),
                 'fee_type_id': assignment.fee_type.id if assignment.fee_type else None,
-                'class_level_id': assignment.class_level.id if assignment.class_level else None,
-                'class_level_name': assignment.class_level.name if assignment.class_level else None,
+                'class_level_id': assignment.class_level if assignment.class_level else None,
+                'class_level_name': dict(CLASS_LEVEL_CHOICES).get(assignment.class_level, assignment.class_level) if assignment.class_level else None,
             })
         
         return fee_breakdown
@@ -298,8 +282,8 @@ class Student(BaseModel):
                     'expected': Decimal('0'),
                     'paid': Decimal('0'),
                     'remaining': Decimal('0'),
-                    'class_level_id': level.id if level else None,
-                    'class_level_name': level.name if level else None,
+                    'class_level_id': level if level else None,
+                    'class_level_name': dict(CLASS_LEVEL_CHOICES).get(level, level) if level else None,
                 }
             
             by_fee_type[fee_name]['expected'] += assignment.amount
@@ -321,7 +305,7 @@ class Student(BaseModel):
             'remaining_balance': remaining,
             'registration_number': self.registration_number,
             'status': self.status,
-            'class_level': level.name if level else None,
-            'class_level_id': level.id if level else None,
+            'class_level': dict(CLASS_LEVEL_CHOICES).get(level, level) if level else None,
+            'class_level_id': level if level else None,
             'by_fee_type': by_fee_type,
         }

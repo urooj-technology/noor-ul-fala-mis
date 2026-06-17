@@ -3,18 +3,11 @@ from rest_framework.response import Response
 from django.db.models import Sum, Count
 from django.db import transaction
 from django.utils import timezone
-from api.models.data.student import Student, ClassLevel
-from api.serializers.data.student import StudentSerializer, ClassLevelSerializer
+from api.models.data.student import Student, CLASS_LEVEL_CHOICES
+from api.serializers.data.student import StudentSerializer
 from api.views.data.base import DataRootViewSet
 from decimal import Decimal
 from rest_framework import status as drf_status
-
-
-class ClassLevelViewSet(DataRootViewSet):
-    queryset = ClassLevel.objects.all().order_by('level')
-    serializer_class = ClassLevelSerializer
-    filterset_fields = ['is_active']
-    search_fields = ['name', 'level']
 
 
 class StudentViewSet(DataRootViewSet):
@@ -47,7 +40,7 @@ class StudentViewSet(DataRootViewSet):
         # Filter by class_level
         class_level = self.request.query_params.get('class_level')
         if class_level:
-            queryset = queryset.filter(class_level_id=class_level)
+            queryset = queryset.filter(class_level=class_level)
 
         # Filter by list of IDs (for bulk operations)
         id_in = self.request.query_params.get('id__in')
@@ -66,15 +59,10 @@ class StudentViewSet(DataRootViewSet):
                         If not provided, uses student's current class_level.
         """
         student = self.get_object()
-        class_level_id = request.query_params.get('class_level')
+        class_level_param = request.query_params.get('class_level')
         
-        # Get the ClassLevel object if provided
-        class_level = None
-        if class_level_id and class_level_id != 'all':
-            try:
-                class_level = ClassLevel.objects.get(id=class_level_id)
-            except ClassLevel.DoesNotExist:
-                pass
+        # Use the class_level parameter if provided, otherwise use student's current class_level
+        class_level = class_level_param if class_level_param and class_level_param != 'all' else student.class_level
         
         summary = student.get_financial_summary(class_level=class_level)
 
@@ -103,21 +91,21 @@ class StudentViewSet(DataRootViewSet):
     def by_level(self, request):
         """
         Get all students for a specific class level
-        URL: /api/students/by_level/?level=<level_id>
+        URL: /api/students/by_level/?level=<level_value>
         """
-        level_id = request.query_params.get('level')
+        level_value = request.query_params.get('level')
         
-        if not level_id:
+        if not level_value:
             return Response({'error': 'level parameter is required'}, status=drf_status.HTTP_400_BAD_REQUEST)
         
-        try:
-            level = ClassLevel.objects.get(id=level_id)
-        except ClassLevel.DoesNotExist:
-            return Response({'error': 'Class level not found'}, status=drf_status.HTTP_404_NOT_FOUND)
+        # Validate the level value
+        valid_levels = [choice[0] for choice in CLASS_LEVEL_CHOICES]
+        if level_value not in valid_levels:
+            return Response({'error': 'Invalid class level'}, status=drf_status.HTTP_400_BAD_REQUEST)
         
         # Get all students for this level
         students = Student.objects.filter(
-            class_level=level,
+            class_level=level_value,
             status='active'
         ).order_by('full_name')
         
@@ -125,9 +113,9 @@ class StudentViewSet(DataRootViewSet):
         
         return Response({
             'level': {
-                'id': level.id,
-                'name': level.name,
-                'level': level.level
+                'id': level_value,
+                'name': dict(CLASS_LEVEL_CHOICES).get(level_value, level_value),
+                'level': level_value
             },
             'students': serializer.data,
             'count': students.count()
@@ -189,7 +177,7 @@ class StudentViewSet(DataRootViewSet):
     def bulk_change_class(self, request):
         """Bulk update class_level for multiple students"""
         student_ids = request.data.get('student_ids', [])
-        class_level_id = request.data.get('class_level')
+        class_level_value = request.data.get('class_level')
 
         if not student_ids or not isinstance(student_ids, list) or len(student_ids) == 0:
             return Response(
@@ -197,24 +185,23 @@ class StudentViewSet(DataRootViewSet):
                 status=drf_status.HTTP_400_BAD_REQUEST
             )
 
-        if not class_level_id:
+        if not class_level_value:
             return Response(
                 {'error': 'class_level is required'},
                 status=drf_status.HTTP_400_BAD_REQUEST
             )
 
-        # Validate class level exists
-        try:
-            class_level = ClassLevel.objects.get(id=class_level_id)
-        except ClassLevel.DoesNotExist:
+        # Validate the class level value
+        valid_levels = [choice[0] for choice in CLASS_LEVEL_CHOICES]
+        if class_level_value not in valid_levels:
             return Response(
-                {'error': 'Class level not found'},
-                status=drf_status.HTTP_404_NOT_FOUND
+                {'error': 'Invalid class level'},
+                status=drf_status.HTTP_400_BAD_REQUEST
             )
 
         # Fetch and update students
         students = Student.objects.filter(id__in=student_ids)
-        updated_count = students.update(class_level_id=class_level_id)
+        updated_count = students.update(class_level=class_level_value)
 
         # Return updated students
         updated_students = Student.objects.filter(id__in=student_ids)
@@ -222,6 +209,10 @@ class StudentViewSet(DataRootViewSet):
 
         return Response({
             'updated_count': updated_count,
-            'class_level': ClassLevelSerializer(class_level).data,
+            'class_level': {
+                'id': class_level_value,
+                'name': dict(CLASS_LEVEL_CHOICES).get(class_level_value, class_level_value),
+                'level': class_level_value
+            },
             'students': serializer.data,
         })

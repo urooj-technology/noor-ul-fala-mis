@@ -13,6 +13,22 @@ import useFetchObjects from '@/api/useFetchObjects';
 import useFetchObject from '@/api/useFetchObject';
 import useUpdate from '@/api/useUpdate';
 
+// Static class level options
+const CLASS_LEVELS = [
+  { id: '1', level: '1', name: 'Class 1' },
+  { id: '2', level: '2', name: 'Class 2' },
+  { id: '3', level: '3', name: 'Class 3' },
+  { id: '4', level: '4', name: 'Class 4' },
+  { id: '5', level: '5', name: 'Class 5' },
+  { id: '6', level: '6', name: 'Class 6' },
+  { id: '7', level: '7', name: 'Class 7' },
+  { id: '8', level: '8', name: 'Class 8' },
+  { id: '9', level: '9', name: 'Class 9' },
+  { id: '10', level: '10', name: 'Class 10' },
+  { id: '11', level: '11', name: 'Class 11' },
+  { id: '12', level: '12', name: 'Class 12' },
+];
+
 interface FeeType {
   id: number;
   name: string;
@@ -26,7 +42,7 @@ interface Student {
   full_name: string;
   registration_number: string;
   class_level_details?: {
-    id: number;
+    id: string;
     name: string;
     level: string;
   };
@@ -222,7 +238,7 @@ const EditStudentFeeAssignment = () => {
                 {t('students.classLevel')} <span className="text-destructive">*</span>
               </Label>
               <Autocomplete
-                endpoint="class-levels"
+                options={CLASS_LEVELS}
                 value={selectedLevel}
                 onChange={(value) => setSelectedLevel(value as string)}
                 placeholder={t('students.selectClassLevel')}

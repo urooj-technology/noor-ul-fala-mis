@@ -19,6 +19,7 @@ from django.db.models import Sum, Q
 from django.utils import timezone
 from api.models.data.base import BaseModel
 from api.models.data.choices import CURRENCY_CHOICES, DEFAULT_CURRENCY
+from api.models.data.student import CLASS_LEVEL_CHOICES
 from decimal import Decimal
 
 
@@ -66,7 +67,7 @@ class StudentFeeAssignment(BaseModel):
     fee_type = models.ForeignKey(FeeType, on_delete=models.PROTECT, related_name='student_assignments')
     
     # Optional class level context for the assignment (keeps information about which level this assignment targets)
-    class_level = models.ForeignKey('api.ClassLevel', on_delete=models.SET_NULL, null=True, blank=True, related_name='fee_assignments')
+    class_level = models.CharField(max_length=2, choices=CLASS_LEVEL_CHOICES, null=True, blank=True)
 
     # Simple numeric payment plan per-assignment (e.g., 1=monthly, 3=quarterly, 12=yearly)
     payment_plan = models.PositiveIntegerField(default=1, help_text='Number of months between payments for this assignment')

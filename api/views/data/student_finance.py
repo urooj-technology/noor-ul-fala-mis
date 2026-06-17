@@ -21,7 +21,7 @@ from rest_framework import status as drf_status
 from api.models.data.student_finance import (
     FeeType, StudentFeeAssignment, StudentPayment, FinanceLedger
 )
-from api.models.data.student import Student
+from api.models.data.student import Student, CLASS_LEVEL_CHOICES
 from api.serializers.data.student_finance import (
     FeeTypeSerializer, FeeTypeMinimalSerializer,
     StudentFeeAssignmentSerializer, StudentPaymentSerializer, FinanceLedgerSerializer
@@ -42,7 +42,7 @@ class FeeTypeViewSet(DataRootViewSet):
 
 class StudentFeeAssignmentViewSet(DataRootViewSet):
     """API endpoint for StudentFeeAssignment management | مدیریت تخصیص فیس شاگردان"""
-    queryset = StudentFeeAssignment.objects.all().select_related('student', 'fee_type', 'class_level')
+    queryset = StudentFeeAssignment.objects.all().select_related('student', 'fee_type')
     serializer_class = StudentFeeAssignmentSerializer
     filterset_fields = ['student', 'fee_type', 'is_active', 'is_mandatory', 'class_level']
     search_fields = ['student__full_name', 'student__registration_number', 'fee_type__name']
@@ -51,7 +51,7 @@ class StudentFeeAssignmentViewSet(DataRootViewSet):
         queryset = super().get_queryset()
         class_level = self.request.query_params.get('class_level')
         if class_level:
-            queryset = queryset.filter(class_level_id=class_level)
+            queryset = queryset.filter(class_level=class_level)
         return queryset
     
     @action(detail=False, methods=['get'])
@@ -72,7 +72,7 @@ class StudentFeeAssignmentViewSet(DataRootViewSet):
         Get all data needed for fee assignment in one request.
         Returns: fee types, class level assigned fees, and student's existing assignments.
         """
-        class_level_id = request.query_params.get('class_level')
+        class_level = request.query_params.get('class_level')
         student_id = request.query_params.get('student')
         
         # Get all active fee types
@@ -89,9 +89,9 @@ class StudentFeeAssignmentViewSet(DataRootViewSet):
         
         # Get all active fee assignments for this class level
         class_assignments_qs = StudentFeeAssignment.objects.filter(
-            class_level_id=class_level_id,
+            class_level=class_level,
             is_active=True
-        ).select_related('fee_type', 'student') if class_level_id else []
+        ).select_related('fee_type', 'student') if class_level else []
         
         # Group by fee_type with assignment count and amounts
         from collections import Counter
@@ -125,11 +125,11 @@ class StudentFeeAssignmentViewSet(DataRootViewSet):
                 student_assignments_qs = StudentFeeAssignment.objects.filter(
                     student=student,
                     is_active=True
-                ).select_related('fee_type', 'class_level')
+                ).select_related('fee_type')
                 
-                # If class_level_id is provided, only get assignments for that level
-                if class_level_id:
-                    student_assignments_qs = student_assignments_qs.filter(class_level_id=class_level_id)
+                # If class_level is provided, only get assignments for that level
+                if class_level:
+                    student_assignments_qs = student_assignments_qs.filter(class_level=class_level)
                 
                 for a in student_assignments_qs:
                     student_assignments.append({
@@ -138,8 +138,8 @@ class StudentFeeAssignmentViewSet(DataRootViewSet):
                         'amount': str(a.amount),
                         'currency': a.currency,
                         'payment_plan': a.payment_plan,
-                        'class_level_id': a.class_level_id,
-                        'class_level_name': a.class_level.name if a.class_level else None,
+                        'class_level': a.class_level,
+                        'class_level_name': dict(CLASS_LEVEL_CHOICES).get(a.class_level, a.class_level) if a.class_level else None,
                     })
             except Student.DoesNotExist:
                 pass
@@ -157,7 +157,7 @@ class StudentFeeAssignmentViewSet(DataRootViewSet):
         Request body:
         {
             "student": student_id,
-            "class_level": class_level_id,
+            "class_level": class_level,
             "currency": "AFN",
             "payment_plan": 1,
             "assignments": [
@@ -168,7 +168,7 @@ class StudentFeeAssignmentViewSet(DataRootViewSet):
         }
         """
         student_id = request.data.get('student')
-        class_level_id = request.data.get('class_level')
+        class_level = request.data.get('class_level')
         currency = request.data.get('currency', 'AFN')
         payment_plan = request.data.get('payment_plan', 1)
         assignments_data = request.data.get('assignments', [])
@@ -224,7 +224,7 @@ class StudentFeeAssignmentViewSet(DataRootViewSet):
                 existing = StudentFeeAssignment.objects.filter(
                     student=student,
                     fee_type=fee_type,
-                    class_level_id=class_level_id if class_level_id else None,
+                    class_level=class_level if class_level else None,
                     is_active=True
                 ).first()
 
@@ -243,7 +243,7 @@ class StudentFeeAssignmentViewSet(DataRootViewSet):
                         amount=amount_dec,
                         currency=currency,
                         payment_plan=payment_plan,
-                        class_level_id=class_level_id if class_level_id else student.class_level_id,
+                        class_level=class_level if class_level else student.class_level,
                         is_active=True,
                         is_mandatory=fee_type.is_mandatory,
                     )
@@ -404,10 +404,7 @@ class StudentPaymentViewSet(DataRootViewSet):
         else:
             assignments_qs = StudentFeeAssignment.objects.filter(student=student, is_active=True)
             if class_level and class_level != 'all':
-                try:
-                    assignments_qs = assignments_qs.filter(class_level_id=int(class_level))
-                except Exception:
-                    pass
+                assignments_qs = assignments_qs.filter(class_level=class_level)
             assignments = list(assignments_qs.select_related('fee_type'))
 
         # Helper: check payment_plan limits per assignment for the selected months
@@ -628,13 +625,10 @@ class StudentPaymentViewSet(DataRootViewSet):
             student=student,
             id__in=assignment_ids,
             is_active=True
-        ).select_related('fee_type', 'class_level')
+        ).select_related('fee_type')
         
         if class_level and class_level != 'all':
-            try:
-                assignments_qs = assignments_qs.filter(class_level_id=int(class_level))
-            except (ValueError, TypeError):
-                pass
+            assignments_qs = assignments_qs.filter(class_level=class_level)
         
         assignments = list(assignments_qs)
         
@@ -808,8 +802,8 @@ class StudentPaymentViewSet(DataRootViewSet):
         class_level = request.query_params.get('class_level')
         assignments_qs = StudentFeeAssignment.objects.filter(student=student, is_active=True)
         if class_level and class_level != 'all':
-            assignments_qs = assignments_qs.filter(class_level_id=class_level)
-        assignments = list(assignments_qs.select_related('fee_type', 'class_level'))
+            assignments_qs = assignments_qs.filter(class_level=class_level)
+        assignments = list(assignments_qs.select_related('fee_type'))
         total_fee = sum(a.amount or Decimal('0') for a in assignments)
         
         # Calculate total completed payments (assignment-based, filtered by class_level)
@@ -818,7 +812,7 @@ class StudentPaymentViewSet(DataRootViewSet):
             payment_status='completed'
         )
         if class_level and class_level != 'all':
-            payments_qs = payments_qs.filter(assignment__class_level_id=class_level)
+            payments_qs = payments_qs.filter(assignment__class_level=class_level)
         total_paid = payments_qs.aggregate(total_paid=Sum('amount'))['total_paid'] or Decimal('0')
         
         # Calculate remaining balance
@@ -848,8 +842,8 @@ class StudentPaymentViewSet(DataRootViewSet):
                 'is_mandatory': assignment.is_mandatory,
                 'paid_amount': str(paid_for_assignment),
                 'remaining_amount': str(max(Decimal('0'), (assignment.amount or Decimal('0')) - paid_for_assignment)),
-                'class_level_id': assignment.class_level_id,
-                'class_level_name': assignment.class_level.name if assignment.class_level else None,
+                'class_level': assignment.class_level,
+                'class_level_name': dict(CLASS_LEVEL_CHOICES).get(assignment.class_level, assignment.class_level) if assignment.class_level else None,
             })
         
         return Response({
@@ -857,8 +851,8 @@ class StudentPaymentViewSet(DataRootViewSet):
             'student_name': student.full_name,
             'registration_number': student.registration_number,
             'currency': assignments[0].currency if assignments else 'AFN',
-            'class_level': assignments[0].class_level.name if assignments and assignments[0].class_level else None,
-            'class_level_id': assignments[0].class_level_id if assignments else None,
+            'class_level': dict(CLASS_LEVEL_CHOICES).get(assignments[0].class_level, assignments[0].class_level) if assignments and assignments[0].class_level else None,
+            'class_level_id': assignments[0].class_level if assignments else None,
             # Overall financial status
             'total_fee': str(total_fee),
             'total_paid': str(total_paid),
@@ -890,13 +884,10 @@ class StudentPaymentViewSet(DataRootViewSet):
         assignments_qs = StudentFeeAssignment.objects.filter(
             student=student,
             is_active=True
-        ).select_related('fee_type', 'class_level')
+        ).select_related('fee_type')
         
         if class_level and class_level != 'all':
-            try:
-                assignments_qs = assignments_qs.filter(class_level_id=int(class_level))
-            except (ValueError, TypeError):
-                pass
+            assignments_qs = assignments_qs.filter(class_level=class_level)
         
         serializer = StudentFeeAssignmentSerializer(assignments_qs, many=True, context={'request': request})
         
@@ -908,7 +899,7 @@ class StudentPaymentViewSet(DataRootViewSet):
                 'id': student.id,
                 'full_name': student.full_name,
                 'registration_number': student.registration_number,
-                'class_level': student.class_level.name if student.class_level else None,
+                'class_level': dict(CLASS_LEVEL_CHOICES).get(student.class_level, student.class_level) if student.class_level else None,
                 'total_paid': student.get_total_payments(class_level=student.class_level if class_level == 'all' or not class_level else None),
                 'remaining_balance': student.get_remaining_balance(class_level=student.class_level if class_level == 'all' or not class_level else None),
             },
@@ -942,13 +933,10 @@ class StudentPaymentViewSet(DataRootViewSet):
         assignments_qs = StudentFeeAssignment.objects.filter(
             student=student,
             is_active=True
-        ).select_related('fee_type', 'class_level')
+        ).select_related('fee_type')
 
         if class_level and class_level != 'all':
-            try:
-                assignments_qs = assignments_qs.filter(class_level_id=int(class_level))
-            except (ValueError, TypeError):
-                pass
+            assignments_qs = assignments_qs.filter(class_level=class_level)
 
         assignments = list(assignments_qs)
         result = []
@@ -1005,7 +993,7 @@ class StudentPaymentViewSet(DataRootViewSet):
             payment_status='completed',
         )
         if class_level and class_level != 'all':
-            payments_qs = payments_qs.filter(assignment__class_level_id=class_level)
+            payments_qs = payments_qs.filter(assignment__class_level=class_level)
         total_paid_all = payments_qs.aggregate(total=Sum('amount'))['total'] or Decimal('0')
         total_remaining = max(total_expected - total_paid_all, Decimal('0'))
 
@@ -1029,10 +1017,10 @@ class StudentPaymentViewSet(DataRootViewSet):
         Get all data needed for fee assignment in one request.
         Returns: fee types, class level assigned fees, and student's existing assignments.
         """
-        class_level_id = request.query_params.get('class_level')
+        class_level = request.query_params.get('class_level')
         student_id = request.query_params.get('student')
         
-        if not class_level_id:
+        if not class_level:
             return Response(
                 {'error': 'class_level parameter is required'},
                 status=drf_status.HTTP_400_BAD_REQUEST
@@ -1052,7 +1040,7 @@ class StudentPaymentViewSet(DataRootViewSet):
         
         # Get all active fee assignments for this class level
         class_assignments_qs = StudentFeeAssignment.objects.filter(
-            class_level_id=class_level_id,
+            class_level=class_level,
             is_active=True
         ).select_related('fee_type', 'student')
         
@@ -1088,11 +1076,11 @@ class StudentPaymentViewSet(DataRootViewSet):
                 student_assignments_qs = StudentFeeAssignment.objects.filter(
                     student=student,
                     is_active=True
-                ).select_related('fee_type', 'class_level')
+                ).select_related('fee_type')
                 
-                # If class_level_id is provided, only get assignments for that level
-                if class_level_id:
-                    student_assignments_qs = student_assignments_qs.filter(class_level_id=class_level_id)
+                # If class_level is provided, only get assignments for that level
+                if class_level:
+                    student_assignments_qs = student_assignments_qs.filter(class_level=class_level)
                 
                 for a in student_assignments_qs:
                     student_assignments.append({
@@ -1101,8 +1089,8 @@ class StudentPaymentViewSet(DataRootViewSet):
                         'amount': str(a.amount),
                         'currency': a.currency,
                         'payment_plan': a.payment_plan,
-                        'class_level_id': a.class_level_id,
-                        'class_level_name': a.class_level.name if a.class_level else None,
+                        'class_level': a.class_level,
+                        'class_level_name': dict(CLASS_LEVEL_CHOICES).get(a.class_level, a.class_level) if a.class_level else None,
                     })
             except Student.DoesNotExist:
                 pass
@@ -1120,7 +1108,7 @@ class StudentPaymentViewSet(DataRootViewSet):
         Request body:
         {
             "student": student_id,
-            "class_level": class_level_id,
+            "class_level": class_level,
             "currency": "AFN",
             "payment_plan": 1,
             "assignments": [
@@ -1131,7 +1119,7 @@ class StudentPaymentViewSet(DataRootViewSet):
         }
         """
         student_id = request.data.get('student')
-        class_level_id = request.data.get('class_level')
+        class_level = request.data.get('class_level')
         currency = request.data.get('currency', 'AFN')
         payment_plan = request.data.get('payment_plan', 1)
         assignments_data = request.data.get('assignments', [])
@@ -1187,7 +1175,7 @@ class StudentPaymentViewSet(DataRootViewSet):
                 existing = StudentFeeAssignment.objects.filter(
                     student=student,
                     fee_type=fee_type,
-                    class_level_id=class_level_id if class_level_id else None,
+                    class_level=class_level if class_level else None,
                     is_active=True
                 ).first()
 
@@ -1206,7 +1194,7 @@ class StudentPaymentViewSet(DataRootViewSet):
                         amount=amount_dec,
                         currency=currency,
                         payment_plan=payment_plan,
-                        class_level_id=class_level_id if class_level_id else student.class_level_id,
+                        class_level=class_level if class_level else student.class_level,
                         is_active=True,
                         is_mandatory=fee_type.is_mandatory,
                     )

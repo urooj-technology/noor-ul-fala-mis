@@ -1,14 +1,8 @@
 from rest_framework import serializers
 from decimal import Decimal
-from api.models.data.student import Student, ClassLevel
+from api.models.data.student import Student, CLASS_LEVEL_CHOICES
 from api.serializers.data.base import DataRootSerializer
 from api.utils.calendar import get_calendar_info
-
-
-class ClassLevelSerializer(DataRootSerializer):
-    class Meta:
-        model = ClassLevel
-        fields = ['id', 'level', 'name', 'description', 'is_active', 'created_at', 'updated_at']
 
 
 class StudentSerializer(DataRootSerializer):
@@ -48,9 +42,9 @@ class StudentSerializer(DataRootSerializer):
     def get_class_level_details(self, obj):
         if obj.class_level:
             return {
-                'id': obj.class_level.id,
-                'level': obj.class_level.level,
-                'name': obj.class_level.name,
+                'id': obj.class_level,
+                'level': obj.class_level,
+                'name': dict(CLASS_LEVEL_CHOICES).get(obj.class_level, obj.class_level),
             }
         return None
 

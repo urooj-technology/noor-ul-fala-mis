@@ -11,18 +11,27 @@ import { RotateCw, ArrowLeft, GraduationCap, Users, CheckCircle, AlertCircle, Pr
 import api from '@/lib/axios';
 import { toast } from 'sonner';
 
-interface ClassLevel {
-  id: number;
-  level: string;
-  name: string;
-  description?: string;
-}
+// Static class level options
+const CLASS_LEVELS = [
+  { id: '1', level: '1', name: 'Class 1' },
+  { id: '2', level: '2', name: 'Class 2' },
+  { id: '3', level: '3', name: 'Class 3' },
+  { id: '4', level: '4', name: 'Class 4' },
+  { id: '5', level: '5', name: 'Class 5' },
+  { id: '6', level: '6', name: 'Class 6' },
+  { id: '7', level: '7', name: 'Class 7' },
+  { id: '8', level: '8', name: 'Class 8' },
+  { id: '9', level: '9', name: 'Class 9' },
+  { id: '10', level: '10', name: 'Class 10' },
+  { id: '11', level: '11', name: 'Class 11' },
+  { id: '12', level: '12', name: 'Class 12' },
+];
 
 interface SelectedStudent {
   id: number;
   registration_number: string;
   full_name: string;
-  class_level?: { id?: number; name?: string } | null;
+  class_level?: { id?: string; name?: string } | null;
   father_name?: string;
   status: string;
 }
@@ -39,7 +48,7 @@ const BulkChangeClassLevel = () => {
     return studentIdsParam.split(',').map((id) => parseInt(id, 10)).filter((id) => !isNaN(id));
   }, [studentIdsParam]);
 
-  const [classLevels, setClassLevels] = useState<ClassLevel[]>([]);
+  const classLevels = CLASS_LEVELS;
   const [selectedClassLevelId, setSelectedClassLevelId] = useState<string>('');
   const [students, setStudents] = useState<SelectedStudent[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(true);
@@ -77,24 +86,8 @@ const BulkChangeClassLevel = () => {
       .finally(() => setLoadingStudents(false));
   }, [studentIds]);
 
-  // Load all class levels
-  useEffect(() => {
-    api.get<{ results?: ClassLevel[] } | ClassLevel[]>('class-levels/')
-      .then((res) => {
-        const data: ClassLevel[] = Array.isArray(res.data)
-          ? res.data
-          : (res.data.results || []);
-        setClassLevels(data);
-      })
-      .catch(() => {
-        toast.error(t('common.error', 'Error'), {
-          description: t('students.failedToLoadClassLevels', 'Failed to load class levels'),
-        });
-      });
-  }, []);
-
   const selectedLevel = useMemo(
-    () => classLevels.find((cl) => cl.id.toString() === selectedClassLevelId),
+    () => classLevels.find((cl) => cl.id === selectedClassLevelId),
     [classLevels, selectedClassLevelId]
   );
 
@@ -109,9 +102,9 @@ const BulkChangeClassLevel = () => {
     if (!selectedClassLevelId || changed.length === 0) return;
     setSubmitting(true);
     try {
-      const res = await api.post<{ updated_count: number; class_level: ClassLevel }>(
+      const res = await api.post<{ updated_count: number; class_level: { id: string; name: string } }>(
         'students/bulk_change_class/',
-        { student_ids: changed.map((s) => s.id), class_level: parseInt(selectedClassLevelId, 10) }
+        { student_ids: changed.map((s) => s.id), class_level: selectedClassLevelId }
       );
       toast.success(t('students.bulkUpdateSuccess', 'Class Level Updated'), {
         description: `${res.data.updated_count} ${t('students.studentsUpdated', 'students updated')}`,

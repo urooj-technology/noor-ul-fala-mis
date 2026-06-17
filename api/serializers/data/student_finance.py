@@ -10,7 +10,7 @@ from django.utils import timezone
 from api.models.data.student_finance import (
     FeeType, StudentFeeAssignment, StudentPayment, FinanceLedger
 )
-from api.models.data.student import Student
+from api.models.data.student import Student, CLASS_LEVEL_CHOICES
 from api.serializers.data.base import DataRootSerializer
 from api.utils.calendar import get_calendar_info
 
@@ -68,11 +68,10 @@ class StudentFeeAssignmentSerializer(DataRootSerializer):
     
     def get_class_level_details(self, obj):
         if getattr(obj, 'class_level', None):
-            cl = obj.class_level
             return {
-                'id': cl.id,
-                'level': getattr(cl, 'level', None),
-                'name': getattr(cl, 'name', None),
+                'id': obj.class_level,
+                'level': obj.class_level,
+                'name': dict(CLASS_LEVEL_CHOICES).get(obj.class_level, obj.class_level),
             }
         return None
     
@@ -165,12 +164,12 @@ class StudentPaymentSerializer(DataRootSerializer):
                 'payment_plan': obj.assignment.payment_plan,
                 'amount': str(obj.assignment.amount),
                 'currency': obj.assignment.currency,
-                'class_level': obj.assignment.class_level.name if obj.assignment.class_level else None,
-                'class_level_id': obj.assignment.class_level.id if obj.assignment.class_level else None,
+                'class_level': dict(CLASS_LEVEL_CHOICES).get(obj.assignment.class_level, obj.assignment.class_level) if obj.assignment.class_level else None,
+                'class_level_id': obj.assignment.class_level if obj.assignment.class_level else None,
                 'class_level_details': {
-                    'id': obj.assignment.class_level.id,
-                    'name': obj.assignment.class_level.name,
-                    'level': obj.assignment.class_level.level,
+                    'id': obj.assignment.class_level,
+                    'name': dict(CLASS_LEVEL_CHOICES).get(obj.assignment.class_level, obj.assignment.class_level),
+                    'level': obj.assignment.class_level,
                 } if obj.assignment.class_level else None,
             }
         return None

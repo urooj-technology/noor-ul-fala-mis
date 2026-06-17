@@ -4,19 +4,11 @@ from api.models.data.employee import Employee
 from api.models.data.payroll import Payroll
 from api.models.data.advance import Advance
 from api.models.data.activity_log import ActivityLog
-from api.models.data.student import Student, ClassLevel
+from api.models.data.student import Student
 from api.models.data.student_finance import (
     StudentPayment, StudentFeeAssignment,
     FeeType
 )
-
-
-@admin.register(ClassLevel)
-class ClassLevelAdmin(admin.ModelAdmin):
-    list_display = ['level', 'name', 'is_active', 'created_at']
-    list_filter = ['is_active']
-    search_fields = ['name', 'level']
-    readonly_fields = ['created_at', 'updated_at']
 
 
 @admin.register(Student)
