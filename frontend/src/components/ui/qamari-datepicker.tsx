@@ -37,11 +37,12 @@ export function QamariDatePicker({
   const { language } = useLanguage();
   const [open, setOpen] = useState(false);
 
-  // Parse current value to Qamari
-  const currentQamari = useMemo(() => {
-    if (!value) return null;
-    return dateToQamari(value);
-  }, [value]);
+   // Parse current value to Qamari
+   const currentQamari = useMemo(() => {
+     if (!value) return null;
+     const result = dateToQamari(value);
+     return result;
+   }, [value]);
 
   // Display value
   const displayValue = currentQamari
@@ -78,16 +79,16 @@ export function QamariDatePicker({
     }
   }, [viewYear, viewMonth, daysInMonth]);
 
-  // Handle day selection
-  const handleDaySelect = (day: number) => {
-    try {
-      const isoDate = qamariToISO(viewYear, viewMonth, day);
-      onChange(isoDate);
-      setOpen(false);
-    } catch {
-      // Invalid date
-    }
-  };
+   // Handle day selection
+   const handleDaySelect = (day: number) => {
+     try {
+       const isoDate = qamariToISO(viewYear, viewMonth, day);
+       onChange(isoDate);
+       setOpen(false);
+     } catch (error) {
+       console.error('Error in handleDaySelect:', error);
+     }
+   };
 
   // Navigate months
   const goToPrevMonth = () => {
@@ -199,24 +200,26 @@ export function QamariDatePicker({
             {/* Days grid */}
             <div className="grid grid-cols-7 gap-1">
               {days.map((day, idx) => (
-                <div key={idx} className="aspect-square">
-                  {day !== null && (
-                    <Button
-                      variant={
-                        currentQamari?.year === viewYear &&
-                        currentQamari?.month === viewMonth &&
-                        currentQamari?.day === day
-                          ? 'default'
-                          : 'ghost'
-                      }
-                      size="sm"
-                      className="w-full h-full p-0 font-normal"
-                      onClick={() => handleDaySelect(day)}
-                    >
-                      {day}
-                    </Button>
-                  )}
-                </div>
+                day !== null ? (
+                  <Button
+                    key={idx}
+                    type="button"
+                    variant={
+                      currentQamari?.year === viewYear &&
+                      currentQamari?.month === viewMonth &&
+                      currentQamari?.day === day
+                        ? 'default'
+                        : 'ghost'
+                    }
+                    size="sm"
+                    className="aspect-square w-full h-full p-0 font-normal"
+                    onClick={() => handleDaySelect(day)}
+                  >
+                    {day}
+                  </Button>
+                ) : (
+                  <div key={idx} className="aspect-square" />
+                )
               ))}
             </div>
 

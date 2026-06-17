@@ -133,18 +133,18 @@ export function shamsiToGregorian(jy: number, jm: number, jd: number): { year: n
     days = (days - 1) % 365;
   }
   
-  const gd = days + 1;
-  const sal_a = [0, 31, (gy % 4 === 0 && gy % 100 !== 0) || gy % 400 === 0 ? 29 : 28, 
-    31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  
-  let gm = 0;
-  for (gm = 0; gm < 13 && gd > sal_a[gm]; gm++) {
-    // Loop through months
-  }
-  
-  const gDay = gd - sal_a[gm - 1];
-  
-  return { year: gy, month: gm, day: gDay };
+    let remainingDays = days + 1;
+    const sal_a = [0, 31, (gy % 4 === 0 && gy % 100 !== 0) || gy % 400 === 0 ? 29 : 28, 
+      31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    
+    let gm = 1;
+    while (gm <= 12 && remainingDays > sal_a[gm]) {
+      remainingDays -= sal_a[gm];
+      gm++;
+    }
+    const gDay = remainingDays;
+    
+    return { year: gy, month: gm, day: gDay };
 }
 
 /**

@@ -118,6 +118,97 @@ class AccountingService:
             transaction_type='student_payment',
             reference=reference
         )
+
+    @staticmethod
+    @transaction.atomic
+    def record_student_fee_assignment(assignment, amount=None, date=None, reference=None, description=None, currency=None):
+        """Record assigned student fees as receivable and revenue.
+
+        Dr Accounts Receivable
+        Cr Student Fees Revenue
+        """
+        amount = Decimal(str(amount if amount is not None else assignment.amount))
+        if amount <= 0:
+            return None
+
+        currency = currency or assignment.currency or 'AFN'
+        receivable_account = Account.objects.filter(code=f'1200_{currency}').first()
+        revenue_account = Account.objects.filter(code=f'4000_{currency}').first()
+
+        if not receivable_account or not revenue_account:
+            raise ValueError(f"Default accounts not configured for {currency}. Please run init_chart_of_accounts.")
+
+        student = assignment.student
+        fee_type_name = assignment.fee_type.name if assignment.fee_type else 'Fee'
+        class_level = assignment.class_level or ''
+        description = description or f"Fee Assignment - {student.full_name} - {fee_type_name}"
+        if class_level:
+            description = f"{description} ({class_level})"
+
+        return AccountingService.create_journal_entry(
+            date=date or timezone.now().date(),
+            description=description,
+            lines=[
+                {'account_id': receivable_account.id, 'debit': amount, 'credit': 0},
+                {'account_id': revenue_account.id, 'debit': 0, 'credit': amount}
+            ],
+            transaction_type='student_payment',
+            reference=reference or f"FEE-ASSIGN-{assignment.id}"
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def record_student_fee_assignment_reversal(assignment, amount, date=None, reference=None, description=None, currency=None):
+        """Reverse assigned student fees when an assignment total is reduced."""
+        amount = Decimal(str(amount))
+        if amount <= 0:
+            return None
+
+        currency = currency or assignment.currency or 'AFN'
+        receivable_account = Account.objects.filter(code=f'1200_{currency}').first()
+        revenue_account = Account.objects.filter(code=f'4000_{currency}').first()
+
+        if not receivable_account or not revenue_account:
+            raise ValueError(f"Default accounts not configured for {currency}. Please run init_chart_of_accounts.")
+
+        student = assignment.student
+        fee_type_name = assignment.fee_type.name if assignment.fee_type else 'Fee'
+
+        return AccountingService.create_journal_entry(
+            date=date or timezone.now().date(),
+            description=description or f"Fee Assignment Reduction - {student.full_name} - {fee_type_name}",
+            lines=[
+                {'account_id': revenue_account.id, 'debit': amount, 'credit': 0},
+                {'account_id': receivable_account.id, 'debit': 0, 'credit': amount}
+            ],
+            transaction_type='student_payment',
+            reference=reference or f"FEE-ASSIGN-REV-{assignment.id}"
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def record_student_payment_reversal(student_id, amount, date, description, reference=None, currency='AFN'):
+        """Reverse a student payment when a completed payment is reduced/cancelled."""
+        amount = Decimal(str(amount))
+        if amount <= 0:
+            return None
+
+        cash_account = Account.objects.filter(code=f'1000_{currency}').first()
+        receivable_account = Account.objects.filter(code=f'1200_{currency}').first()
+
+        if not cash_account or not receivable_account:
+            raise ValueError(f"Default accounts not configured for {currency}. Please run init_chart_of_accounts.")
+
+        return AccountingService.create_journal_entry(
+            date=date,
+            description=f"Student Payment Reversal - {description}",
+            lines=[
+                {'account_id': receivable_account.id, 'debit': amount, 'credit': 0},
+                {'account_id': cash_account.id, 'debit': 0, 'credit': amount}
+            ],
+            transaction_type='student_payment',
+            reference=reference
+        )
     
     @staticmethod
     @transaction.atomic

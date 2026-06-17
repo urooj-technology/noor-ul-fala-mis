@@ -131,20 +131,20 @@ const EditShopRental = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="start_date" className="font-semibold flex items-center gap-2"><Calendar className="h-4 w-4" />{t("shop-rental.startDate")} <span className="text-destructive">*</span></Label>
-              <DatePicker
-                value={formData.start_date}
-                onChange={(date) => { setFormData((prev) => ({ ...prev, start_date: date?.toISOString().slice(0, 10) || '' })); if (errors.start_date) setErrors((prev) => ({ ...prev, start_date: "" })); }}
-                className="h-10"
-              />
+               <DatePicker
+                 value={formData.start_date}
+                 onChange={(date) => { setFormData((prev) => ({ ...prev, start_date: date || '' })); if (errors.start_date) setErrors((prev) => ({ ...prev, start_date: "" })); }}
+                 className="h-10"
+               />
               {errors.start_date && <p className="text-xs text-destructive">{errors.start_date}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="end_date" className="font-semibold flex items-center gap-2"><Calendar className="h-4 w-4" />{t("shop-rental.endDate")} <span className="text-destructive">*</span></Label>
-              <DatePicker
-                value={formData.end_date}
-                onChange={(date) => { setFormData((prev) => ({ ...prev, end_date: date?.toISOString().slice(0, 10) || '' })); if (errors.end_date) setErrors((prev) => ({ ...prev, end_date: "" })); }}
-                className="h-10"
-              />
+               <DatePicker
+                 value={formData.end_date}
+                 onChange={(date) => { setFormData((prev) => ({ ...prev, end_date: date || '' })); if (errors.end_date) setErrors((prev) => ({ ...prev, end_date: "" })); }}
+                 className="h-10"
+               />
               {errors.end_date && <p className="text-xs text-destructive">{errors.end_date}</p>}
             </div>
           </div>

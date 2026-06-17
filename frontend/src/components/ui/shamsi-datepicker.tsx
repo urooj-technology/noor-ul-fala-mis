@@ -40,11 +40,12 @@ export function ShamsiDatePicker({
   // Get month names based on language
   const monthNames = language === 'ps' ? SHAMSI_MONTHS_PASHTO : SHAMSI_MONTHS_DARI;
 
-  // Parse current value to Shamsi
-  const currentShamsi = useMemo(() => {
-    if (!value) return null;
-    return dateToShamsi(value);
-  }, [value]);
+   // Parse current value to Shamsi
+   const currentShamsi = useMemo(() => {
+     if (!value) return null;
+     const result = dateToShamsi(value);
+     return result;
+   }, [value]);
 
   // Display value
   const displayValue = currentShamsi
@@ -77,12 +78,16 @@ export function ShamsiDatePicker({
     return daysArray;
   }, [viewYear, viewMonth, daysInMonth]);
 
-  // Handle day selection
-  const handleDaySelect = (day: number) => {
-    const isoDate = shamsiToISO(viewYear, viewMonth, day);
-    onChange(isoDate);
-    setOpen(false);
-  };
+   // Handle day selection
+   const handleDaySelect = (day: number) => {
+     try {
+       const isoDate = shamsiToISO(viewYear, viewMonth, day);
+       onChange(isoDate);
+       setOpen(false);
+     } catch (error) {
+       console.error('Error in handleDaySelect:', error);
+     }
+   };
 
   // Navigate months
   const goToPrevMonth = () => {
@@ -196,24 +201,26 @@ export function ShamsiDatePicker({
             {/* Days grid */}
             <div className="grid grid-cols-7 gap-1">
               {days.map((day, idx) => (
-                <div key={idx} className="aspect-square">
-                  {day !== null && (
-                    <Button
-                      variant={
-                        currentShamsi?.year === viewYear &&
-                        currentShamsi?.month === viewMonth &&
-                        currentShamsi?.day === day
-                          ? 'default'
-                          : 'ghost'
-                      }
-                      size="sm"
-                      className="w-full h-full p-0 font-normal"
-                      onClick={() => handleDaySelect(day)}
-                    >
-                      {day}
-                    </Button>
-                  )}
-                </div>
+                day !== null ? (
+                  <Button
+                    key={idx}
+                    type="button"
+                    variant={
+                      currentShamsi?.year === viewYear &&
+                      currentShamsi?.month === viewMonth &&
+                      currentShamsi?.day === day
+                        ? 'default'
+                        : 'ghost'
+                    }
+                    size="sm"
+                    className="aspect-square w-full h-full p-0 font-normal"
+                    onClick={() => handleDaySelect(day)}
+                  >
+                    {day}
+                  </Button>
+                ) : (
+                  <div key={idx} className="aspect-square" />
+                )
               ))}
             </div>
 

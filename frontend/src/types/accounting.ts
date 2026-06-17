@@ -22,6 +22,8 @@ export interface Account {
   is_detail: boolean;
   balance: number;
   current_balance?: number;
+  total_debit?: number;
+  total_credit?: number;
   currency?: string;
   created_at?: string;
   updated_at?: string;

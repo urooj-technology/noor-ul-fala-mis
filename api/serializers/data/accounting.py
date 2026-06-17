@@ -5,21 +5,33 @@ from api.models.data.accounting import (
 )
 from api.utils.calendar import get_calendar_info
 from decimal import Decimal
+from django.db.models import Sum
 
 
 class AccountSerializer(DataRootSerializer):
     account_type_display = serializers.CharField(source='get_account_type_display', read_only=True)
     parent_name = serializers.CharField(source='parent.name', read_only=True)
     current_balance = serializers.SerializerMethodField()
+    total_debit = serializers.SerializerMethodField()
+    total_credit = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
         fields = ['id', 'name', 'code', 'account_type', 'account_type_display',
                   'parent', 'parent_name', 'is_active', 'is_detail', 'balance',
-                  'current_balance', 'currency', 'created_at', 'updated_at']
+                  'current_balance', 'total_debit', 'total_credit', 'currency',
+                  'created_at', 'updated_at']
 
     def get_current_balance(self, obj):
         return float(obj.get_balance())
+
+    def get_total_debit(self, obj):
+        total = obj.journal_entries.aggregate(total=Sum('debit'))['total'] or Decimal('0')
+        return float(total)
+
+    def get_total_credit(self, obj):
+        total = obj.journal_entries.aggregate(total=Sum('credit'))['total'] or Decimal('0')
+        return float(total)
 
 
 class JournalEntrySerializer(DataRootSerializer):

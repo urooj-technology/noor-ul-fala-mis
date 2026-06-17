@@ -1,19 +1,20 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, Eye, BookOpen, Tag, FileText, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import DataTable, { TableColumn, TableAction, FilterOption } from '@/components/ui/data-table';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
-import { formatDateByCalendarType } from '@/utils/calendar';
+import { CalendarProvider } from '@/contexts/CalendarContext';
+import { getCurrencySymbol } from '@/utils/currency';
+import { Account } from '@/types/accounting';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 
 export const AccountList = () => {
   const { t } = useLanguage();
-  const { calendarType } = useCalendar();
-  const lang = t('language.code') as 'fa' | 'ps';
+  const lang = t('language.code', 'en') as 'en' | 'fa' | 'ps';
+  const locale = lang === 'fa' ? 'fa-AF' : lang === 'ps' ? 'ps-AF' : 'en-US';
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -21,7 +22,7 @@ export const AccountList = () => {
   const [pageSize, setPageSize] = useState(25);
 
   const { data: accountsData, isLoading } = useFetchObjects<{
-    results: any[];
+    results: Account[];
     count: number;
     next: string | null;
     previous: string | null;
@@ -44,12 +45,29 @@ export const AccountList = () => {
   const accounts = accountsData?.results || [];
   const totalItems = accountsData?.count || 0;
 
-  const handleEdit = (account: any) => {
+  const handleEdit = (account: Account) => {
     navigate(`/accounts/${account.id}/edit`);
   };
 
-  const handleDetails = (account: any) => {
+  const handleDetails = (account: Account) => {
     navigate(`/accounts/${account.id}`);
+  };
+
+  const formatMoney = (value: number | string | undefined | null, currency = 'AFN') => {
+    const amount = Number(value || 0);
+    try {
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount);
+    } catch {
+      return `${new Intl.NumberFormat(locale, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount)} ${getCurrencySymbol(currency)}`;
+    }
   };
 
   const getTypeBadge = (type: string) => {
@@ -67,7 +85,7 @@ export const AccountList = () => {
     );
   };
 
-  const columns: TableColumn[] = [
+  const columns: TableColumn<Account>[] = [
     {
       key: 'code',
       title: t('accounting.accountCode'),
@@ -89,11 +107,32 @@ export const AccountList = () => {
       render: (value) => getTypeBadge(value || '')
     },
     {
+      key: 'total_debit',
+      title: t('accounting.totalDebit'),
+      align: 'right',
+      render: (value, record) => (
+        <span className="whitespace-nowrap font-bold text-xs text-green-700">
+          {formatMoney(value, record.currency || 'AFN')}
+        </span>
+      )
+    },
+    {
+      key: 'total_credit',
+      title: t('accounting.totalCredit'),
+      align: 'right',
+      render: (value, record) => (
+        <span className="whitespace-nowrap font-bold text-xs text-blue-700">
+          {formatMoney(value, record.currency || 'AFN')}
+        </span>
+      )
+    },
+    {
       key: 'current_balance',
-      title: t('accounting.currentBalance'),
-      render: (value) => (
-        <span className="font-bold text-xs text-green-600">
-          {Number(value || 0).toFixed(2)}
+      title: t('accounting.balance', 'Balance'),
+      align: 'right',
+      render: (value, record) => (
+        <span className="whitespace-nowrap font-bold text-xs text-slate-800 dark:text-slate-200">
+          {formatMoney(value ?? record.balance ?? 0, record.currency || 'AFN')}
         </span>
       )
     },
