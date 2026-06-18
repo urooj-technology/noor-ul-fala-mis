@@ -4,7 +4,6 @@ export const studentPaymentsPs = {
   editPayment: "تادیه سمول",
   paymentDetails: "د تادیې معلومات",
   paymentInformation: "د تادیې معلومات",
-
   // Invoice Generation
   periodicGeneration: "د صورتحسابونو دورتي تولید",
   generateInvoicesForPeriod: "د ټولو زده کونکو لپاره د دورې په پیل کې صورتحسابونه جوړول",
@@ -22,7 +21,6 @@ export const studentPaymentsPs = {
   error: {
     generate: "د صورتحسابونو جوړولو کې ستونزه"
   },
-
   // Export
   exportPayments: "د زده کونکو تادیاتو صادرات",
   exportDescription: "د زده کونکو تادیاتو میاشتنی تفکیک ته اکسل صادرات",
@@ -31,36 +29,12 @@ export const studentPaymentsPs = {
   endDate: "د پای نیټه",
   selectClassLevels: "د صنف کچې وټاکئ (اختیاري - ډیری انتخاب جلا ټبونه جوړوي)",
   multiTabInfo: "څو صنفونه غوره شوي - هر صنف به خپل جلا ټب ولري",
-
   // Payment Information
   amount: "مقدار",
-  paymentDate: "د تادیې نېټه",
-  paymentStatus: "د تادیې حالت",
-  paymentCycle: "د تادیې چکل",
   referenceNumber: "د ارجاع شمېره",
   description: "توضیحات",
   receipt: "رسید",
-  currency: "اسعار",
-  student: "زده کونکی",
-  selectStudent: "زده کونکی وټاکئ",
-  selectStatus: "حالت وټاکئ",
-  selectMonth: "میاشت وټاکئ",
-  selectInterval: "دوره وټاکئ",
-  selectFeeType: "د فیس ډول وټاکئ",
-  allFees: "ټول فیسونه (خودکار تخصیص)",
-  feeTypeHelp: "د دې تادیې لپاره چې ثبتېږي، یو ځانګړی فیس ټاکئ. د ټولو د دیارلکو پرته د خپلکارې تخصیص لپاره خالي پریږدئ.",
   selectCycle: "چکل وټاکئ",
-  selectCurrency: "اسعار وټاکئ",
-  selectInvoices: "صورتحسابونه وټاکئ",
-  enterAmount: "مقدار دننه کړئ",
-  enterDescription: "توضیحات دننه کړئ",
-  periodYearPlaceholder: "د. 2026",
-  cycleForThisPayment: "د دې تادیې چکل",
-  periodCoverage: "د دوره پوښتې",
-  summary: "خلاصه",
-  referenceNumberPlaceholder: "د. بنک-2026-001",
-  notes: "یادښتونه",
-
   // Statuses
   status: {
     pending: "پاتې",
@@ -68,40 +42,6 @@ export const studentPaymentsPs = {
     cancelled: "لغو شوی",
     refunded: "بیرته ورکړل شوی"
   },
-
-  // Summary
-  dailySummary: "د تادیې ټولنیز خلاصه",
-  monthlySummary: "د میاشتې خلاصه",
-  totalAmount: "ټول مقدار",
-  paidAmount: "د تادیې شوی مقدار",
-  remainingAmount: "د تادیې موندلي مقدار",
-  paymentCount: "د تادیاتو شمېر",
-  periodFinancialInfo: "د دورې مالي معلومات",
-  financialInfo: "مالي معلومات",
-
-  // Allocation
-  allocateToInvoices: "د صورتحسابونو ته تخصیص کول",
-  selectInvoicesForPayment: "د دې تادیې تخصیس لپاره صورتحسابونه وټاکئ",
-  pendingInvoices: "د صورتحسابونو ترکیب",
-  invoicesFound: "صورتحسابونه موندل شول",
-  noPendingInvoices: "د دې زده کونکي لپاره هیڅ صورتحسابونه شتون نلري",
-  dueDate: "د تادیې نیټه",
-  remaining: "موندلي",
-  selected: "غوره شوی",
-  clickToSelect: "د غوره کولو لپاره کلیک کړئ",
-  invoicesSelected: "صورتحسابونه غوره شول",
-  clickAllocateToComplete: "د بشپړولو لپاره 'تخصیص' کلیک کړئ",
-
-  // Actions
-  viewDetails: "تفصیلات وګورئ",
-  edit: "سمول",
-  delete: "حذف کول",
-  deletePayment: "تادیه حذف کول",
-  markAsPaid: "د تادیې په توګه علامت کول",
-  markAsRefunded: "د بیرته ورکولو په توګه علامت کول",
-  allocate: "تخصیص",
-  allocating: "د تخصیص کولو...",
-
   // Validation
   validation: {
     amount: "مقدار اړین دی",
@@ -110,36 +50,9 @@ export const studentPaymentsPs = {
     student: "زده کونکی اړین دی",
     selectInvoices: "لطفاً کم ازه یوه صورتحساب غوره کړئ"
   },
-  
-  // Additional translations
-  managePayments: "د تادیاتو سمبالول",
-  searchPayments: "د تادیاتو پلټنه...",
-  noPaymentsFound: "هیڅ تادیه ونه موندل شوه",
-  addFirstPayment: "خپل لومړنی تادیه زاید کړئ",
-  loadingPayments: "د تادیاتو په بارول...",
   tryAdjustingSearch: "لطفاً خپل پلټنې متن ته بدلون وکړئ",
-  clearFilters: "فلټرونه پاک کړئ",
-  
-  // Payment Flow
-  paymentFlow: "د تادیې بیاکتن",
-  selectLevel: "د صنف کچه وټاکئ",
-  feeAssignments: "د فیسو تخصیصونه او تادیه",
-  selectMonths: "میاشتې وټاکئ",
-  paymentAmount: "د تادیې مقدار",
-  year: "کال",
-  totalPayment: "ټول تادیه",
-  processing: "د پروسیس کولو...",
-  createPayments: "تادیات جوړول",
-  feeBreakdown: "د فیس څخه ویش",
-  feeBreakdownHelp: "د دې فیس لپاره چې تادیه کړئ، یوه ځانګړه فیس وټاکئ.",
-  feeBreakdownNote: "په لاندنی ټول فیسو او تادیات ښکاره شوي.",
-  actions: "عملیات",
-  noFeeAssignments: "هیڅ فیس تخصیص شتون نلري",
-  noFeeAssignmentsDesc: "د دې زده کونکي لپاره هیڅ فیس تخصیص شتون نلري. لطفاً لومړی فیس تخصیص زاید کړئ.",
-studentFinancialInfo: "د زده کونکي مالي خلاصه",
-  periodFinancialInfo: "د دورې مالي معلومات",
+  studentFinancialInfo: "د زده کونکي مالي خلاصه",
   totalMonthsSelected: "ټولې غوره شوي میاشتې",
-  
   // Missing translations
   selectLevel: "د صنف کچه وټاکئ",
   paymentFlow: "د تادیې بیاکتن",
@@ -227,9 +140,8 @@ studentFinancialInfo: "د زده کونکي مالي خلاصه",
   addFirstPayment: "خپل لومړنی تادیه زاید کړئ",
   loadingPayments: "د تادیاتو په بارول...",
   clearFilters: "فلټرونه پاک کړئ",
-  
   // Additional missing keys
   limitReached: "حداقل رسیده",
   failedToCreatePayments: "پرداخت جوړول ناکام شو",
-  selectFeeWithMonths: "لطفاً حداقل یک فیس با ماهها و مبلغ را انتخاب کنید",
-};
+  selectFeeWithMonths: "لطفاً حداقل یک فیس با ماهها و مبلغ را انتخاب کنید"
+  };

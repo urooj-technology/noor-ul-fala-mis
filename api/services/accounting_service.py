@@ -283,6 +283,28 @@ class AccountingService:
         )
 
     @staticmethod
+    def ensure_fee_assignment_journal(assignment):
+        """Create fee-assignment journal (Dr Receivable, Cr Revenue) if missing."""
+        from api.models.data.accounting import Transaction
+
+        if assignment.is_deleted or not assignment.is_active:
+            return None
+
+        amount = Decimal(str(assignment.amount or 0))
+        if amount <= 0:
+            return None
+
+        reference = f"FEE-ASSIGN-{assignment.id}"
+        if Transaction.objects.filter(reference=reference, is_deleted=False).exists():
+            return None
+
+        return AccountingService.record_student_fee_assignment(
+            assignment=assignment,
+            amount=amount,
+            reference=reference,
+        )
+
+    @staticmethod
     def ensure_advance_journal(advance):
         """Create the advance journal entry if it does not already exist."""
         if advance.is_deleted:
@@ -348,7 +370,7 @@ class AccountingService:
 
         transactions = (
             Transaction.objects.filter(
-                Q(reference=base_reference) | Q(reference__startswith=f"{base_reference}-ADJ")
+                Q(reference=base_reference) | Q(reference__startswith=f"{base_reference}-")
             )
             .exclude(reference__endswith='-VOID')
             .order_by('id')
@@ -845,6 +867,22 @@ class AccountingService:
         }
     
     @staticmethod
+    def _student_fees_collected(currency, start_date, end_date):
+        """Sum completed student payments for a currency in a date range."""
+        from django.db.models import Sum
+        from api.models.data.student_finance import StudentPayment
+        from api.utils.currency import normalize_currency
+
+        currency = normalize_currency(currency)
+        payments = StudentPayment.completed().filter(currency=currency)
+        if start_date:
+            payments = payments.filter(payment_date__gte=start_date)
+        if end_date:
+            payments = payments.filter(payment_date__lte=end_date)
+        total = payments.aggregate(total=Sum('amount'))['total']
+        return Decimal(str(total or 0))
+
+    @staticmethod
     def get_income_statement(start_date, end_date):
         """Generate income statement (Profit & Loss) with multi-currency support"""
         result = {
@@ -884,6 +922,21 @@ class AccountingService:
                         'amount': float(balance)
                     })
                     total_income += balance
+
+            has_student_revenue = any(item['code'].startswith('4000_') for item in income_items)
+            if not has_student_revenue:
+                student_collected = AccountingService._student_fees_collected(
+                    currency, start_date, end_date
+                )
+                if student_collected > 0:
+                    income_items.append({
+                        'code': f'4000_{currency}',
+                        'name': 'Student Fees (Collected)',
+                        'type': 'Income',
+                        'currency': currency,
+                        'amount': float(student_collected),
+                    })
+                    total_income += student_collected
             
             total_expenses = Decimal('0')
             expense_items = []

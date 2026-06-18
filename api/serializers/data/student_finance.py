@@ -89,9 +89,8 @@ class StudentFeeAssignmentSerializer(DataRootSerializer):
     
     def get_paid_amount(self, obj):
         """Get total paid amount for this assignment"""
-        paid = StudentPayment.objects.filter(
+        paid = StudentPayment.completed().filter(
             assignment=obj,
-            payment_status='completed'
         ).aggregate(total=models.Sum('amount'))['total']
         return str(paid) if paid else '0'
     
@@ -101,9 +100,8 @@ class StudentFeeAssignmentSerializer(DataRootSerializer):
         from decimal import Decimal
         
         amount = obj.amount if obj.amount else Decimal('0')
-        paid = StudentPayment.objects.filter(
+        paid = StudentPayment.completed().filter(
             assignment=obj,
-            payment_status='completed'
         ).aggregate(total=Sum('amount'))['total']
         paid = Decimal(str(paid)) if paid else Decimal('0')
         
@@ -363,9 +361,8 @@ class StudentPaymentCreateSerializer(serializers.Serializer):
         if amount:
             total_remaining = Decimal('0')
             for assignment in assignments:
-                paid = StudentPayment.objects.filter(
+                paid = StudentPayment.completed().filter(
                     assignment=assignment,
-                    payment_status='completed'
                 ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
                 remaining = (assignment.amount or Decimal('0')) - paid
                 if remaining < 0:

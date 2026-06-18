@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from datetime import timedelta
 from django.utils import timezone
 from django.db.models import Sum
@@ -20,6 +21,7 @@ from api.utils.calendar import to_gregorian_date_str
 
 class ComprehensiveReportView(APIView):
     """Clean comprehensive reports backed by journal entries."""
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         report_type = request.query_params.get('type', 'overview')
@@ -59,35 +61,41 @@ class ComprehensiveReportView(APIView):
         return build_financial_summary(period, start_date, end_date)
 
     def _student_payments_report(self, period, start_date, end_date):
-        """Report student cash collections from active journal entries."""
+        """Report student payments bucketed by payment currency."""
+        from api.models.data.student_finance import StudentPayment
+        from api.utils.currency import normalize_currency
+
         date_range = get_date_range(period, start_date, end_date)
         result = {'AFN': 0.0, 'USD': 0.0}
         details = {'AFN': [], 'USD': []}
 
-        entries = JournalEntry.active().filter(
-            transaction__transaction_type='student_payment',
-            account__code__startswith='1000_',
-            debit__gt=0,
-        ).select_related('transaction')
-
+        payments = StudentPayment.completed().select_related(
+            'assignment__student', 'fee_type'
+        )
         if date_range['start']:
-            entries = entries.filter(date__gte=date_range['start'])
+            payments = payments.filter(payment_date__gte=date_range['start'])
         if date_range['end']:
-            entries = entries.filter(date__lte=date_range['end'])
+            payments = payments.filter(payment_date__lte=date_range['end'])
 
-        for entry in entries.order_by('-date')[:500]:
-            currency = entry.account.code.split('_')[-1]
-            amount = float(entry.debit or 0)
+        for payment in payments.order_by('-payment_date')[:500]:
+            currency = normalize_currency(payment.currency)
+            amount = float(payment.amount or 0)
             if amount == 0:
                 continue
             result[currency] = result.get(currency, 0) + amount
-            description = entry.description or entry.transaction.description or 'Student Payment'
-            description = description.replace('Student Payment - ', '').replace('Student Payment Reversal - ', '')
+            student_name = (
+                payment.assignment.student.full_name
+                if payment.assignment and payment.assignment.student
+                else 'Student'
+            )
+            fee_name = payment.fee_type.name if payment.fee_type else ''
+            description = payment.description or f'{student_name} - {fee_name}'.strip(' -')
             details.setdefault(currency, []).append({
-                'date': str(entry.date),
+                'date': str(payment.payment_date),
                 'description': description,
                 'amount': amount,
-                'reference': entry.reference or entry.transaction.reference,
+                'reference': payment.reference_number,
+                'currency': currency,
             })
 
         return {
@@ -97,7 +105,7 @@ class ComprehensiveReportView(APIView):
             'total': result,
             'payment_count': sum(len(v) for v in details.values()),
             'details': details,
-            'note': 'Totals reflect active student-payment journal entries (cash collected).',
+            'note': 'Totals reflect completed student payments by payment currency.',
         }
 
     def _rental_report(self, period, start_date, end_date):
@@ -163,9 +171,12 @@ class ComprehensiveReportView(APIView):
 
 class DailyReportView(APIView):
     """Daily financial snapshot."""
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         date = request.query_params.get('date', timezone.now().date().isoformat())
+        calendar_type = request.query_params.get('calendar_type', 'gregorian')
+        date = to_gregorian_date_str(date, calendar_type)
         report = build_financial_summary('custom', date, date)
         report['date'] = date
         return Response(report, status=status.HTTP_200_OK)

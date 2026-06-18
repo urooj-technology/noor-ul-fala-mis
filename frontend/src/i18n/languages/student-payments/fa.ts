@@ -4,7 +4,6 @@ export const studentPaymentsFa = {
   editPayment: "ویرایش پرداخت",
   paymentDetails: "جزئیات پرداخت",
   paymentInformation: "اطلاعات پرداخت",
-
   // Invoice Generation
   periodicGeneration: "تولید دورهای صورتحساب",
   generateInvoicesForPeriod: "تولید صورتحساب برای همه شاگردان در یک دوره",
@@ -35,37 +34,11 @@ export const studentPaymentsFa = {
   endDate: "تاریخ پایان",
   selectClassLevels: "انتخاب سطح صنف (اختیاری)",
   multiTabInfo: "چند صنف انتخاب شده - هر صنف برگه مخصوص خود را خواهد داشت",
-
-  // Payment Information
-  amount: "مبلغ",
-  paymentDate: "تاریخ پرداخت",
-  paymentStatus: "وضعیت پرداخت",
-  paymentCycle: "چرخه پرداخت",
   referenceNumber: "شماره مرجع",
   description: "توضیحات",
   receipt: "رسید",
-  currency: "ارز",
-  student: "شاگرد",
-  selectStudent: "انتخاب شاگرد",
-  selectStatus: "انتخاب وضعیت",
-  selectMonth: "انتخاب ماه",
-  selectInterval: "انتخاب دوره",
   selectCycle: "انتخاب چرخه",
-  selectFeeType: "انتخاب نوع فیس",
-  allFees: "همه فیسها (تخصیص خودکار)",
-  feeTypeHelp: "فیس خاصی را انتخاب کنید تا این پرداخت برای آن ثبت شود. خالی بگذارید تا به تمام صورتحساب های در انتظار تخصیص شود.",
-  selectCurrency: "انتخاب ارز",
-  selectInvoices: "انتخاب صورتحساب ها",
-  enterAmount: "مبلغ را وارد کنید",
-  enterDescription: "توضیحات را وارد کنید",
   amount: "مبلغ",
-  notes: "یادداشت",
-  periodYearPlaceholder: "مثال: 2026",
-  cycleForThisPayment: "چرخه این پرداخت",
-  periodCoverage: "پوشش دوره",
-  summary: "خلاصه",
-  referenceNumberPlaceholder: "مثال: BANK-2026-001",
-
   // Statuses
   status: {
     pending: "در انتظار",
@@ -73,40 +46,6 @@ export const studentPaymentsFa = {
     cancelled: "لغو شده",
     refunded: "برگشت خورده"
   },
-
-  // Summary
-  dailySummary: "خلاصه روزانه پرداخت",
-  monthlySummary: "خلاصه ماهانه پرداخت",
-  totalAmount: "مجموع مبلغ",
-  paidAmount: "مبلغ پرداخت شده",
-  remainingAmount: "مبلغ باقی مانده",
-  paymentCount: "تعداد پرداختها",
-  periodFinancialInfo: "اطلاعات مالی دوره",
-  financialInfo: "اطلاعات مالی",
-
-  // Allocation
-  allocateToInvoices: "تخصیص به صورتحساب ها",
-  selectInvoicesForPayment: "صورتحساب ها را برای تخصیص این پرداخت انتخاب کنید",
-  pendingInvoices: "صورتحساب های در انتظار",
-  invoicesFound: "صورتحساب یافت شد",
-  noPendingInvoices: "هیچ صورتحساب در انتظاری برای این شاگرد وجود ندارد",
-  dueDate: "تاریخ سررسید",
-  remaining: "باقی مانده",
-  selected: "انتخاب شده",
-  clickToSelect: "برای انتخاب کلیک کنید",
-  invoicesSelected: "صورتحساب انتخاب شد",
-  clickAllocateToComplete: "برای تکمیل 'تخصیص' را کلیک کنید",
-
-  // Actions
-  viewDetails: "مشاهده جزئیات",
-  edit: "ویرایش",
-  delete: "حذف",
-  deletePayment: "حذف پرداخت",
-  markAsPaid: "علامتگذاری به عنوان پرداخت شده",
-  markAsRefunded: "علامتگذاری به عنوان برگشت خورده",
-  allocate: "تخصیص",
-  allocating: "در حال تخصیص...",
-
   // Validation
   validation: {
     amount: "مبلغ الزامی است",
@@ -115,36 +54,9 @@ export const studentPaymentsFa = {
     student: "شاگرد الزامی است",
     selectInvoices: "لطفاً حداقل یک صورتحساب انتخاب کنید"
   },
-  
-  // Additional translations
-  managePayments: "مدیریت پرداختها",
-  searchPayments: "جستجوی پرداختها...",
-  noPaymentsFound: "هیچ پرداختی یافت نشد",
-  addFirstPayment: "اولین پرداخت خود را اضافه کنید",
-  loadingPayments: "در حال بارگذاری پرداختها...",
   tryAdjustingSearch: "لطفاً عبارت جستجو خود را تغییر دهید",
-  clearFilters: "پاک کردن فیلترها",
-  
-  // Payment Flow
-  paymentFlow: "فرآیند پرداخت",
-  selectLevel: "انتخاب سطح صنف",
-  feeAssignments: "تخصیص فیسها و پرداخت",
-  selectMonths: "انتخاب ماهها",
-  paymentAmount: "مبلغ پرداخت",
-  year: "سال",
-  totalPayment: "مجموع پرداخت",
-  processing: "در حال پردازش...",
-  createPayments: "ایجاد پرداختها",
-  feeBreakdown: "جزئیات فیس بر اساس نوع",
-  feeBreakdownHelp: "فیس خاصی را برای پرداخت انتخاب کنید.",
-  feeBreakdownNote: "مجموع فیسها و پرداختها در زیر نمایش داده شده است.",
-  actions: "عملیات",
-  noFeeAssignments: "هیچ تخصیص فیسی موجود نیست",
-  noFeeAssignmentsDesc: "این شاگرد هیچ تخصیص فیسی ندارد. لطفاً ابتدا تخصیص فیس اضافه کنید.",
-studentFinancialInfo: "خلاصه مالی شاگرد",
-  periodFinancialInfo: "اطلاعات مالی دوره",
+  studentFinancialInfo: "خلاصه مالی شاگرد",
   totalMonthsSelected: "مجموع ماههای انتخاب شده",
-  
   // Missing translations
   selectLevel: "انتخاب سطح صنف",
   paymentFlow: "فرآیند پرداخت",
@@ -232,9 +144,8 @@ studentFinancialInfo: "خلاصه مالی شاگرد",
   addFirstPayment: "اولین پرداخت خود را اضافه کنید",
   loadingPayments: "در حال بارگذاری پرداختها...",
   clearFilters: "پاک کردن فیلترها",
-  
   // Additional missing keys
   limitReached: "حداقل رسیده",
   failedToCreatePayments: "ایجاد پرداخت ناموفق بود",
-  selectFeeWithMonths: "لطفاً حداقل یک فیس با ماهها و مبلغ را انتخاب کنید",
-};
+  selectFeeWithMonths: "لطفاً حداقل یک فیس با ماهها و مبلغ را انتخاب کنید"
+  };

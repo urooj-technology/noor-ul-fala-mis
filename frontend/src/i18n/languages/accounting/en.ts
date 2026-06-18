@@ -9,7 +9,6 @@ export const accountingEn = {
   incomeStatement: "Income Statement",
   balanceSheet: "Balance Sheet",
   fiscalYears: "Fiscal Years",
-  
   // Account Category
   addAccountCategory: "Add Account Category",
   editAccountCategory: "Edit Account Category",
@@ -18,7 +17,6 @@ export const accountingEn = {
   accountCategoryCode: "Category Code",
   accountCategoryType: "Account Type",
   accountCategoryDescription: "Description",
-  
   // Account
   addAccount: "Add Account",
   editAccount: "Edit Account",
@@ -31,7 +29,6 @@ export const accountingEn = {
   isActive: "Is Active",
   isDetail: "Is Detail Account",
   currentBalance: "Current Balance",
-  
   // Transaction
   addTransaction: "Add Transaction",
   editTransaction: "Edit Transaction",
@@ -47,14 +44,12 @@ export const accountingEn = {
   entries: "Entries",
   debit: "Debit",
   credit: "Credit",
-  
   // Journal Entry
   searchJournalEntries: "Search journal entries...",
   filterByDate: "Filter by date",
   noJournalEntriesFound: "No journal entries found",
   addFirstJournalEntry: "Add your first journal entry to get started",
   doubleEntryBookkeeping: "Double-entry bookkeeping system",
-  
   // Fiscal Year
   addFiscalYear: "Add Fiscal Year",
   editFiscalYear: "Edit Fiscal Year",
@@ -63,7 +58,6 @@ export const accountingEn = {
   fiscalYearStartDate: "Start Date",
   fiscalYearEndDate: "End Date",
   isClosed: "Is Closed",
-  
   // Financial Reports
   financialReports: "Financial Reports",
   reportDate: "Report Date",
@@ -73,14 +67,12 @@ export const accountingEn = {
   totalAssets: "Total Assets",
   totalLiabilities: "Total Liabilities",
   totalEquity: "Total Equity",
-  
   // Messages
   addSuccess: "Account added successfully",
   editSuccess: "Account updated successfully",
   deleteSuccess: "Account deleted successfully",
   transactionCreated: "Transaction created successfully",
   transactionUpdated: "Transaction updated successfully",
-  
   // UI Components
   title: "Accounting",
   viewDetails: "View Details",
@@ -108,29 +100,23 @@ export const accountingEn = {
   loadingTransactions: "Loading transactions...",
   loadingFiscalYears: "Loading fiscal years...",
   loadingJournalEntries: "Loading journal entries...",
-  
   // Account Types
   asset: "Asset",
   liability: "Liability",
   equity: "Equity",
   income: "Income",
-  expense: "Expense",
-  
   // Currency
   currency: "Currency",
   afn: "AFN - Afghan Afghani",
   usd: "USD - US Dollar",
-  
   // Yes/No
   yes: "Yes",
   no: "No",
-  
   // Status
   status: "Status",
   filterByStatus: "Filter by status",
   open: "Open",
   closed: "Closed",
-  
   // Placeholders
   description: "Description",
   accountNamePlaceholder: "Enter account name",
@@ -146,11 +132,9 @@ export const accountingEn = {
   accountCategoryTypePlaceholder: "Select account type",
   accountCategoryDescriptionPlaceholder: "Enter description...",
   fiscalYearNamePlaceholder: "Enter fiscal year name",
-  
   // Messages
   transactionNotBalanced: "Transaction must be balanced (Debit = Credit)",
   startDateMustBeBeforeEndDate: "Start date must be before end date",
-  
   // Additional UI
   addEntry: "Add Entry",
   date: "Date",
@@ -159,7 +143,6 @@ export const accountingEn = {
   currentAssets: "Current Assets",
   fixedAssets: "Fixed Assets",
   totalLiabilitiesAndEquity: "Total Liabilities & Equity",
-  
   // Transaction Types
   studentPayment: "Student Payment",
   expense: "Expense",
@@ -170,7 +153,6 @@ export const accountingEn = {
   other_income: "Other Income",
   journal: "Manual Journal Entry",
   opening: "Opening Balance",
-  
   // Additional missing keys
   accountNotFound: "Account not found",
   transactionNotFound: "Transaction not found",
@@ -190,4 +172,4 @@ export const accountingEn = {
   grandTotal: "Grand Total",
   balance: "Balance",
   difference: "Difference"
-};
+  };

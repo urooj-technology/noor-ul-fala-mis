@@ -10,6 +10,7 @@ from api.models.data.other_income import OtherIncome
 from api.models.data.shop_rental_payment import ShopRentalPayment
 from api.services.accounting_service import AccountingService
 from api.models.data.choices import DEFAULT_CURRENCY
+from api.utils.currency import normalize_currency
 
 
 def _adj_reference(base_ref, instance):
@@ -96,6 +97,15 @@ def _sync_monetary_document(
         record_decrease_fn(instance, abs(delta), _adj_reference(reference, instance))
 
 
+def _student_payment_currency(payment):
+    """Resolve payment currency from payment row, then assignment, default AFN."""
+    if payment.currency:
+        return normalize_currency(payment.currency)
+    if payment.assignment and payment.assignment.currency:
+        return normalize_currency(payment.assignment.currency)
+    return 'AFN'
+
+
 def _student_payment_description(payment):
     student = payment.assignment.student if payment.assignment and payment.assignment.student else None
     fee_type = payment.fee_type or (payment.assignment.fee_type if payment.assignment else None)
@@ -128,7 +138,7 @@ def snapshot_student_payment_for_accounting(sender, instance, **kwargs):
         return
 
     previous = sender.objects.filter(pk=instance.pk).values(
-        'amount', 'currency', 'payment_status'
+        'amount', 'currency', 'payment_status', 'is_deleted'
     ).first()
     instance._accounting_previous = previous
 
@@ -142,11 +152,7 @@ def create_fee_assignment_journal(sender, instance, created, **kwargs):
 
         if created:
             if instance.is_active and current_amount > 0:
-                AccountingService.record_student_fee_assignment(
-                    assignment=instance,
-                    amount=current_amount,
-                    reference=f"FEE-ASSIGN-{instance.id}",
-                )
+                AccountingService.ensure_fee_assignment_journal(instance)
             return
 
         if not previous:
@@ -216,7 +222,30 @@ def create_student_payment_journal(sender, instance, created, **kwargs):
         current_amount = Decimal(str(instance.amount or 0))
         previous = getattr(instance, '_accounting_previous', None)
         description = _student_payment_description(instance)
-        currency = instance.currency or DEFAULT_CURRENCY
+        currency = _student_payment_currency(instance)
+
+        if instance.is_deleted:
+            if not previous or not previous.get('is_deleted'):
+                if previous and previous.get('payment_status') == 'completed' and instance.reference_number:
+                    AccountingService.void_source_document_journals(
+                        instance.reference_number,
+                        date=instance.payment_date,
+                        description=f"Student Payment Deleted - {description}",
+                    )
+            return
+
+        if not created and previous and previous.get('is_deleted') and not instance.is_deleted:
+            if instance.payment_status == 'completed' and current_amount > 0:
+                AccountingService.record_student_payment(
+                    student_id=student_obj.id,
+                    amount=current_amount,
+                    date=instance.payment_date,
+                    description=description,
+                    reference=instance.reference_number,
+                    payment_cycle='interval',
+                    currency=currency,
+                )
+            return
 
         if created:
             if instance.payment_status == 'completed' and current_amount > 0:
@@ -237,7 +266,7 @@ def create_student_payment_journal(sender, instance, created, **kwargs):
         previous_amount = Decimal(str(previous.get('amount') or 0))
         was_completed = previous.get('payment_status') == 'completed'
         is_completed = instance.payment_status == 'completed'
-        previous_currency = previous.get('currency') or DEFAULT_CURRENCY
+        previous_currency = normalize_currency(previous.get('currency')) if previous.get('currency') else currency
 
         if was_completed and is_completed and previous_currency != currency:
             if previous_amount > 0:
@@ -287,7 +316,7 @@ def create_student_payment_journal(sender, instance, created, **kwargs):
                 date=instance.payment_date,
                 description=description,
                 reference=f"{instance.reference_number}-REV",
-                currency=previous.get('currency') or currency
+                currency=normalize_currency(previous.get('currency')) if previous.get('currency') else currency
             )
     except Exception as e:
         import logging

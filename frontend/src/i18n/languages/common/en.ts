@@ -253,10 +253,9 @@ export const commonEn = {
   next: "Next",
   totals: "Totals",
   selectInvoices: "Select Invoices",
-  processing: "Processing...",
   deselectAll: "Deselect All",
   units: {
-    unit: "Unit",
+    unit: "Unit"
   },
   billNumber: "Bill Number",
   product: "Product",
@@ -267,7 +266,7 @@ export const commonEn = {
   paidAmount: "Paid Amount",
   remainingAmount: "Remaining Amount",
   vendors: {
-    details: "Vendor Details",
+    details: "Vendor Details"
   },
   customers: {
     details: "Customer Details",
@@ -276,7 +275,6 @@ export const commonEn = {
     remainingAmount: "Remaining Amount"
   },
   company: "Company",
-  
   // Additional common translations
   filterByCurrency: "Filter by currency",
   addFirstItem: "Add your first item to get started",
@@ -286,7 +284,6 @@ export const commonEn = {
   searchPlaceholder: "Search...",
   allStatuses: "All Statuses",
   allCurrencies: "All Currencies",
-  
   // Additional translations for bill template form
   general: "General",
   header: "Header",
@@ -337,7 +334,6 @@ export const commonEn = {
     restoreTitle: "Restore Backup",
     restoreConfirm: "Are you sure you want to restore this backup? This will replace your current database with the backup data."
   },
-  
   // Additional missing translations
   code: "Code",
   remove: "Remove",
@@ -345,7 +341,6 @@ export const commonEn = {
   currencyBreakdown: "Currency Breakdown",
   max: "Max",
   processing: "Processing...",
-  
   // Accounting translations
   balanceSheetBalanced: "Balance Sheet is Balanced",
   balanceSheetNotBalanced: "Balance Sheet is Not Balanced",
@@ -376,12 +371,10 @@ export const commonEn = {
   currentAssets: "Current Assets",
   fixedAssets: "Fixed Assets",
   totalLiabilitiesAndEquity: "Total Liabilities & Equity",
-  
   // Currency
   currency: "Currency",
   afn: "AFN - Afghan Afghani",
   usd: "USD - US Dollar",
-  
   // Additional UI
   transaction: "Transaction",
   totalDebit: "Total Debit",
@@ -389,13 +382,11 @@ export const commonEn = {
   isBalanced: "Is Balanced",
   isPosted: "Is Posted",
   isDetail: "Is Detail Account",
-  
   // Messages
   addSuccess: "Account added successfully",
   editSuccess: "Account updated successfully",
   transactionCreated: "Transaction created successfully",
   transactionUpdated: "Transaction updated successfully",
-  
   // UI Components
   deleteAccount: "Delete Account",
   deleteAccountCategory: "Delete Account Category",
@@ -421,10 +412,8 @@ export const commonEn = {
   loadingTransactions: "Loading transactions...",
   loadingFiscalYears: "Loading fiscal years...",
   loadingJournalEntries: "Loading journal entries...",
-  
   // Double Entry Bookkeeping
   doubleEntryBookkeeping: "Double-entry bookkeeping system",
-  
   // Financial Reports
   financialReports: "Financial Reports",
   reportDate: "Report Date",
@@ -432,7 +421,6 @@ export const commonEn = {
   totalAssets: "Total Assets",
   totalLiabilities: "Total Liabilities",
   totalEquity: "Total Equity",
-  
   // Transaction Types
   studentPayment: "Student Payment",
   payroll: "Payroll",
@@ -440,12 +428,10 @@ export const commonEn = {
   rentalIncome: "Rental Income",
   otherIncome: "Other Income",
   opening: "Opening Balance",
-  
   // Additional missing common keys
   paid: "Paid",
   unpaid: "Unpaid",
   partial: "Partial",
-  
   // Date translations
   months: {
     january: "January",
@@ -461,7 +447,6 @@ export const commonEn = {
     november: "November",
     december: "December"
   },
-  
   // Calendar month translations for Shamsi and Qamari calendars
   calendar: {
     shamsi: "Shamsi",
@@ -505,4 +490,4 @@ export const commonEn = {
     qamariMonth11: "ذی القعده",
     qamariMonth12: "ذی الحجه"
   }
-};
+  };

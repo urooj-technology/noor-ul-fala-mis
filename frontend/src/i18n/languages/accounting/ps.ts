@@ -9,7 +9,6 @@ export const accountingPs = {
   incomeStatement: "د درېدو او مصارف راپور",
   balanceSheet: "د مالي وړتیا راپور",
   fiscalYears: "د مالي کالونه",
-  
   // Account Category
   addAccountCategory: "د حساب وېشنيزه زياتول",
   editAccountCategory: "د حساب وېشنيزه سمول",
@@ -18,7 +17,6 @@ export const accountingPs = {
   accountCategoryCode: "د وېشنيزې کود",
   accountCategoryType: "د حساب ډول",
   accountCategoryDescription: "توضيحات",
-  
   // Account
   addAccount: "حساب زياتول",
   editAccount: "حساب سمول",
@@ -30,7 +28,6 @@ export const accountingPs = {
   isActive: "فعال دی",
   isDetail: "د تفصیلي حساب ډول",
   currentBalance: "اوسنی مانده",
-  
   // Transaction
   addTransaction: "مامله زياتول",
   editTransaction: "مامله سمول",
@@ -46,14 +43,12 @@ export const accountingPs = {
   entries: "ورودي",
   debit: "بدهکار",
   credit: "بستانکار",
-  
   // Journal Entry
   searchJournalEntries: "د لیکنونو لټون...",
   filterByDate: "په وخت کې فیلتر کول",
   noJournalEntriesFound: "د ډیری کتاب مخونه و نشته",
   addFirstJournalEntry: "د پیل لپاره خپل لومړني ډیری کتاب مخ زيات کړئ",
   doubleEntryBookkeeping: "دوه طرفه کتابه کتابیزه پوهه",
-  
   // Fiscal Year
   addFiscalYear: "د مالي کال زياتول",
   editFiscalYear: "د مالي کال سمول",
@@ -62,7 +57,6 @@ export const accountingPs = {
   fiscalYearStartDate: "د پیل نیټه",
   fiscalYearEndDate: "د پای نیټه",
   isClosed: "بند شوی",
-  
   // Financial Reports
   financialReports: "د مالي راپورونه",
   reportDate: "د راپور نیټه",
@@ -72,14 +66,12 @@ export const accountingPs = {
   totalAssets: "ټول شياوې",
   totalLiabilities: "ټول بدهکاري",
   totalEquity: "ټول سرپل",
-  
   // Messages
   addSuccess: "حساب په بریالیتوب سره زيات شو",
   editSuccess: "حساب په بریالیتوب سره سم شو",
   deleteSuccess: "حساب په بریالیتوب سره حذف شو",
   transactionCreated: "مامله په بریالیتوب سره جوړه شوه",
   transactionUpdated: "مامله په بریالیتوب سره تازه شوه",
-  
   // UI Components
   title: "محاسبه",
   viewDetails: "د معلومات لیدل",
@@ -107,29 +99,23 @@ export const accountingPs = {
   loadingTransactions: "د ماملو بارول...",
   loadingFiscalYears: "د مالي کالونو بارول...",
   loadingJournalEntries: "د ډیری کتاب مخونو بارول...",
-  
   // Account Types
   asset: "شياوې",
   liability: "بدهکاري",
   equity: "سرپل",
   income: "درېدنه",
-  expense: "مصارف",
-  
   // Currency
   currency: "اسعار",
   afn: "AFN - افغانۍ",
   usd: "USD - US ډالر",
-  
   // Yes/No
   yes: "هو",
   no: "نه",
-  
   // Status
   status: "حالت",
   filterByStatus: "د حالت له مخې فلټر",
   open: "پرانیستل",
   closed: "بند شوی",
-  
   // Placeholders
   description: "توضیحات",
   accountNamePlaceholder: "د حساب نوم ولیکئ",
@@ -145,11 +131,9 @@ export const accountingPs = {
   accountCategoryTypePlaceholder: "د حساب ډول وټاکئ",
   accountCategoryDescriptionPlaceholder: "توضیحات ولیکئ...",
   fiscalYearNamePlaceholder: "د مالي کال نوم ولیکئ",
-  
   // Messages
   transactionNotBalanced: "مامله باید متوازن وي (بدهکار = بستانکار)",
   startDateMustBeBeforeEndDate: "د پیل نیټه باید د پای نیټې پخوا وي",
-  
   // Additional UI
   addEntry: "ورودي زياتول",
   date: "نیټه",
@@ -158,7 +142,6 @@ export const accountingPs = {
   currentAssets: "اوسنی شياوې",
   fixedAssets: "ثابت شياوې",
   totalLiabilitiesAndEquity: "ټول بدهکاري او سرپل",
-  
   // Transaction Types
   studentPayment: "د زده کونکي پیسې",
   expense: "مصرف",
@@ -169,7 +152,6 @@ export const accountingPs = {
   other_income: "نوره درېدنه",
   journal: "د دفتر روزنامه دستي سند",
   opening: "د دورې پیل مانده",
-  
   // Additional missing keys
   accountNotFound: "حساب و نه موندل شو",
   transactionNotFound: "مامله و نه موندل شوه",
@@ -186,4 +168,4 @@ export const accountingPs = {
   totalIncome: "ټولې درېدنې",
   totalExpenses: "ټولې مصارف",
   expenses: "مصارف"
-};
+  };

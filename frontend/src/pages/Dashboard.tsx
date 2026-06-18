@@ -9,15 +9,18 @@ import { ReportDateRangeBadge } from '@/components/reports/ReportDateRangeBadge'
 import { ReportPageHeader, ReportEmptyState, FinancialSummaryBar } from '@/components/reports/ReportPageLayout';
 import { FinancialReport, ReportPeriod } from '@/types/financial-report';
 
+import { useCalendar } from '@/contexts/CalendarContext';
+
 const emptyAmounts = { AFN: 0, USD: 0 };
 
 export const Dashboard = () => {
   const { t } = useLanguage();
+  const { calendarType } = useCalendar();
   const [period, setPeriod] = useState<ReportPeriod>('monthly');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  const params: Record<string, string> = { period };
+  const params: Record<string, string> = { period, calendar_type: calendarType };
   if (period === 'custom') {
     if (startDate) params.start_date = startDate;
     if (endDate) params.end_date = endDate;
@@ -26,7 +29,7 @@ export const Dashboard = () => {
   const canFetch = period !== 'custom' || Boolean(startDate && endDate);
 
   const { data: report, isLoading, refetch } = useFetchObjects<FinancialReport>({
-    queryKey: ['financial-report', period, startDate, endDate],
+    queryKey: ['financial-report', period, startDate, endDate, calendarType],
     endpoint: 'reports/financial/',
     params,
     enabled: canFetch,

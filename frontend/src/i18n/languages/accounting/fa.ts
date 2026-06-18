@@ -9,7 +9,6 @@ export const accountingFa = {
   incomeStatement: "صورت فایده و زیان",
   balanceSheet: "ترازنامه",
   fiscalYears: "سالهای مالی",
-  
   // Account Category
   addAccountCategory: "افزودن کتگوری حساب",
   editAccountCategory: "ویرایش کتگوری حساب",
@@ -18,7 +17,6 @@ export const accountingFa = {
   accountCategoryCode: "کد کتگوری",
   accountCategoryType: "نوع حساب",
   accountCategoryDescription: "توضیحات",
-  
   // Account
   addAccount: "افزودن حساب",
   editAccount: "ویرایش حساب",
@@ -31,7 +29,6 @@ export const accountingFa = {
   isActive: "فعال است",
   isDetail: "حساب جزئی است",
   currentBalance: "موجودی فعلی",
-  
   // Transaction
   addTransaction: "افزودن تراکنش",
   editTransaction: "ویرایش تراکنش",
@@ -47,14 +44,12 @@ export const accountingFa = {
   entries: "ورودیها",
   debit: "بدهکار",
   credit: "بستانکار",
-  
   // Journal Entry
   searchJournalEntries: "جستجوی سندهای دفترروزنامه...",
   filterByDate: "فیلتر بر اساس تاریخ",
   noJournalEntriesFound: "سند دفترروزنامهای یافت نشد",
   addFirstJournalEntry: "برای شروع اولین سند دفترروزنامه خود را اضافه کنید",
   doubleEntryBookkeeping: "سیستم حسابداری دو طرفه",
-  
   // Fiscal Year
   addFiscalYear: "افزودن سال مالی",
   editFiscalYear: "ویرایش سال مالی",
@@ -63,7 +58,6 @@ export const accountingFa = {
   fiscalYearStartDate: "تاریخ شروع",
   fiscalYearEndDate: "تاریخ پایان",
   isClosed: "بسته شده",
-  
   // Financial Reports
   financialReports: "گزارشهای مالی",
   reportDate: "تاریخ گزارش",
@@ -73,14 +67,12 @@ export const accountingFa = {
   totalAssets: "مجموع داراییها",
   totalLiabilities: "مجموع بدهیها",
   totalEquity: "مجموع سرمایه",
-  
   // Messages
   addSuccess: "حساب با موفقیت اضافه شد",
   editSuccess: "حساب با موفقیت ویرایش شد",
   deleteSuccess: "حساب با موفقیت حذف شد",
   transactionCreated: "تراکنش با موفقیت ایجاد شد",
   transactionUpdated: "تراکنش با موفقیت بهروزرسانی شد",
-  
   // UI Components
   title: "حسابداری",
   viewDetails: "مشاهده جزئیات",
@@ -108,29 +100,23 @@ export const accountingFa = {
   loadingTransactions: "در حال بارگذاری تراکنشها...",
   loadingFiscalYears: "در حال بارگذاری سالهای مالی...",
   loadingJournalEntries: "در حال بارگذاری سندهای دفترروزنامه...",
-  
   // Account Types
   asset: "دارایی",
   liability: "بدهی",
   equity: "سرمایه",
   income: "درآمد",
-  expense: "مصرف",
-  
   // Currency
   currency: "ارز",
   afn: "AFN - افغانی",
   usd: "USD - دلار آمریکا",
-  
   // Yes/No
   yes: "بله",
   no: "خیر",
-  
   // Status
   status: "وضعیت",
   filterByStatus: "فیلتر بر اساس وضعیت",
   open: "باز",
   closed: "بسته",
-  
   // Placeholders
   description: "توضیحات",
   accountNamePlaceholder: "نام حساب را وارد کنید",
@@ -146,11 +132,9 @@ export const accountingFa = {
   accountCategoryTypePlaceholder: "نوع حساب را انتخاب کنید",
   accountCategoryDescriptionPlaceholder: "توضیحات وارد کنید...",
   fiscalYearNamePlaceholder: "نام سال مالی را وارد کنید",
-  
   // Messages
   transactionNotBalanced: "تراکنش باید متوازن باشد (بدهکار = بستانکار)",
   startDateMustBeBeforeEndDate: "تاریخ شروع باید قبل از تاریخ پایان باشد",
-  
   // Additional UI
   addEntry: "ورودی اضافه کنید",
   date: "تاریخ",
@@ -159,7 +143,6 @@ export const accountingFa = {
   currentAssets: "داراییهای جاری",
   fixedAssets: "داراییهای ثابت",
   totalLiabilitiesAndEquity: "مجموع بدهیها و سرمایه",
-  
   // Transaction Types
   studentPayment: "پرداخت شاگرد",
   expense: "مصرف",
@@ -170,7 +153,6 @@ export const accountingFa = {
   other_income: "درآمد دیگر",
   journal: "سند دفترروزنامه دستی",
   opening: "موجودی اول دوره",
-  
   // Additional missing keys
   accountNotFound: "حساب یافت نشد",
   transactionNotFound: "تراکنش یافت نشد",
@@ -190,4 +172,4 @@ export const accountingFa = {
   grandTotal: "مجموع کل",
   balance: "بیلانس",
   difference: "تفاوت"
-};
+  };

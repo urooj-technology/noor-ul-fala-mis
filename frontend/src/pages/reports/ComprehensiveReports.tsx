@@ -173,8 +173,8 @@ const ComprehensiveReports = () => {
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead className="text-sm font-semibold">{t('reports.category')}</TableHead>
-            <TableHead className="text-sm font-semibold">{t('reports.afn')}</TableHead>
-            <TableHead className="text-sm font-semibold">{t('reports.usd')}</TableHead>
+            <TableHead className="text-sm font-semibold text-right">{t('reports.afn')}</TableHead>
+            <TableHead className="text-sm font-semibold text-right">{t('reports.usd')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -182,8 +182,12 @@ const ComprehensiveReports = () => {
             (report?.details?.[currency] || []).slice(0, 50).map((row: any, idx: number) => (
               <TableRow key={`${currency}-${idx}`}>
                 <TableCell className="text-sm md:text-base">{row.description}</TableCell>
-                <TableCell className="text-sm md:text-base tabular-nums">{currency === 'AFN' ? formatNumber(row.amount) : '-'}</TableCell>
-                <TableCell className="text-sm md:text-base tabular-nums">{currency === 'USD' ? formatNumber(row.amount) : '-'}</TableCell>
+                <TableCell className="text-right text-sm md:text-base tabular-nums">
+                  {(row.currency || currency) === 'AFN' ? formatNumber(row.amount) : '-'}
+                </TableCell>
+                <TableCell className="text-right text-sm md:text-base tabular-nums">
+                  {(row.currency || currency) === 'USD' ? formatNumber(row.amount) : '-'}
+                </TableCell>
               </TableRow>
             ))
           )}

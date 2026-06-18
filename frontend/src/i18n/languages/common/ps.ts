@@ -23,7 +23,6 @@ export const commonPs = {
   clearFilters: "فلټرونه پاکول",
   select: "ټاکل",
   selectAll: "ټول ټاکل",
-  deselectAll: "ټول غیر ټاکل",
   confirm: "تایید",
   success: "بریالیتوب",
   warning: "خبرداری",
@@ -248,17 +247,16 @@ export const commonPs = {
   next: "راتلونکی",
   totals: "ټولټال",
   selectInvoices: "صورتحسابونه وټاکئ",
-  processing: "پروسیس کیږي...",
   deselectAll: "ټول غیر ټاکل",
   sales: {
     details: "د پلور تفصیلات",
     items: "توکي",
     quantity: "شمېر",
     sellPrice: "د پلور بیه",
-    total: "ټولټال",
+    total: "ټولټال"
   },
   units: {
-    unit: "واحد",
+    unit: "واحد"
   },
   invoiceNumber: "د فاکتور شمیره",
   billNumber: "د بل شمیره",
@@ -270,7 +268,7 @@ export const commonPs = {
   paidAmount: "تادیه شوی مقدار",
   remainingAmount: "پاتې مقدار",
   vendors: {
-    details: "د پلورونکي تفصیلات",
+    details: "د پلورونکي تفصیلات"
   },
   customers: {
     details: "د پیرودونکي تفصیلات",
@@ -344,7 +342,6 @@ export const commonPs = {
   currencyBreakdown: "د اسعارو تفکیک",
   max: "حداکثر",
   processing: "پروسیس کیږي...",
-  
   // Accounting translations
   balanceSheetBalanced: "د مالي وړتیا ترازنامه متوازن دی",
   balanceSheetNotBalanced: "د مالي وړتیا ترازنامه نامتوازن دی",
@@ -375,12 +372,10 @@ export const commonPs = {
   currentAssets: "اوسنی شياوې",
   fixedAssets: "ثابت شياوې",
   totalLiabilitiesAndEquity: "ټول بدهکاري او سرپل",
-  
   // Currency
   currency: "اسعار",
   afn: "AFN - افغانۍ",
   usd: "USD - US ډالر",
-  
   // Additional UI
   transaction: "مامله",
   totalDebit: "ټول بدهکار",
@@ -388,13 +383,11 @@ export const commonPs = {
   isBalanced: "متوازن دی",
   isPosted: "ثبت شوی",
   isDetail: "د تفصیلي حساب ډول",
-  
   // Messages
   addSuccess: "حساب په بریالیتوب سره زيات شو",
   editSuccess: "حساب په بریالیتوب سره سم شو",
   transactionCreated: "مامله په بریالیتوب سره جوړه شوه",
   transactionUpdated: "مامله په بریالیتوب سره تازه شوه",
-  
   // UI Components
   deleteAccount: "حساب حذف کول",
   deleteAccountCategory: "د حساب وېشنيزه حذف کول",
@@ -420,10 +413,8 @@ export const commonPs = {
   loadingTransactions: "د ماملو بارول...",
   loadingFiscalYears: "د مالي کالونو بارول...",
   loadingJournalEntries: "د ډیری کتاب مخونو بارول...",
-  
   // Double Entry Bookkeeping
   doubleEntryBookkeeping: "دوه طرفه کتابه کتابیزه پوهه",
-  
   // Financial Reports
   financialReports: "د مالي راپورونه",
   reportDate: "د راپور نیټه",
@@ -431,7 +422,6 @@ export const commonPs = {
   totalAssets: "ټول شياوې",
   totalLiabilities: "ټول بدهکاري",
   totalEquity: "ټول سرپل",
-  
   // Transaction Types
   studentPayment: "د زده کونکي پیسې",
   payroll: "د کارمندانو پیسې",
@@ -439,64 +429,10 @@ export const commonPs = {
   rentalIncome: "د اجارې درېدنه",
   otherIncome: "نوره درېدنه",
   opening: "د دورې پیل مانده",
-  
   // Additional missing common keys
   paid: "تادیه شوی",
   unpaid: "تادیه نشوی",
   partial: "بشپ سره تادیه شوی",
-  
-  // Calendar types
-  calendar: {
-    calendarType: "د نیټې ډول",
-    calendarSettings: "د نیټې تنظیمات",
-    selectCalendarType: "د نیټې ډول ټاکل",
-    calendarTypeDescription: "د نیټې سیسټم خپل مطلوب غوره کړئ چې د برنامې په برخه کې نیټې ښودل کیږي.",
-    dateFormat: "د نیټې بڼه",
-    dateFormatDescription: "څنګه نیټې په فورمو، جدولونو او راپورونو کې ښکاره شي وټاکئ.",
-    formatSlash: "کال/میاشت/ورځ",
-    formatDash: "کال-میاشت-ورځ",
-    formatEuropean: "ورځ/میاشت/کال",
-    formatMonthName: "ورځ میاشت کال",
-    datePreview: "مخکتنه — نن",
-    saved: "د نیټې تنظیمات خوندي شول",
-    formatSaved: "د نیټې بڼه خوندي شوه",
-    shamsi: "شمسی",
-    shamsiDescription: "د افغانستان شمسی (جلالی) نیټه - د افغانستان خورشیدي نیټه د دري او پښتو میانوند نومونو سره",
-    qamari: "قمری",
-    qamariDescription: "د قمری (هجری قمری) نیټه - د اسلامي قمری نیټه د عربی میانوند نومونو سره",
-    gregorian: "میلادی",
-    monthShamsi: "ماه",
-    yearShamsi: "کال",
-    monthQamari: "ماه",
-    yearQamari: "کال",
-    month: "Month",
-    year: "Year",
-    shamsiMonth1: "حمل",
-    shamsiMonth2: "ثور",
-    shamsiMonth3: "جوزا",
-    shamsiMonth4: "سرطان",
-    shamsiMonth5: "اسد",
-    shamsiMonth6: "سنبله",
-    shamsiMonth7: "میزان",
-    shamsiMonth8: "عقرب",
-    shamsiMonth9: "قوس",
-    shamsiMonth10: "جدی",
-    shamsiMonth11: "دلو",
-    shamsiMonth12: "حوت",
-    qamariMonth1: "محرم الحرام",
-    qamariMonth2: "صفر المظفر",
-    qamariMonth3: "ربيع الاول",
-    qamariMonth4: "ربيع الثاني",
-    qamariMonth5: "جمادی الاول",
-    qamariMonth6: "جمادی الثاني",
-    qamariMonth7: "رجب المرجب",
-    qamariMonth8: "شعبان المعظم",
-    qamariMonth9: "رمضان المبارک",
-    qamariMonth10: "شوال المکرم",
-    qamariMonth11: "ذی القعده",
-    qamariMonth12: "ذی الحجه"
-  },
-  
   // Calendar types
   calendar: {
     calendarType: "د نیټې ډول",
@@ -539,7 +475,6 @@ export const commonPs = {
     qamariMonth11: "ذی القعده",
     qamariMonth12: "ذی الحجه"
   },
-  
   // Date translations
   months: {
     january: "جنوري",
@@ -555,4 +490,4 @@ export const commonPs = {
     november: "نومبر",
     december: "دسمبر"
   }
-};
+  };

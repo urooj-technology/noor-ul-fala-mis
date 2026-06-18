@@ -4,7 +4,6 @@ export const studentPaymentsEn = {
   editPayment: "Edit Payment",
   paymentDetails: "Payment Details",
   paymentInformation: "Payment Information",
-
   // Invoice Generation
   periodicGeneration: "Periodic Invoice Generation",
   generateInvoicesForPeriod: "Generate invoices for all students in a period",
@@ -35,14 +34,6 @@ export const studentPaymentsEn = {
   endDate: "End Date",
   selectClassLevels: "Select Class Levels (Optional)",
   multiTabInfo: "Multiple classes selected - each class will have its own tab in Excel",
-
-  // Payment Information
-  amount: "Amount",
-  paymentDate: "Payment Date",
-  paymentStatus: "Payment Status",
-  paymentInterval: "Payment Interval",
-  paymentCycle: "Payment Cycle",
-  feeType: "Fee Type",
   feeCategories: {
     admission: "Admission",
     book: "Book",
@@ -54,29 +45,6 @@ export const studentPaymentsEn = {
   referenceNumber: "Reference Number",
   description: "Description",
   receipt: "Receipt",
-  currency: "Currency",
-  student: "Student",
-  selectStudent: "Select student",
-  selectStatus: "Select status",
-  selectMonth: "Select Month",
-  selectInterval: "Select Interval",
-  selectFeeType: "Select Fee Type",
-  allFees: "All Fees (Auto-allocate)",
-  feeTypeHelp: "Select specific fee type to track this payment for. Leave empty to auto-allocate to all pending invoices.",
-  selectCurrency: "Select currency",
-  selectInvoices: "Select Invoices",
-  enterAmount: "Enter amount",
-  enterDescription: "Enter description",
-  amount: "Amount",
-  notes: "Notes",
-  afn: "AFN - Afghan Afghani",
-  usd: "USD - US Dollar",
-  periodYearPlaceholder: "e.g. 2026",
-  cycleForThisPayment: "Cycle for this payment",
-  periodCoverage: "Period Coverage",
-  summary: "Summary",
-  referenceNumberPlaceholder: "e.g. BANK-2026-001",
-
   // Statuses
   status: {
     pending: "Pending",
@@ -84,40 +52,6 @@ export const studentPaymentsEn = {
     cancelled: "Cancelled",
     refunded: "Refunded"
   },
-
-  // Summary
-  dailySummary: "Daily Payment Summary",
-  monthlySummary: "Monthly Payment Summary",
-  totalAmount: "Total Amount",
-  paidAmount: "Paid Amount",
-  remainingAmount: "Remaining Amount",
-  paymentCount: "Payment Count",
-  periodFinancialInfo: "Period Financial Info",
-  financialInfo: "Financial Information",
-
-  // Allocation
-  allocateToInvoices: "Allocate to Invoices",
-  selectInvoicesForPayment: "Select invoices to allocate this payment to",
-  pendingInvoices: "Pending Invoices",
-  invoicesFound: "invoices found",
-  noPendingInvoices: "No pending invoices for this student",
-  dueDate: "Due Date",
-  remaining: "Remaining",
-  selected: "Selected",
-  clickToSelect: "Click to select",
-  invoicesSelected: "invoices selected",
-  clickAllocateToComplete: "Click 'Allocate' to complete",
-
-  // Actions
-  viewDetails: "View Details",
-  edit: "Edit",
-  delete: "Delete",
-  deletePayment: "Delete Payment",
-  markAsPaid: "Mark as Paid",
-  markAsRefunded: "Mark as Refunded",
-  allocate: "Allocate",
-  allocating: "Allocating...",
-
   // Validation
   validation: {
     amount: "Amount is required",
@@ -126,41 +60,13 @@ export const studentPaymentsEn = {
     student: "Student is required",
     selectInvoices: "Please select at least one invoice"
   },
-  
-  // Additional translations
-  managePayments: "Manage Payments",
-  searchPayments: "Search payments...",
-  noPaymentsFound: "No payments found",
-  addFirstPayment: "Add your first payment",
-  loadingPayments: "Loading payments...",
   tryAdjustingSearch: "Try adjusting your search terms",
-  clearFilters: "Clear Filters",
-  
-  // Payment Flow
-  paymentFlow: "Payment Flow",
-  selectLevel: "Select Class Level",
-  feeAssignments: "Fee Assignments & Payment",
-  selectMonths: "Select Months",
-  paymentAmount: "Payment Amount",
-  year: "Year",
-  totalPayment: "Total Payment",
-  processing: "Processing...",
-  createPayments: "Create Payments",
-  feeBreakdown: "Fee Breakdown by Type",
-  feeBreakdownHelp: "Select a fee type below to pay for that specific fee.",
-  feeBreakdownNote: "Total fees and payments shown below.",
-  actions: "Action",
-  noFeeAssignments: "No Fee Assignments",
-  noFeeAssignmentsDesc: "This student has no fee assignments. Please add fee assignments first.",
   studentFinancialInfo: "Student Financial Summary",
-  periodFinancialInfo: "Period Financial Info",
   totalMonthsSelected: "Total months selected",
-  
   // Missing translations
   selectLevel: "Select Class Level",
   paymentFlow: "Student Payment Flow",
   feeAssignments: "Fee Assignments & Payment",
-  selectMonths: "Select Months",
   paymentAmount: "Payment Amount",
   year: "Year",
   totalPayment: "Total Payment",
@@ -176,10 +82,8 @@ export const studentPaymentsEn = {
   classLevel: "Class Level",
   totalPaid: "Total Paid",
   remainingBalance: "Remaining Balance",
-  totals: "Totals",
   selectMonths: "Select Months",
   paymentAmountLabel: "Payment Amount",
-  selectInvoices: "Select Invoices",
   enterDescription: "Enter description",
   totals: "Totals",
   paymentDate: "Payment Date",
@@ -245,9 +149,8 @@ export const studentPaymentsEn = {
   addFirstPayment: "Add your first payment",
   loadingPayments: "Loading payments...",
   clearFilters: "Clear Filters",
-  
   // Additional missing keys
   limitReached: "Limit Reached",
   failedToCreatePayments: "Failed to create payments",
-  selectFeeWithMonths: "Please select at least one fee with months and payment amount",
-};
+  selectFeeWithMonths: "Please select at least one fee with months and payment amount"
+  };

@@ -25,7 +25,6 @@ export const commonFa = {
   clearFilters: "پاک کردن فیلترها",
   select: "انتخاب",
   selectAll: "انتخاب همه",
-  deselectAll: "عدم انتخاب همه",
   confirm: "تایید",
   success: "موفقیت",
   warning: "هشدار",
@@ -245,20 +244,19 @@ export const commonFa = {
   next: "بعدی",
   totals: "مجموع",
   selectInvoices: "انتخاب صورتحسابها",
-  processing: "در حال پردازش...",
   deselectAll: "عدم انتخاب همه",
   purchases: {
     details: "جزئیات خرید",
     items: "آیتمها",
     quantity: "تعداد",
     sellPrice: "قیمت فروش",
-    total: "مجموع",
+    total: "مجموع"
   },
   products: {
-    product: "محصول",
+    product: "محصول"
   },
   units: {
-    unit: "واحد",
+    unit: "واحد"
   },
   invoiceNumber: "شماره فاکتور",
   buyPrice: "قیمت خرید",
@@ -267,7 +265,7 @@ export const commonFa = {
   paidAmount: "مبلغ پرداخت شده",
   remainingAmount: "مبلغ باقیمانده",
   vendors: {
-    details: "جزئیات فروشنده",
+    details: "جزئیات فروشنده"
   },
   customers: {
     details: "جزئیات مشتری",
@@ -278,7 +276,6 @@ export const commonFa = {
     inactive: "غیرفعال"
   },
   company: "شرکت",
-  
   // Additional common translations
   filterByCurrency: "فیلتر بر اساس ارز",
   addFirstItem: "اولین مورد خود را اضافه کنید",
@@ -288,7 +285,6 @@ export const commonFa = {
   searchPlaceholder: "جستجو...",
   allStatuses: "همه وضعیتها",
   allCurrencies: "همه ارزها",
-  
   // Additional translations for bill template form
   general: "عمومی",
   header: "سربرگ",
@@ -343,7 +339,6 @@ export const commonFa = {
   currencyBreakdown: "تفکیک ارزی",
   max: "حداکثر",
   processing: "در حال پردازش...",
-  
   // Accounting translations
   balanceSheetBalanced: "ترازنامه متوازن است",
   balanceSheetNotBalanced: "ترازنامه نامتوازن است",
@@ -374,12 +369,10 @@ export const commonFa = {
   currentAssets: "داراییهای جاری",
   fixedAssets: "داراییهای ثابت",
   totalLiabilitiesAndEquity: "مجموع بدهیها و سرمایه",
-  
   // Currency
   currency: "ارز",
   afn: "AFN - افغانی",
   usd: "USD - دلار آمریکا",
-  
   // UI Components
   deleteAccount: "حذف حساب",
   deleteAccountCategory: "حذف کتگوری حساب",
@@ -405,10 +398,8 @@ export const commonFa = {
   loadingTransactions: "در حال بارگذاری تراکنشها...",
   loadingFiscalYears: "در حال بارگذاری سالهای مالی...",
   loadingJournalEntries: "در حال بارگذاری سندهای دفترروزنامه...",
-  
   // Double Entry Bookkeeping
   doubleEntryBookkeeping: "سیستم حسابداری دو طرفه",
-  
   // Transaction Types
   studentPayment: "پرداخت شاگرد",
   payroll: "حقوق",
@@ -416,13 +407,11 @@ export const commonFa = {
   rentalIncome: "درآمد کرایه",
   otherIncome: "درآمد دیگر",
   opening: "موجودی اول دوره",
-  
   // Additional missing common keys
   paid: "پرداخت شده",
   unpaid: "پرداخت نشده",
   partial: "جزئی پرداخت شده",
-  
-// Calendar types
+  // Calendar types
   calendar: {
     calendarType: "نوع تقویم",
     calendarSettings: "تنظیمات تقویم",
@@ -473,7 +462,6 @@ export const commonFa = {
     qamariMonth11: "ذی القعده",
     qamariMonth12: "ذی الحجه"
   },
-  
   // Date translations
   months: {
     january: "ژانویه",
@@ -489,4 +477,4 @@ export const commonFa = {
     november: "نوامبر",
     december: "دسامبر"
   }
-};
+  };

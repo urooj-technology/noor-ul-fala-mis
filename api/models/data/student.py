@@ -151,9 +151,8 @@ class Student(BaseModel):
     def get_total_paid_for_period(self, start_date, end_date):
         """Calculate total payments made within a date range"""
         StudentPayment = self._get_finance_models()[1]
-        total = StudentPayment.objects.filter(
+        total = StudentPayment.completed().filter(
             assignment__student=self,
-            payment_status='completed',
             payment_date__gte=start_date,
             payment_date__lte=end_date
         ).aggregate(total=models.Sum('amount'))['total']
@@ -167,10 +166,9 @@ class Student(BaseModel):
         """
         StudentPayment = self._get_finance_models()[1]
         level = class_level if class_level is not None else self.class_level
-        total = StudentPayment.objects.filter(
+        total = StudentPayment.completed().filter(
             assignment__student=self,
             assignment__class_level=level,
-            payment_status='completed'
         ).aggregate(total=models.Sum('amount'))['total']
         return total if total else Decimal('0')
 
@@ -193,9 +191,8 @@ class Student(BaseModel):
         for assignment in assignments:
             amount = float(assignment.amount) if assignment.amount else 0
             
-            paid_for_fee = StudentPayment.objects.filter(
+            paid_for_fee = StudentPayment.completed().filter(
                 assignment=assignment,
-                payment_status='completed'
             ).aggregate(total=models.Sum('amount'))['total']
             paid = float(paid_for_fee) if paid_for_fee else 0
             
@@ -229,10 +226,9 @@ class Student(BaseModel):
         ).aggregate(total=models.Sum('amount'))['total']
         expected = expected if expected else Decimal('0')
         
-        paid = StudentPayment.objects.filter(
+        paid = StudentPayment.completed().filter(
             assignment__student=self, 
             assignment__class_level=level,
-            payment_status='completed'
         ).aggregate(total=models.Sum('amount'))['total']
         paid = paid if paid else Decimal('0')
         
@@ -257,10 +253,9 @@ class Student(BaseModel):
         expected = expected if expected else Decimal('0')
         
         # Get total paid from payments (linked via assignment) for this level
-        total_payments = StudentPayment.objects.filter(
+        total_payments = StudentPayment.completed().filter(
             assignment__student=self, 
             assignment__class_level=level,
-            payment_status='completed'
         ).aggregate(total=models.Sum('amount'))['total']
         total_payments = total_payments if total_payments else Decimal('0')
         
@@ -289,9 +284,8 @@ class Student(BaseModel):
             by_fee_type[fee_name]['expected'] += assignment.amount
             
             # Calculate paid for this fee type from payments
-            paid_for_fee = StudentPayment.objects.filter(
+            paid_for_fee = StudentPayment.completed().filter(
                 assignment=assignment,
-                payment_status='completed'
             ).aggregate(total=models.Sum('amount'))['total']
             paid_for_fee = paid_for_fee if paid_for_fee else Decimal('0')
             

@@ -7,21 +7,15 @@ export const studentsEn = {
   addressInformation: "Address Information",
   contactInformation: "Contact Information",
   registrationInformation: "Registration Information",
-  
-  // Personal Information
-  fullName: "Full Name",
   fatherName: "Father Name",
   grandfatherName: "Grandfather Name",
   dateOfBirth: "Date of Birth",
   selectGender: "Select Gender",
   tazkiraNumber: "Tazkira Number",
-  
   // Additional
   age: "Age",
   financialSummary: "Financial Summary",
   totalPayments: "Total Payments",
-  remainingBalance: "Remaining Balance",
-  
   // Gender
   genderLabel: "Gender",
   gender: {
@@ -29,7 +23,6 @@ export const studentsEn = {
     female: "Female",
     other: "Other"
   },
-  
   // Transportation
   transportation: "Transportation",
   selectTransportation: "Select Transportation",
@@ -39,27 +32,20 @@ export const studentsEn = {
     walking: "Walking",
     public_transport: "Public Transport"
   },
-  
   // Address Information
   permanentAddress: "Permanent Address",
   currentAddress: "Current Address",
   province: "Province",
   district: "District",
   area: "Area",
-  
   // Contact Information
   parentPhone: "Parent Phone",
   studentPhone: "Student Phone",
   alternativePhone: "Alternative Phone",
   email: "Email",
   phone: "Phone",
-  
-  // Registration Information
-  registrationNumber: "Registration Number",
   registrationDate: "Registration Date",
-  selectStatus: "Select Status",
   status: "Status",
-  
   // Status Options
   statusOptions: {
     active: "Active",
@@ -68,7 +54,6 @@ export const studentsEn = {
     suspended: "Suspended",
     transferred: "Transferred"
   },
-  
   // Documents
   documents: "Documents",
   documentsPreview: "Document preview",
@@ -77,17 +62,9 @@ export const studentsEn = {
   parentTazkiraCopy: "Parent Tazkira Copy",
   previousResultCard: "Previous Result Card",
   paymentReceipt: "Payment Receipt",
-  selectStudent: "Select student",
   documentPreview: "Document preview",
   viewDetails: "View Details",
-  edit: "Edit",
-  delete: "Delete",
   deleteStudent: "Delete Student",
-
-  // Class & Fee Information
-  classFeeInformation: "Class & Fee Information",
-  classLevel: "Class Level",
-  selectClassLevel: "Select Class Level",
   classLevelShort: "Class",
   paymentCycle: "Payment Cycle",
   paymentInterval: "Payment Interval",
@@ -95,7 +72,7 @@ export const studentsEn = {
   selectPaymentInterval: "Select Payment Interval",
   paymentCycleOptions: {
     monthly: "Monthly",
-    yearly: "Yearly",
+    yearly: "Yearly"
   },
   paymentIntervalMonths: {
     monthly: "Monthly (Every 1 Month)",
@@ -118,33 +95,18 @@ export const studentsEn = {
   feeLabel: "Fee",
   notSet: "Not Set",
   months: "months",
-  
   // Payment interval description
   paymentIntervalDescription: "How often should the student pay?",
   paymentIntervalHint: "Select the number of months between payments",
   monthsBetweenPayments: "months between payments",
   every: "Every",
-  notes: "Notes",
-
   // Fee Types
   feeTypes: "Fee Types",
-  feeType: "Fee Type",
   addFeeType: "Add Fee Type",
   editFeeType: "Edit Fee Type",
   feeName: "Fee Name",
   code: "Code",
-  category: "Category",
-  mandatory: "Mandatory",
   selectCategory: "Select category",
-  feeCategories: {
-    admission: "Admission Fee",
-    book: "Book Fee",
-    uniform: "Uniform Fee",
-    transportation: "Transportation Fee",
-    exam: "Exam Fee",
-    other: "Other Fee"
-  },
-
   // Class Fees
   classFees: "Class Fees",
   classFee: "Class Fee",
@@ -155,7 +117,6 @@ export const studentsEn = {
   noClassFeesFound: "No class fees found",
   addFirstClassFee: "Add your first class fee",
   loadingClassFees: "Loading class fees...",
-  
   // Fee Assignments
   feeAssignments: "Fee Assignments",
   feeAssignment: "Fee Assignment",
@@ -170,14 +131,11 @@ export const studentsEn = {
   noFeeAssignmentsFound: "No fee assignments found",
   addFirstFeeAssignment: "Add your first fee assignment",
   loadingFeeAssignments: "Loading...",
-  
   // Fee Types management
   manageFeeTypes: "Manage fee types",
   searchFeeTypes: "Search fee types...",
   noFeeTypesFound: "No fee types found",
   addFirstFeeType: "Add your first fee type",
-  loadingFeeTypes: "Loading fee types...",
-  
   // Bulk Change Class Level
   bulkChangeClassLevel: "Bulk Change Class Level",
   selectNewClassLevel: "New Class Level",
@@ -199,7 +157,6 @@ export const studentsEn = {
   changeClassLevel: "Change Class Level",
   studentsSelected: "student selected",
   failedToLoadClassLevels: "Failed to load class levels",
-
   // UI Components
   manageStudents: "Manage student records",
   searchStudents: "Search students...",
@@ -210,7 +167,6 @@ export const studentsEn = {
   addFirstStudent: "Add your first student to get started",
   loadingStudents: "Loading students...",
   allStatuses: "All Statuses",
-  
   // Validation
   validation: {
     fullName: "Full name is required",
@@ -221,23 +177,17 @@ export const studentsEn = {
     phone: "Phone number is required",
     paymentInterval: "Payment interval is required"
   },
-
   // Fee Assignment Notes
   feeAssignmentNote: "After registration, fees will be auto-assigned from class defaults",
   feeAssignmentNote2: "You can customize fees in Student Fee Assignments after registration",
-  selectCurrency: "Select Currency",
   addFeeAssignmentDesc: "Assign fees to student from class defaults or create custom assignments",
-  amount: "Amount",
   notes: "Notes",
-  currency: "Currency",
-
   // Payment Status
   paymentStatus: "Payment Status",
   paid: "Paid",
   unpaid: "Unpaid",
   partiallyPaid: "Partially Paid",
   overdue: "Overdue",
-
   // Fee Summary
   totalFee: "Total Fee",
   paidFee: "Paid",
@@ -248,17 +198,14 @@ export const studentsEn = {
   totalRemaining: "Total Remaining",
   viewFeeAssignments: "View Fee Assignments",
   feeBreakdown: "Fee Breakdown by Type",
-
   // Common actions
   add: "Add",
   save: "Save",
-  cancel: "Cancel",
   back: "Back",
   next: "Next",
   delete: "Delete",
   edit: "Edit",
   view: "View",
-  
   // Common terms
   search: "Search",
   filter: "Filter",
@@ -267,18 +214,10 @@ export const studentsEn = {
   printed: "Printed",
   signature: "Signature",
   generatedBy: "Document generated by Student Management System",
-  printed: "Printed",
-  signature: "Signature",
-  generatedBy: "Document generated by Student Management System",
-  
-  // Student
-  student: "Student",
-  
   // Common messages
   required: "Required",
   positive: "Must be positive",
   loading: "Loading...",
-  saving: "Saving...",
   updating: "Updating...",
   generating: "Generating...",
   notAvailable: "Not Available",
@@ -287,13 +226,11 @@ export const studentsEn = {
   upload: "Upload",
   preview: "Preview",
   download: "Download",
-  
   // Status labels
   active: "Active",
   inactive: "Inactive",
   yes: "Yes",
   no: "No",
-  
   // Invoice Status
   invoiceStatus: {
     pending: "Pending",
@@ -302,7 +239,6 @@ export const studentsEn = {
     overdue: "Overdue",
     cancelled: "Cancelled"
   },
-  
   // Student Invoices
   studentInvoices: "Student Invoices",
   invoiceDetails: "Invoice Details",
@@ -316,7 +252,6 @@ export const studentsEn = {
   loadingInvoices: "Loading...",
   searchInvoices: "Search...",
   period: "Period",
-  
   // Payment Plans
   paymentPlans: "Payment Plans",
   paymentPlan: "Payment Plan",
@@ -330,7 +265,6 @@ export const studentsEn = {
   interval: "Interval",
   startDate: "Start Date",
   endDate: "End Date",
-  
   // Invoice generation
   periodicGeneration: "Periodic Invoice Generation",
   generateInvoicesForPeriod: "Generate invoices for all students in a period",
@@ -341,39 +275,32 @@ export const studentsEn = {
   selectStudentsDescription: "Select students to generate invoices for",
   periodMonth: "Period Month",
   periodYear: "Period Year",
-  
   // Invoice generation success
   success: {
     title: "Invoices Generated Successfully!",
     description: (count: number) => `${count} invoices were created`
   },
-  
   // Invoice generation errors
   error: {
     generate: "Failed to generate invoices"
   },
-  
   // Fee type info
   feeTypeInformation: "Fee Type Information",
   addFeeTypeDesc: "Create a new fee type",
   editFeeTypeDesc: "Update fee type details",
-  
   // Class fee info
   classFeeInformation: "Class Fee Information",
   addClassFeeDesc: "Create a new class fee",
   editClassFeeDesc: "Update class fee details",
-  
   // Payment plan info
   paymentPlanInformation: "Payment Plan Information",
   addPaymentPlanDesc: "Create a new payment plan",
   editPaymentPlanDesc: "Update payment plan details",
-  
   // Common form terms
   selectStatus: "Select Status",
   selectFeeType: "Select Fee Type",
   enterDescription: "Enter description",
   referenceNumberPlaceholder: "e.g. BANK-2026-001",
-  
   // Fee Categories
   feeCategories: {
     admission: "Admission Fee",
@@ -383,7 +310,6 @@ export const studentsEn = {
     exam: "Exam Fee",
     other: "Other Fee"
   },
-
   // Bulk Fee Assignment
   bulkFeeAssignment: "Bulk Fee Assignment",
   assignFeesToStudent: "Assign multiple fee types to a student at once",
@@ -399,8 +325,6 @@ export const studentsEn = {
   paymentPlanLabel: "Payment Plan (months)",
   totalFeesLabel: "Total Fees",
   feeTypesCount: "fee type(s) selected",
-  clickToDeselect: "Click to deselect",
-  clickToSelect: "Click to select",
   selectedForAssignment: "Selected for assignment",
   previouslyAssignedAtLevel: "Previously assigned at this level (suggested amount shown)",
   loadingFeeTypes: "Loading fee types...",
@@ -420,7 +344,6 @@ export const studentsEn = {
   configureFees: "Configure Fee Types",
   configureFeesDesc: "Enable fee types and set amounts for this student",
   selectCurrency: "Select Currency",
-  
   // Additional keys
   studentName: "Student Name",
   classLevel: "Class Level",
@@ -430,4 +353,4 @@ export const studentsEn = {
   enableFeeTypeWithAmount: "Please enable at least one fee type with an amount",
   clickToDeselect: "Click to deselect",
   clickToSelect: "Click to select"
-};
+  };

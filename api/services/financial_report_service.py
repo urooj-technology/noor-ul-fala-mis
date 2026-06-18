@@ -5,7 +5,9 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from api.models.data.accounting import Account, JournalEntry
+from api.models.data.student_finance import StudentPayment
 from api.services.accounting_service import AccountingService
+from api.utils.currency import journal_entry_currency, normalize_currency
 
 CURRENCIES = ['AFN', 'USD']
 
@@ -106,6 +108,45 @@ def _cash_outflow_amount(account_code, currency, start_date, end_date):
     return debits - credits
 
 
+def _student_payment_cash_collected(currency, start_date, end_date):
+    """Cash collected from students, bucketed by payment currency (not journal account)."""
+    currency = normalize_currency(currency)
+    payments = StudentPayment.completed().filter(currency=currency)
+    if start_date:
+        payments = payments.filter(payment_date__gte=start_date)
+    if end_date:
+        payments = payments.filter(payment_date__lte=end_date)
+
+    payment_total = payments.aggregate(total=Sum('amount'))['total']
+    if payment_total:
+        return Decimal(str(payment_total))
+
+    # Fallback for legacy journals without matching payment rows
+    entries = JournalEntry.active().filter(
+        transaction__transaction_type='student_payment',
+        account__code__startswith='1000_',
+    ).select_related('account')
+    if start_date:
+        entries = entries.filter(date__gte=start_date)
+    if end_date:
+        entries = entries.filter(date__lte=end_date)
+
+    total = Decimal('0')
+    for entry in entries:
+        if journal_entry_currency(entry) != currency:
+            continue
+        total += Decimal(str(entry.debit or 0)) - Decimal(str(entry.credit or 0))
+    return total
+
+
+def _student_income_amount(currency, start_date, end_date):
+    """Student income: fee revenue on 4000 when posted, else cash collected from payments."""
+    accrual_revenue = _income_amount(INCOME_ACCOUNTS['student'], currency, start_date, end_date)
+    if accrual_revenue > 0:
+        return accrual_revenue
+    return _student_payment_cash_collected(currency, start_date, end_date)
+
+
 def build_financial_summary(period='monthly', start_date=None, end_date=None):
     """Build a unified financial summary from active journal entries only."""
     date_range = get_date_range(period, start_date, end_date)
@@ -123,7 +164,10 @@ def build_financial_summary(period='monthly', start_date=None, end_date=None):
 
     for currency in CURRENCIES:
         for key, code in INCOME_ACCOUNTS.items():
-            amount = _income_amount(code, currency, start, end)
+            if key == 'student':
+                amount = _student_income_amount(currency, start, end)
+            else:
+                amount = _income_amount(code, currency, start, end)
             if amount != 0:
                 income[key][currency] = float(amount)
                 income_breakdown.append({
@@ -180,24 +224,24 @@ def build_financial_summary(period='monthly', start_date=None, end_date=None):
         'date_range': date_range,
         'generated_at': timezone.now().isoformat(),
         'income': {
-            'student': {c: income['student'][c] for c in CURRENCIES},
-            'student_payments': {c: income['student'][c] for c in CURRENCIES},
-            'rental': {c: income['rental'][c] for c in CURRENCIES},
-            'rental_income': {c: income['rental'][c] for c in CURRENCIES},
-            'other': {c: income['other'][c] for c in CURRENCIES},
-            'other_income': {c: income['other'][c] for c in CURRENCIES},
+            'student': {c: float(income['student'][c]) for c in CURRENCIES},
+            'student_payments': {c: float(income['student'][c]) for c in CURRENCIES},
+            'rental': {c: float(income['rental'][c]) for c in CURRENCIES},
+            'rental_income': {c: float(income['rental'][c]) for c in CURRENCIES},
+            'other': {c: float(income['other'][c]) for c in CURRENCIES},
+            'other_income': {c: float(income['other'][c]) for c in CURRENCIES},
             'total': {c: float(total_income[c]) for c in CURRENCIES},
         },
         'expenses': {
-            'payroll': {c: expenses['payroll'][c] for c in CURRENCIES},
-            'general': {c: expenses['general'][c] for c in CURRENCIES},
-            'general_expenses': {c: expenses['general'][c] for c in CURRENCIES},
-            'advances': {c: expenses['advances'][c] for c in CURRENCIES},
+            'payroll': {c: float(expenses['payroll'][c]) for c in CURRENCIES},
+            'general': {c: float(expenses['general'][c]) for c in CURRENCIES},
+            'general_expenses': {c: float(expenses['general'][c]) for c in CURRENCIES},
+            'advances': {c: float(expenses['advances'][c]) for c in CURRENCIES},
             'total': {c: float(total_expenses[c]) for c in CURRENCIES},
             'breakdown': {
-                'payroll': {c: expenses['payroll'][c] for c in CURRENCIES},
-                'general_expenses': {c: expenses['general'][c] for c in CURRENCIES},
-                'advances': {c: expenses['advances'][c] for c in CURRENCIES},
+                'payroll': {c: float(expenses['payroll'][c]) for c in CURRENCIES},
+                'general_expenses': {c: float(expenses['general'][c]) for c in CURRENCIES},
+                'advances': {c: float(expenses['advances'][c]) for c in CURRENCIES},
             },
         },
         'cash_outflows': {
@@ -238,7 +282,7 @@ def build_payroll_report(period='monthly', start_date=None, end_date=None):
         advance_entries = advance_entries.filter(date__lte=end)
 
     for entry in payroll_entries.select_related('account', 'transaction'):
-        currency = entry.account.code.split('_')[-1]
+        currency = journal_entry_currency(entry)
         amount = entry.debit - entry.credit
         if amount <= 0:
             continue
@@ -251,7 +295,7 @@ def build_payroll_report(period='monthly', start_date=None, end_date=None):
         })
 
     for entry in advance_entries.select_related('account', 'transaction'):
-        currency = entry.account.code.split('_')[-1]
+        currency = journal_entry_currency(entry)
         amount = entry.debit - entry.credit
         if amount <= 0:
             continue

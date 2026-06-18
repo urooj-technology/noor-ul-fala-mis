@@ -527,7 +527,7 @@ class StudentPaymentViewSet(DataRootViewSet):
     def daily_summary(self, request):
         """Get daily payment summary | خلاصه روزانه پرداختها"""
         date = request.query_params.get('date', timezone.now().date().isoformat())
-        summary = StudentPayment.objects.filter(payment_date=date).aggregate(
+        summary = StudentPayment.active().filter(payment_date=date).aggregate(
             total_amount=Sum('amount'), count=Count('id')
         )
         return Response({
@@ -541,7 +541,7 @@ class StudentPaymentViewSet(DataRootViewSet):
         """Get monthly payment summary | خلاصه ماهانه پرداختها"""
         year = request.query_params.get('year', timezone.now().year)
         month = self.request.query_params.get('month')
-        queryset = StudentPayment.objects.filter(payment_date__year=year)
+        queryset = StudentPayment.active().filter(payment_date__year=year)
         if month:
             queryset = queryset.filter(payment_date__month=month)
         summary = queryset.aggregate(total_amount=Sum('amount'), count=Count('id'))
@@ -671,9 +671,8 @@ class StudentPaymentViewSet(DataRootViewSet):
             # Calculate total remaining across selected assignments
             total_remaining = Decimal('0')
             for assignment in assignments:
-                paid = StudentPayment.objects.filter(
+                paid = StudentPayment.completed().filter(
                     assignment=assignment,
-                    payment_status='completed'
                 ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
                 remaining = (assignment.amount or Decimal('0')) - paid
                 if remaining < 0:
@@ -716,9 +715,8 @@ class StudentPaymentViewSet(DataRootViewSet):
                 for assignment, alloc_amt in allocations:
                     for month_str in norm_months:
                         # Check remaining for this assignment
-                        paid_for_assignment = StudentPayment.objects.filter(
+                        paid_for_assignment = StudentPayment.completed().filter(
                             assignment=assignment,
-                            payment_status='completed'
                         ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
                         remaining_for_assignment = (assignment.amount or Decimal('0')) - paid_for_assignment
                         
@@ -741,9 +739,8 @@ class StudentPaymentViewSet(DataRootViewSet):
                 for assignment in assignments:
                     for month_str in norm_months:
                         # Check remaining for this assignment
-                        paid_for_assignment = StudentPayment.objects.filter(
+                        paid_for_assignment = StudentPayment.completed().filter(
                             assignment=assignment,
-                            payment_status='completed'
                         ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
                         remaining_for_assignment = (assignment.amount or Decimal('0')) - paid_for_assignment
                         
@@ -807,9 +804,8 @@ class StudentPaymentViewSet(DataRootViewSet):
         total_fee = sum(a.amount or Decimal('0') for a in assignments)
         
         # Calculate total completed payments (assignment-based, filtered by class_level)
-        payments_qs = StudentPayment.objects.filter(
+        payments_qs = StudentPayment.completed().filter(
             assignment__student=student,
-            payment_status='completed'
         )
         if class_level and class_level != 'all':
             payments_qs = payments_qs.filter(assignment__class_level=class_level)
@@ -828,9 +824,8 @@ class StudentPaymentViewSet(DataRootViewSet):
         
         for assignment in assignments:
             # Get paid amount for this assignment
-            paid_for_assignment = StudentPayment.objects.filter(
+            paid_for_assignment = StudentPayment.completed().filter(
                 assignment=assignment,
-                payment_status='completed'
             ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
             
             fee_breakdown.append({
@@ -947,9 +942,8 @@ class StudentPaymentViewSet(DataRootViewSet):
             ).data
 
             # Get paid months for this assignment and year
-            paid_payments = StudentPayment.objects.filter(
+            paid_payments = StudentPayment.completed().filter(
                 assignment=assignment,
-                payment_status='completed',
                 period_year=year,
             ).values('period_month', 'amount', 'id', 'payment_date').order_by('period_month')
 
@@ -966,9 +960,8 @@ class StudentPaymentViewSet(DataRootViewSet):
                     paid_total += p['amount'] or Decimal('0')
 
             # Also include payments without period_month (older payments)
-            paid_without_month = StudentPayment.objects.filter(
+            paid_without_month = StudentPayment.completed().filter(
                 assignment=assignment,
-                payment_status='completed',
             ).exclude(period_month__isnull=False).aggregate(
                 total=Sum('amount')
             )['total'] or Decimal('0')
@@ -988,9 +981,8 @@ class StudentPaymentViewSet(DataRootViewSet):
 
         # Student financial summary (filtered by class_level if provided)
         total_expected = sum(a.amount for a in assignments if a.amount) or Decimal('0')
-        payments_qs = StudentPayment.objects.filter(
+        payments_qs = StudentPayment.completed().filter(
             assignment__student=student,
-            payment_status='completed',
         )
         if class_level and class_level != 'all':
             payments_qs = payments_qs.filter(assignment__class_level=class_level)
@@ -1003,7 +995,7 @@ class StudentPaymentViewSet(DataRootViewSet):
             'student_registration': student.registration_number,
             'class_level': class_level,
             'year': year,
-            'currency': assignments[0].currency if assignments else 'USD',
+            'currency': assignments[0].currency if assignments else 'AFN',
             'total_expected': str(total_expected),
             'total_paid': str(total_paid_all),
             'total_remaining': str(total_remaining),
@@ -1316,9 +1308,8 @@ class StudentPaymentViewSet(DataRootViewSet):
                     errors.append(f"Payment {idx + 1}: Invalid amount")
                     continue
 
-                paid_so_far = StudentPayment.objects.filter(
+                paid_so_far = StudentPayment.completed().filter(
                     assignment=assignment,
-                    payment_status='completed',
                 ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
 
                 remaining = (assignment.amount or Decimal('0')) - paid_so_far
@@ -1331,9 +1322,8 @@ class StudentPaymentViewSet(DataRootViewSet):
 
                 # Check for duplicate month payments
                 already_paid_months = set(
-                    StudentPayment.objects.filter(
+                    StudentPayment.completed().filter(
                         assignment=assignment,
-                        payment_status='completed',
                         period_year=period_year,
                     ).values_list('period_month', flat=True)
                 )

@@ -19,6 +19,8 @@ from django.db.models import Sum, Q
 from django.utils import timezone
 from api.models.data.base import BaseModel
 from api.models.data.choices import CURRENCY_CHOICES, DEFAULT_CURRENCY
+
+STUDENT_DEFAULT_CURRENCY = 'AFN'
 from api.models.data.student import CLASS_LEVEL_CHOICES
 from decimal import Decimal
 
@@ -73,7 +75,7 @@ class StudentFeeAssignment(BaseModel):
     payment_plan = models.PositiveIntegerField(default=1, help_text='Number of months between payments for this assignment')
 
     amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default=DEFAULT_CURRENCY)
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default=STUDENT_DEFAULT_CURRENCY)
     
     is_mandatory = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
@@ -106,7 +108,7 @@ class StudentFeeAssignment(BaseModel):
                 fee_type=fee_type,
                 class_level=student.class_level,
                 amount=0,
-                currency=DEFAULT_CURRENCY,
+                currency=STUDENT_DEFAULT_CURRENCY,
                 is_mandatory=fee_type.is_mandatory,
             ))
         
@@ -132,7 +134,7 @@ class StudentPayment(BaseModel):
     # Link payment to a specific StudentFeeAssignment instead of directly to Student
     assignment = models.ForeignKey(StudentFeeAssignment, on_delete=models.CASCADE, related_name='payments')
     amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default=DEFAULT_CURRENCY)
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default=STUDENT_DEFAULT_CURRENCY)
     payment_date = models.DateField(default=timezone.now)
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUSES, default='pending')
     
@@ -166,8 +168,24 @@ class StudentPayment(BaseModel):
     def __str__(self):
         student_name = self.assignment.student.full_name if self.assignment and self.assignment.student else 'Unknown'
         return f"{student_name} - {self.amount} ({self.payment_status})"
+
+    @classmethod
+    def completed(cls):
+        """Active completed payments (exclude soft-deleted)."""
+        return cls.active().filter(payment_status='completed')
     
     def save(self, *args, **kwargs):
+        if self.assignment_id and not self.pk and self.currency == DEFAULT_CURRENCY:
+            assignment_currency = (
+                self.assignment.currency
+                if hasattr(self.assignment, 'currency')
+                else StudentFeeAssignment.objects.filter(pk=self.assignment_id)
+                .values_list('currency', flat=True)
+                .first()
+            )
+            if assignment_currency:
+                self.currency = assignment_currency
+
         if not self.reference_number:
             prefix = 'PAY'
             count = StudentPayment.objects.filter(payment_date__year=timezone.now().year).count() + 1
@@ -203,7 +221,7 @@ class FinanceLedger(BaseModel):
     
     account = models.CharField(max_length=100, help_text='Account code (e.g., receivable, income)')
     amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default=DEFAULT_CURRENCY)
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default=STUDENT_DEFAULT_CURRENCY)
     
     entry_side = models.CharField(max_length=10, choices=[('debit', 'Debit'), ('credit', 'Credit')])
     

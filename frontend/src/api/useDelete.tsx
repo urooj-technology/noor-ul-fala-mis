@@ -20,6 +20,7 @@ import { useAuth } from "@/contexts/AuthContext";
 interface UseDeleteProps {
   queryKey: string[];
   endpoint?: string;
+  invalidateQueryKeys?: string[][];
 }
 
 interface UseDeleteReturn {
@@ -27,7 +28,7 @@ interface UseDeleteReturn {
   ConfirmDialog: React.FC;
 }
 
-const useDelete = ({ queryKey, endpoint }: UseDeleteProps): UseDeleteReturn => {
+const useDelete = ({ queryKey, endpoint, invalidateQueryKeys = [] }: UseDeleteProps): UseDeleteReturn => {
   const { t } = useLanguage();
   const { getUser, logout } = useAuth();
   const queryClient = useQueryClient();
@@ -75,6 +76,9 @@ const useDelete = ({ queryKey, endpoint }: UseDeleteProps): UseDeleteReturn => {
         },
       });
       queryClient.invalidateQueries({ queryKey });
+      invalidateQueryKeys.forEach((key) => {
+        queryClient.invalidateQueries({ queryKey: key, exact: false });
+      });
     },
     onError: (error: AxiosError<{ detail?: string }>) => {
       const errorMessage = error.response?.data?.detail ||

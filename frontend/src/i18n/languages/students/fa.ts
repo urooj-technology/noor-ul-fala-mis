@@ -7,21 +7,15 @@ export const studentsFa = {
   addressInformation: "اطلاعات آدرس",
   contactInformation: "اطلاعات تماس",
   registrationInformation: "اطلاعات ثبت",
-  
-  // Personal Information
-  fullName: "نام کامل",
   fatherName: "نام پدر",
   grandfatherName: "نام پدربزرگ",
   dateOfBirth: "تاریخ تولد",
   selectGender: "انتخاب جنسیت",
   tazkiraNumber: "شماره تذکره",
-  
   // Additional
   age: "سن",
   financialSummary: "خلاصه مالی",
   totalPayments: "کل پرداختها",
-  remainingBalance: "مانده حساب",
-  
   // Gender
   genderLabel: "جنسیت",
   gender: {
@@ -29,7 +23,6 @@ export const studentsFa = {
     female: "زن",
     other: "دیگر"
   },
-  
   // Transportation
   transportation: "حمل و نقل",
   selectTransportation: "انتخاب حمل و نقل",
@@ -39,27 +32,20 @@ export const studentsFa = {
     walking: "پیاده",
     public_transport: "حمل و نقل عمومی"
   },
-  
   // Address Information
   permanentAddress: "آدرس دائمی",
   currentAddress: "آدرس فعلی",
   province: "ولایت",
   district: "ولسوالی",
   area: "منطقه",
-  
   // Contact Information
   parentPhone: "تلفن والدین",
   studentPhone: "تلفن شاگرد",
   alternativePhone: "تلفن جایگزین",
   email: "ایمیل",
   phone: "تلفن",
-  
-  // Registration Information
-  registrationNumber: "شماره ثبت",
   registrationDate: "تاریخ ثبت",
-  selectStatus: "انتخاب وضعیت",
   status: "وضعیت",
-  
   // Status Options
   statusOptions: {
     active: "فعال",
@@ -68,7 +54,6 @@ export const studentsFa = {
     suspended: "معلق",
     transferred: "منتقل شده"
   },
-  
   // Documents
   documents: "مدرکها",
   documentsPreview: "پیشنمایش مدرک",
@@ -77,17 +62,11 @@ export const studentsFa = {
   parentTazkiraCopy: "کپی تذکره والدین",
   previousResultCard: "کارت نتیجه قبلی",
   paymentReceipt: "رسید پرداخت",
-  selectStudent: "انتخاب شاگرد",
   documentPreview: "پیشنمایش مدرک",
   viewDetails: "مشاهده جزئیات",
-  edit: "ویرایش",
-  delete: "حذف",
   deleteStudent: "حذف شاگرد",
-
   // Class & Fee Information
   classFeeInformation: "اطلاعات صنف و فیس",
-  classLevel: "صنف",
-  selectClassLevel: "انتخاب صنف",
   classLevelShort: "صنف",
   paymentCycle: "چرخه پرداخت",
   paymentInterval: "فاصله پرداخت",
@@ -95,7 +74,7 @@ export const studentsFa = {
   selectPaymentInterval: "انتخاب فاصله پرداخت",
   paymentCycleOptions: {
     monthly: "ماهانه",
-    yearly: "سالانه",
+    yearly: "سالانه"
   },
   paymentIntervalMonths: {
     monthly: "ماهانه (هر 1 ماه)",
@@ -118,33 +97,18 @@ export const studentsFa = {
   feeLabel: "فیس",
   notSet: "تنظیم نشده",
   months: "ماه",
-  
   // Payment interval description
   paymentIntervalDescription: "شاگرد هر چند وقت یکبار باید فیس بدهد؟",
   paymentIntervalHint: "تعداد ماههای بین پرداختها را انتخاب کنید",
   monthsBetweenPayments: "ماه بین پرداختها",
   every: "هر",
-  notes: "یادداشت",
-
   // Fee Types
   feeTypes: "انواع فیس",
-  feeType: "نوع فیس",
   addFeeType: "افزودن نوع فیس",
   editFeeType: "ویرایش نوع فیس",
   feeName: "نام فیس",
   code: "کد",
-  category: "کتگوری",
-  mandatory: "اجباری",
   selectCategory: "انتخاب کتگوری",
-  feeCategories: {
-    admission: "قیس داخله",
-    book: "فیس کتاب",
-    uniform: "فیس یونیفرم",
-    transportation: "فیس ترانسپورت",
-    exam: "فیس امتحان",
-    other: "فیس دیگر"
-  },
-
   // Class Fees
   classFees: "فیسهای صنف",
   classFee: "فیس صنف",
@@ -155,7 +119,6 @@ export const studentsFa = {
   noClassFeesFound: "هیچ فیس صنفی یافت نشد",
   addFirstClassFee: "اولین فیس صنف خود را اضافه کنید",
   loadingClassFees: "در حال بارگذاری فیسهای صنف...",
-  
   // Fee Assignments
   feeAssignments: "تخصیص فیسها",
   feeAssignment: "تخصیص فیس",
@@ -170,14 +133,11 @@ export const studentsFa = {
   noFeeAssignmentsFound: "هیچ تخصیص فیسی یافت نشد",
   addFirstFeeAssignment: "اولین تخصیص فیس خود را اضافه کنید",
   loadingFeeAssignments: "در حال بارگذاری...",
-  
   // Fee Types management
   manageFeeTypes: "مدیریت انواع فیس",
   searchFeeTypes: "جستجوی انواع فیس...",
   noFeeTypesFound: "هیچ نوع فیسی یافت نشد",
   addFirstFeeType: "اولین نوع فیس خود را اضافه کنید",
-  loadingFeeTypes: "در حال بارگذاری انواع فیس...",
-  
   // Bulk Change Class Level
   bulkChangeClassLevel: "تغییر گروهی صنف",
   selectNewClassLevel: "صنف جدید",
@@ -199,7 +159,6 @@ export const studentsFa = {
   changeClassLevel: "تغییر صنف",
   studentsSelected: "شاگرد انتخاب شده",
   failedToLoadClassLevels: "خطا در بارگذاری صنفها",
-
   // UI Components
   manageStudents: "مدیریت سوابق شاگردان",
   searchStudents: "جستجوی شاگردان...",
@@ -210,7 +169,6 @@ export const studentsFa = {
   addFirstStudent: "برای شروع اولین شاگرد خود را اضافه کنید",
   loadingStudents: "در حال بارگذاری شاگردان...",
   allStatuses: "همه وضعیتها",
-  
   // Validation
   validation: {
     fullName: "نام کامل الزامی است",
@@ -221,23 +179,17 @@ export const studentsFa = {
     phone: "شماره تلفن الزامی است",
     paymentInterval: "فاصله پرداخت الزامی است"
   },
-
   // Fee Assignment Notes
   feeAssignmentNote: "بعد از ثبت، فیسها به صورت خودکار از پیشفرضهای صنف تخصیص میشوند",
   feeAssignmentNote2: "میتوانید فیسها را در بخش تخصیص فیسها ویرایش کنید",
-  selectCurrency: "انتخاب ارز",
   addFeeAssignmentDesc: "از پیشفرضهای صنف فیسها را به شاگرد تخصیص دهید یا تخصیص دلخواه ایجاد کنید",
-  amount: "مبلغ",
   notes: "یادداشت",
-  currency: "ارز",
-
   // Payment Status
   paymentStatus: "وضعیت پرداخت",
   paid: "پرداخت شده",
   unpaid: "پرداخت نشده",
   partiallyPaid: "بخشی پرداخت شده",
   overdue: "سررسید گذشته",
-
   // Fee Summary
   totalFee: "کل فیس",
   paidFee: "پرداخت شده",
@@ -248,17 +200,14 @@ export const studentsFa = {
   totalRemaining: "کل باقیمانده",
   viewFeeAssignments: "مشاهده تخصیص فیسها",
   feeBreakdown: "تفکیک فیسها بر اساس نوع",
-
   // Common actions
   add: "افزودن",
   save: "ذخیره",
-  cancel: "لغو",
   back: "بازگشت",
   next: "بعد",
   delete: "حذف",
   edit: "ویرایش",
   view: "مشاهده",
-  
   // Common terms
   search: "جستجو",
   filter: "فیلتر",
@@ -267,15 +216,10 @@ export const studentsFa = {
   printed: "چاپ شده",
   signature: "امضا",
   generatedBy: "این سند توسط سیستم مدیریت شاگردان تولید شده است",
-  
-  // Student
-  student: "شاگرد",
-  
   // Common messages
   required: "الزامی است",
   positive: "باید مثبت باشد",
   loading: "در حال بارگذاری...",
-  saving: "در حال ذخیره...",
   updating: "در حال بهروزرسانی...",
   generating: "در حال تولید...",
   notAvailable: "در دسترس نیست",
@@ -284,13 +228,11 @@ export const studentsFa = {
   upload: "آپلود",
   preview: "پیشنمایش",
   download: "دانلود",
-  
   // Status labels
   active: "فعال",
   inactive: "غیرفعال",
   yes: "بله",
   no: "خیر",
-  
   // Invoice Status
   invoiceStatus: {
     pending: "در انتظار",
@@ -299,7 +241,6 @@ export const studentsFa = {
     overdue: "سررسید گذشته",
     cancelled: "لغو شده"
   },
-  
   // Student Invoices
   studentInvoices: "صورتحسابهای شاگرد",
   invoiceDetails: "جزئیات صورتحساب",
@@ -313,7 +254,6 @@ export const studentsFa = {
   loadingInvoices: "در حال بارگذاری...",
   searchInvoices: "جستجو...",
   period: "دوره",
-  
   // Payment Plans
   paymentPlans: "برنامههای پرداخت",
   paymentPlan: "برنامه پرداخت",
@@ -327,7 +267,6 @@ export const studentsFa = {
   interval: "فاصله",
   startDate: "تاریخ شروع",
   endDate: "تاریخ پایان",
-  
   // Invoice generation
   periodicGeneration: "تولید دورهای صورتحساب",
   generateInvoicesForPeriod: "تولید صورتحساب برای همه شاگردان در یک دوره",
@@ -338,38 +277,31 @@ export const studentsFa = {
   selectStudentsDescription: "شاگردان را برای تولید صورتحساب انتخاب کنید",
   periodMonth: "ماه دوره",
   periodYear: "سال دوره",
-  
   // Invoice generation success
   success: {
     title: "صورتحساب با موفقیت تولید شد!",
     description: (count: number) => `${count} صورتحساب ایجاد شد`
   },
-  
   // Invoice generation errors
   error: {
     generate: "خطا در تولید صورتحساب"
   },
-  
   // Fee type info
   feeTypeInformation: "اطلاعات نوع فیس",
   addFeeTypeDesc: "ایجاد نوع فیس جدید",
   editFeeTypeDesc: "بهروزرسانی جزئیات نوع فیس",
-  
   // Class fee info
   addClassFeeDesc: "ایجاد فیس صنف جدید",
   editClassFeeDesc: "بهروزرسانی جزئیات فیس صنف",
-  
   // Payment plan info
   paymentPlanInformation: "اطلاعات برنامه پرداخت",
   addPaymentPlanDesc: "ایجاد برنامه پرداخت جدید",
   editPaymentPlanDesc: "بهروزرسانی جزئیات برنامه پرداخت",
-  
   // Common form terms
   selectStatus: "انتخاب وضعیت",
   selectFeeType: "انتخاب نوع فیس",
   enterDescription: "توضیحات را وارد کنید",
   referenceNumberPlaceholder: "مثال: BANK-2026-001",
-  
   // Fee Categories
   feeCategories: {
     admission: "قیس داخله",
@@ -379,7 +311,6 @@ export const studentsFa = {
     exam: "فیس امتحان",
     other: "فیس دیگر"
   },
-
   // Bulk Fee Assignment
   bulkFeeAssignment: "تخصیص گروهی فیس",
   assignFeesToStudent: "تخصیص چندین نوع فیس به یک شاگرد",
@@ -395,8 +326,6 @@ export const studentsFa = {
   paymentPlanLabel: "برنامه پرداخت (ماه)",
   totalFeesLabel: "کل فیسها",
   feeTypesCount: "فیس نوع(ها) انتخاب شده",
-  clickToDeselect: "کلیک برای لغو انتخاب",
-  clickToSelect: "کلیک برای انتخاب",
   selectedForAssignment: "برای تخصیص انتخاب شده",
   previouslyAssignedAtLevel: "قبلاً در این سطح تخصیص داده شده (مبلغ پیشنهادی نمایش داده شود)",
   loadingFeeTypes: "در حال بارگذاری انواع فیس...",
@@ -416,7 +345,6 @@ export const studentsFa = {
   configureFees: "پیکره‌بندی فیسها",
   configureFeesDesc: "فیسها را برای این شاگرد فعال کنید و مبالغ را تنظیم کنید",
   selectCurrency: "انتخاب ارز",
-  
   // Additional keys
   studentName: "نام شاگرد",
   classLevel: "سطح صنف",
@@ -426,4 +354,4 @@ export const studentsFa = {
   enableFeeTypeWithAmount: "لطفاً حداقل یک نوع فیس با مبلغ را فعال کنید",
   clickToDeselect: "کلیک برای لغو انتخاب",
   clickToSelect: "کلیک برای انتخاب"
-};
+  };

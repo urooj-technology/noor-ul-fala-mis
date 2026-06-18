@@ -71,7 +71,8 @@ export const StudentPaymentList = () => {
 
   const { handleDelete, ConfirmDialog } = useDelete({
     queryKey: ['student-payments'],
-    endpoint: 'student-payments'
+    endpoint: 'student-payments',
+    invalidateQueryKeys: [['student-fee-assignments']],
   });
 
   const payments = paymentsData?.results || [];
