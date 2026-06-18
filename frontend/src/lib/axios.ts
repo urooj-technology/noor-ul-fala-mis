@@ -63,7 +63,23 @@ api.interceptors.request.use(
 
 // Response interceptor to handle token validation and errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const contentType = response.headers['content-type'] || '';
+    const isHtml = contentType.includes('text/html');
+    const isApiRequest = response.config.url?.includes('/api/') ||
+      response.config.baseURL?.includes('/api') ||
+      !response.config.url?.startsWith('http');
+
+    if (isHtml && isApiRequest) {
+      const error = new Error(
+        'API returned HTML instead of JSON. Restart the Django server so new API routes are loaded.'
+      );
+      (error as any).response = response;
+      return Promise.reject(error);
+    }
+
+    return response;
+  },
   (error) => {
     // Skip logout for auth endpoints
     const isAuthEndpoint = error.config?.url?.includes('/login/') || 

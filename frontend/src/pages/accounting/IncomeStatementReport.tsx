@@ -7,13 +7,16 @@ import { useCalendar } from '@/contexts/CalendarContext';
 import { RefreshCw } from 'lucide-react';
 import useFetchObject from '@/api/useFetchObject';
 import { formatNumber } from '@/lib/formatNumber';
+import { formatDateByCalendarType } from '@/utils/calendar';
 import { DatePicker } from '@/components/ui/date-picker-calendar';
 
 const IncomeStatementReport = () => {
-  const { t } = useLanguage();
-  const { calendarType } = useCalendar();
-  const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const { t, language } = useLanguage();
+  const { calendarType, dateFormat } = useCalendar();
+  const todayIso = new Date().toISOString().split('T')[0];
+  const monthStartIso = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+  const [startDate, setStartDate] = useState(monthStartIso);
+  const [endDate, setEndDate] = useState(todayIso);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const { data, loading, refetch } = useFetchObject({
@@ -77,7 +80,11 @@ const IncomeStatementReport = () => {
             <Card key={currency} className="overflow-hidden">
               <div className="bg-muted px-6 py-3 border-b font-semibold text-lg flex items-center justify-between">
                 <span>{currency}</span>
-                <span className="text-sm text-muted-foreground">{startDate} - {endDate}</span>
+                <span className="text-sm text-muted-foreground" dir="rtl">
+                  {formatDateByCalendarType(startDate, calendarType, language as 'fa' | 'ps' | 'en', dateFormat)}
+                  {' - '}
+                  {formatDateByCalendarType(endDate, calendarType, language as 'fa' | 'ps' | 'en', dateFormat)}
+                </span>
               </div>
               
               <CardContent className="p-0">

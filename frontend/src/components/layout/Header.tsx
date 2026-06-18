@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCalendar } from '@/contexts/CalendarContext';
+import { formatToday } from '@/utils/calendar';
 import { Language, languageNames } from '@/i18n';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -23,7 +25,9 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const { language, changeLanguage, direction } = useLanguage();
   const { user, logout } = useAuth();
+  const { calendarType, dateFormat } = useCalendar();
   const navigate = useNavigate();
+  const todayLabel = formatToday(calendarType, dateFormat, language as 'fa' | 'ps' | 'en');
 
   const handleLogout = () => {
     logout();
@@ -48,8 +52,8 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           <h2 className="text-base font-semibold text-foregroundtext-sm">
             Welcome back, {user?.name?.split(' ')[0] || 'User'}
           </h2>
-          <p className="text-base text-muted-foreground">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          <p className="text-base text-muted-foreground" dir="rtl">
+            {todayLabel}
           </p>
         </div>
       </div>
@@ -141,7 +145,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
               <User size={16} className="mr-2" />
               Profile
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate('/settings/units')} className="cursor-pointer">
+            <DropdownMenuItem onClick={() => navigate('/settings/calendar')} className="cursor-pointer">
               <SettingsIcon size={16} className="mr-2" />
               Settings
             </DropdownMenuItem>

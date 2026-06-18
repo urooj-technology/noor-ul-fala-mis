@@ -9,6 +9,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { RotateCw, ArrowLeft, Calendar, Tag, CheckCircle } from 'lucide-react';
 import useUpdate from '@/api/useUpdate';
 import useFetchObject from '@/api/useFetchObject';
+import DatePicker from '@/components/ui/date-picker-calendar';
 
 interface FiscalYearFormData {
   name: string;
@@ -101,13 +102,23 @@ const EditFiscalYear = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="start_date" className="font-semibold flex items-center gap-2"><Calendar className="h-4 w-4" />{t("accounting.fiscalYearStartDate")} <span className="text-destructive">*</span></Label>
-              <Input id="start_date" type="date" value={formData.start_date} onChange={(e) => { setFormData((prev) => ({ ...prev, start_date: e.target.value })); if (errors.start_date) setErrors((prev) => ({ ...prev, start_date: "" })); }} className="h-10" />
+              <DatePicker
+                label={t("accounting.fiscalYearStartDate")}
+                required
+                value={formData.start_date}
+                onChange={(d) => { setFormData((prev) => ({ ...prev, start_date: d })); if (errors.start_date) setErrors((prev) => ({ ...prev, start_date: "" })); }}
+                placeholder={t('accounting.selectDate', 'Select date')}
+              />
               {errors.start_date && <p className="text-xs text-destructive">{errors.start_date}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="end_date" className="font-semibold flex items-center gap-2"><Calendar className="h-4 w-4" />{t("accounting.fiscalYearEndDate")} <span className="text-destructive">*</span></Label>
-              <Input id="end_date" type="date" value={formData.end_date} onChange={(e) => { setFormData((prev) => ({ ...prev, end_date: e.target.value })); if (errors.end_date) setErrors((prev) => ({ ...prev, end_date: "" })); }} className="h-10" />
+              <DatePicker
+                label={t("accounting.fiscalYearEndDate")}
+                required
+                value={formData.end_date}
+                onChange={(d) => { setFormData((prev) => ({ ...prev, end_date: d })); if (errors.end_date) setErrors((prev) => ({ ...prev, end_date: "" })); }}
+                placeholder={t('accounting.selectDate', 'Select date')}
+              />
               {errors.end_date && <p className="text-xs text-destructive">{errors.end_date}</p>}
             </div>
           </div>

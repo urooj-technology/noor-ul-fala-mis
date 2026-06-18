@@ -12,6 +12,90 @@ from api.services.accounting_service import AccountingService
 from api.models.data.choices import DEFAULT_CURRENCY
 
 
+def _adj_reference(base_ref, instance):
+    ts = instance.updated_at.strftime('%Y%m%d%H%M%S%f')
+    return f"{base_ref}-ADJ-{ts}"
+
+
+def _snapshot_accounting_fields(sender, instance, fields):
+    if not instance.pk:
+        instance._accounting_previous = None
+        return
+    instance._accounting_previous = sender.objects.filter(pk=instance.pk).values(*fields).first()
+
+
+def _sync_monetary_document(
+    instance,
+    created,
+    reference,
+    amount_field,
+    date_field,
+    currency_field,
+    ensure_fn,
+    record_increase_fn,
+    record_decrease_fn,
+    void_description_fn,
+    structural_change=False,
+):
+    """Keep journal entries aligned when a source document is voided, restored, or edited."""
+    previous = getattr(instance, '_accounting_previous', None)
+
+    if instance.is_deleted:
+        if not previous or not previous.get('is_deleted'):
+            AccountingService.void_source_document_journals(
+                reference,
+                date=getattr(instance, date_field),
+                description=void_description_fn(instance),
+            )
+        return
+
+    if created:
+        ensure_fn(instance)
+        return
+
+    if not previous:
+        return
+
+    if previous.get('is_deleted') and not instance.is_deleted:
+        curr_amount = Decimal(str(getattr(instance, amount_field) or 0))
+        if curr_amount > 0:
+            restore_ref = f"{reference}-RESTORE-{instance.updated_at.strftime('%Y%m%d%H%M%S%f')}"
+            record_increase_fn(instance, curr_amount, restore_ref)
+        return
+
+    if structural_change:
+        AccountingService.void_source_document_journals(
+            reference,
+            date=getattr(instance, date_field),
+            description=f"{void_description_fn(instance)} (reclassification)",
+        )
+        current_amount = Decimal(str(getattr(instance, amount_field) or 0))
+        if current_amount > 0:
+            record_increase_fn(instance, current_amount, _adj_reference(reference, instance))
+        return
+
+    prev_amount = Decimal(str(previous.get(amount_field) or 0))
+    curr_amount = Decimal(str(getattr(instance, amount_field) or 0))
+    prev_currency = previous.get(currency_field) or DEFAULT_CURRENCY
+    curr_currency = getattr(instance, currency_field) or DEFAULT_CURRENCY
+
+    if prev_currency != curr_currency:
+        AccountingService.void_source_document_journals(
+            reference,
+            date=getattr(instance, date_field),
+            description=f"{void_description_fn(instance)} (currency change)",
+        )
+        if curr_amount > 0:
+            record_increase_fn(instance, curr_amount, _adj_reference(reference, instance))
+        return
+
+    delta = curr_amount - prev_amount
+    if delta > 0:
+        record_increase_fn(instance, delta, _adj_reference(reference, instance))
+    elif delta < 0:
+        record_decrease_fn(instance, abs(delta), _adj_reference(reference, instance))
+
+
 def _student_payment_description(payment):
     student = payment.assignment.student if payment.assignment and payment.assignment.student else None
     fee_type = payment.fee_type or (payment.assignment.fee_type if payment.assignment else None)
@@ -211,103 +295,171 @@ def create_student_payment_journal(sender, instance, created, **kwargs):
         logger.error(f"Failed to create journal entry for student payment {instance.id}: {e}")
 
 
+@receiver(pre_save, sender=Expense)
+def snapshot_expense_for_accounting(sender, instance, **kwargs):
+    _snapshot_accounting_fields(
+        sender, instance, ['amount', 'currency', 'expense_date', 'is_deleted', 'category_id']
+    )
+
+
 @receiver(post_save, sender=Expense)
-def create_expense_journal(sender, instance, created, **kwargs):
-    """Create journal entry when expense is created"""
-    if created:
-        try:
-            from api.models.data.accounting import Account
-            
-            currency = instance.currency or 'AFN'
-            category_name = instance.category.name.lower() if instance.category else ''
-            
-            # Determine expense account based on category name
-            expense_account = None
-            if 'salary' in category_name or 'wage' in category_name:
-                expense_account = Account.objects.filter(code=f'5000_{currency}').first()
-            else:
-                # Default to Other Expenses for all other categories
-                expense_account = Account.objects.filter(code=f'5900_{currency}').first()
-            
-            if not expense_account:
-                expense_account = Account.objects.filter(code=f'5900_{currency}').first()
-            
-            cash_account = Account.objects.filter(code=f'1000_{currency}').first()
-            
-            if not cash_account or not expense_account:
-                raise ValueError(f"Default accounts not configured for {currency}. Please run init_chart_of_accounts.")
-            
-            AccountingService.create_journal_entry(
-                date=instance.expense_date,
-                description=f"Expense - {instance.category.name}: {instance.description or ''}",
-                lines=[
-                    {'account_id': expense_account.id, 'debit': instance.amount, 'credit': 0},
-                    {'account_id': cash_account.id, 'debit': 0, 'credit': instance.amount}
-                ],
-                transaction_type='expense',
-                reference=f"EXPENSE-{instance.id}"
-            )
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Failed to create journal entry for expense {instance.id}: {e}")
+def sync_expense_journal(sender, instance, created, **kwargs):
+    try:
+        reference = f"EXPENSE-{instance.id}"
+        previous = getattr(instance, '_accounting_previous', None)
+        structural_change = bool(
+            previous
+            and not created
+            and previous.get('category_id') != instance.category_id
+        )
+
+        _sync_monetary_document(
+            instance=instance,
+            created=created,
+            reference=reference,
+            amount_field='amount',
+            date_field='expense_date',
+            currency_field='currency',
+            ensure_fn=AccountingService.ensure_expense_journal,
+            record_increase_fn=lambda obj, amount, ref: AccountingService.record_expense_adjustment(
+                obj, amount, reference=ref
+            ),
+            record_decrease_fn=lambda obj, amount, ref: AccountingService.record_expense_reversal(
+                obj, amount, reference=ref
+            ),
+            void_description_fn=lambda obj: f"Void Expense - {obj.category.name if obj.category else 'Expense'}",
+            structural_change=structural_change,
+        )
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to sync journal entry for expense {instance.id}: {e}")
+
+
+@receiver(pre_save, sender=Payroll)
+def snapshot_payroll_for_accounting(sender, instance, **kwargs):
+    _snapshot_accounting_fields(
+        sender, instance, ['salary', 'currency', 'payment_date', 'is_deleted']
+    )
 
 
 @receiver(post_save, sender=Payroll)
-def create_payroll_journal(sender, instance, created, **kwargs):
-    """Create journal entry when payroll is created"""
-    if created:
-        try:
-            AccountingService.record_payroll(
-                employee_name=instance.employee.full_name,
-                amount=instance.salary,
-                date=instance.payment_date,
-                reference=f"PAYROLL-{instance.id}"
-            )
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Failed to create journal entry for payroll {instance.id}: {e}")
+def sync_payroll_journal(sender, instance, created, **kwargs):
+    try:
+        reference = f"PAYROLL-{instance.id}"
+        _sync_monetary_document(
+            instance=instance,
+            created=created,
+            reference=reference,
+            amount_field='salary',
+            date_field='payment_date',
+            currency_field='currency',
+            ensure_fn=AccountingService.ensure_payroll_journal,
+            record_increase_fn=lambda obj, amount, ref: AccountingService.record_payroll(
+                employee_name=obj.employee.full_name,
+                amount=amount,
+                date=obj.payment_date,
+                reference=ref,
+                currency=obj.currency or DEFAULT_CURRENCY,
+            ),
+            record_decrease_fn=lambda obj, amount, ref: AccountingService.record_payroll_reversal(
+                employee_name=obj.employee.full_name,
+                amount=amount,
+                date=obj.payment_date,
+                reference=ref,
+                currency=obj.currency or DEFAULT_CURRENCY,
+            ),
+            void_description_fn=lambda obj: f"Void Payroll - {obj.employee.full_name}",
+        )
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to sync journal entry for payroll {instance.id}: {e}")
+
+
+@receiver(pre_save, sender=Advance)
+def snapshot_advance_for_accounting(sender, instance, **kwargs):
+    _snapshot_accounting_fields(
+        sender, instance, ['amount', 'currency', 'payment_date', 'is_deleted']
+    )
 
 
 @receiver(post_save, sender=Advance)
-def create_advance_journal(sender, instance, created, **kwargs):
-    """Create journal entry when advance is created"""
-    if created:
-        try:
-            AccountingService.record_advance(
-                employee_name=instance.employee.full_name,
-                amount=instance.amount,
-                date=instance.payment_date,
-                reference=f"ADVANCE-{instance.id}"
-            )
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Failed to create journal entry for advance {instance.id}: {e}")
+def sync_advance_journal(sender, instance, created, **kwargs):
+    try:
+        reference = f"ADVANCE-{instance.id}"
+        _sync_monetary_document(
+            instance=instance,
+            created=created,
+            reference=reference,
+            amount_field='amount',
+            date_field='payment_date',
+            currency_field='currency',
+            ensure_fn=AccountingService.ensure_advance_journal,
+            record_increase_fn=lambda obj, amount, ref: AccountingService.record_advance(
+                employee_name=obj.employee.full_name,
+                amount=amount,
+                date=obj.payment_date,
+                reference=ref,
+                currency=obj.currency or DEFAULT_CURRENCY,
+            ),
+            record_decrease_fn=lambda obj, amount, ref: AccountingService.record_advance_reversal(
+                employee_name=obj.employee.full_name,
+                amount=amount,
+                date=obj.payment_date,
+                reference=ref,
+                currency=obj.currency or DEFAULT_CURRENCY,
+            ),
+            void_description_fn=lambda obj: f"Void Advance - {obj.employee.full_name}",
+        )
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to sync journal entry for advance {instance.id}: {e}")
+
+
+@receiver(pre_save, sender=OtherIncome)
+def snapshot_other_income_for_accounting(sender, instance, **kwargs):
+    _snapshot_accounting_fields(
+        sender, instance, ['amount', 'currency', 'income_date', 'is_deleted']
+    )
 
 
 @receiver(post_save, sender=OtherIncome)
-def create_other_income_journal(sender, instance, created, **kwargs):
-    """Create journal entry when other income is created"""
-    if created:
-        try:
-            from api.models.data.accounting import Account
-            currency = instance.currency if instance.currency else 'AFN'
-            AccountingService.create_journal_entry(
-                date=instance.income_date,
-                description=f"Other Income - {instance.income_category.name if instance.income_category else 'General'} - {instance.source or 'N/A'}",
-                lines=[
-                    {'account_id': Account.objects.get(code=f'1000_{currency}').id, 'debit': instance.amount, 'credit': 0},
-                    {'account_id': Account.objects.get(code=f'4300_{currency}').id, 'debit': 0, 'credit': instance.amount}
-                ],
-                transaction_type='other_income',
-                reference=f"INCOME-{instance.id}"
-            )
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Failed to create journal entry for other income {instance.id}: {e}")
+def sync_other_income_journal(sender, instance, created, **kwargs):
+    try:
+        reference = f"INCOME-{instance.id}"
+        _sync_monetary_document(
+            instance=instance,
+            created=created,
+            reference=reference,
+            amount_field='amount',
+            date_field='income_date',
+            currency_field='currency',
+            ensure_fn=AccountingService.ensure_other_income_journal,
+            record_increase_fn=lambda obj, amount, ref: AccountingService.record_other_income_adjustment(
+                obj, amount, reference=ref
+            ),
+            record_decrease_fn=lambda obj, amount, ref: AccountingService.record_other_income_reversal(
+                obj, amount, reference=ref
+            ),
+            void_description_fn=lambda obj: (
+                f"Void Other Income - {obj.income_category.name if obj.income_category else 'General'}"
+            ),
+        )
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to sync journal entry for other income {instance.id}: {e}")
+
+
+@receiver(pre_save, sender=ShopRentalPayment)
+def snapshot_rental_payment_for_accounting(sender, instance, **kwargs):
+    if not instance.pk:
+        instance._accounting_previous = None
+        return
+    previous = sender.objects.filter(pk=instance.pk).values('payment_status').first()
+    instance._accounting_previous = previous
 
 
 @receiver(post_save, sender=ShopRentalPayment)
@@ -318,8 +470,17 @@ def create_rental_payment_journal(sender, instance, created, **kwargs):
     1. Creates accrual entry for the months being paid (Dr Rental Receivable, Cr Rental Income)
     2. Records the payment (Dr Cash, Cr Rental Receivable)
     """
-    # Create journal entry when payment is created and status is completed
-    if created and instance.payment_status == 'completed':
+    should_journal = (
+        (created and instance.payment_status == 'completed') or
+        (
+            not created and
+            getattr(instance, '_accounting_previous', None) and
+            instance._accounting_previous.get('payment_status') != 'completed' and
+            instance.payment_status == 'completed'
+        )
+    )
+
+    if should_journal:
         try:
             # Get period info from the payment
             period_months = instance.period_months or []
@@ -346,43 +507,6 @@ def create_rental_payment_journal(sender, instance, created, **kwargs):
                     currency=instance.currency,
                     reference=instance.reference_number
                 )
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Failed to create journal entry for rental payment {instance.id}: {e}")
-    
-    # Create journal entry when payment status changes to completed
-    if not created:
-        try:
-            old_instance = ShopRentalPayment.objects.get(pk=instance.pk)
-            if old_instance.payment_status != 'completed' and instance.payment_status == 'completed':
-                # Get period info from the payment
-                period_months = instance.period_months or []
-                period_year = instance.period_year or str(timezone.now().year)
-                
-                if not period_months:
-                    # Fallback to old behavior if no period info
-                    AccountingService.record_rental_payment(
-                        tenant_name=instance.rental.tenant.full_name,
-                        amount=instance.amount,
-                        date=instance.payment_date,
-                        reference=instance.reference_number,
-                        rental_id=instance.rental.id
-                    )
-                else:
-                    # Use the new accrual method
-                    AccountingService.record_rental_payment_with_accrual(
-                        rental_id=instance.rental.id,
-                        tenant_name=instance.rental.tenant.full_name,
-                        amount=instance.amount,
-                        date=instance.payment_date,
-                        period_months=period_months,
-                        period_year=period_year,
-                        currency=instance.currency,
-                        reference=instance.reference_number
-                    )
-        except ShopRentalPayment.DoesNotExist:
-            pass
         except Exception as e:
             import logging
             logger = logging.getLogger(__name__)

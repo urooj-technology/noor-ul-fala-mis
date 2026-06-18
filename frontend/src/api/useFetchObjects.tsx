@@ -30,8 +30,19 @@ const useFetchObjects = <T,>({
   const { getUser, logout } = useAuth();
   
   const fetchFunction = async (): Promise<T> => {
-    const response: AxiosResponse<T> = await api.get(`${endpoint}`, { params });
-    return response.data;
+    const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const response: AxiosResponse<T> = await api.get(path, { params });
+    const payload = response.data;
+
+    if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+      return payload;
+    }
+
+    if (typeof payload === 'string' && payload.trim().startsWith('<!DOCTYPE html>')) {
+      throw new Error('API returned the frontend page instead of data. Restart the Django server.');
+    }
+
+    return payload;
   };
   
   const { data, isLoading, isError, isSuccess, error, refetch } = useQuery<

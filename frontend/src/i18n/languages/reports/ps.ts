@@ -108,6 +108,14 @@ export const reportsPs = {
   export: "صادرول",
   income: "درېدنه",
   advances: "مخکې تادیات",
+  overview: "عمومي کتنه",
+  accounting: "محاسبه",
+  payroll: "معاش",
+  outflowsSummary: "وتلې پیسې",
+  totalOutflows: "ټولې وتلې پیسې",
+  netCashPosition: "خالص نغدي موقف",
+  allTime: "ټوله موده",
+  selectCustomDateRange: "د دودیزې مودې لپاره د پیل او پای نیټې دواړه وټاکئ.",
   
   // Report tabs
   students: "زده کونکي"

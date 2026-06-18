@@ -38,28 +38,22 @@ class TransactionViewSet(DataRootViewSet):
             return TransactionCreateSerializer
         return TransactionSerializer
 
+    def perform_destroy(self, instance):
+        user = self.request.user
+        for entry in instance.entries.filter(is_deleted=False):
+            entry.soft_delete(user=user)
+        instance.soft_delete(user=user)
+
     @action(detail=False, methods=['get'])
     def trial_balance(self, request):
         """Get trial balance report with calendar support"""
         from api.services.accounting_service import AccountingService
-        from api.utils.calendar import shamsi_to_gregorian, qamari_to_gregorian, parse_shamsi_date, parse_qamari_date
-        
+        from api.utils.calendar import to_gregorian_date_str
+
         as_of_date = request.query_params.get('as_of_date')
         calendar_type = request.query_params.get('calendar_type', 'gregorian')
-        
-        # Convert date if needed
-        if as_of_date and calendar_type in ['shamsi', 'qamari']:
-            if calendar_type == 'shamsi':
-                parsed = parse_shamsi_date(as_of_date)
-                if parsed:
-                    greg_date = shamsi_to_gregorian(*parsed)
-                    as_of_date = greg_date.isoformat() if greg_date else None
-            elif calendar_type == 'qamari':
-                parsed = parse_qamari_date(as_of_date)
-                if parsed:
-                    greg_date = qamari_to_gregorian(*parsed)
-                    as_of_date = greg_date.isoformat() if greg_date else None
-        
+        as_of_date = to_gregorian_date_str(as_of_date, calendar_type)
+
         result = AccountingService.get_trial_balance(as_of_date)
         return Response(result)
 
@@ -67,70 +61,35 @@ class TransactionViewSet(DataRootViewSet):
     def income_statement(self, request):
         """Get income statement (Profit & Loss) with calendar support"""
         from api.services.accounting_service import AccountingService
-        from api.utils.calendar import shamsi_to_gregorian, qamari_to_gregorian, parse_shamsi_date, parse_qamari_date
+        from api.utils.calendar import to_gregorian_date_str
         from django.utils import timezone
         from datetime import timedelta
-        
+
         start_date = request.query_params.get('start_date')
         end_date = request.query_params.get('end_date')
         calendar_type = request.query_params.get('calendar_type', 'gregorian')
-        
-        # Default dates if not provided
-        if not end_date:
-            end_date = timezone.now().date()
-        if not start_date:
-            start_date = timezone.now().date() - timedelta(days=365)
-        
-        # Convert dates if needed
-        if calendar_type in ['shamsi', 'qamari']:
-            if calendar_type == 'shamsi':
-                if start_date:
-                    parsed = parse_shamsi_date(str(start_date))
-                    if parsed:
-                        greg_date = shamsi_to_gregorian(*parsed)
-                        start_date = greg_date.isoformat() if greg_date else start_date
-                if end_date:
-                    parsed = parse_shamsi_date(str(end_date))
-                    if parsed:
-                        greg_date = shamsi_to_gregorian(*parsed)
-                        end_date = greg_date.isoformat() if greg_date else end_date
-            elif calendar_type == 'qamari':
-                if start_date:
-                    parsed = parse_qamari_date(str(start_date))
-                    if parsed:
-                        greg_date = qamari_to_gregorian(*parsed)
-                        start_date = greg_date.isoformat() if greg_date else start_date
-                if end_date:
-                    parsed = parse_qamari_date(str(end_date))
-                    if parsed:
-                        greg_date = qamari_to_gregorian(*parsed)
-                        end_date = greg_date.isoformat() if greg_date else end_date
 
-        result = AccountingService.get_income_statement(str(start_date), str(end_date))
+        if not end_date:
+            end_date = timezone.now().date().isoformat()
+        if not start_date:
+            start_date = (timezone.now().date() - timedelta(days=365)).isoformat()
+
+        start_date = to_gregorian_date_str(start_date, calendar_type)
+        end_date = to_gregorian_date_str(end_date, calendar_type)
+
+        result = AccountingService.get_income_statement(start_date, end_date)
         return Response(result)
 
     @action(detail=False, methods=['get'])
     def balance_sheet(self, request):
         """Get balance sheet with calendar support"""
         from api.services.accounting_service import AccountingService
-        from api.utils.calendar import shamsi_to_gregorian, qamari_to_gregorian, parse_shamsi_date, parse_qamari_date
-        
+        from api.utils.calendar import to_gregorian_date_str
+
         as_of_date = request.query_params.get('as_of_date')
         calendar_type = request.query_params.get('calendar_type', 'gregorian')
-        
-        # Convert date if needed
-        if as_of_date and calendar_type in ['shamsi', 'qamari']:
-            if calendar_type == 'shamsi':
-                parsed = parse_shamsi_date(as_of_date)
-                if parsed:
-                    greg_date = shamsi_to_gregorian(*parsed)
-                    as_of_date = greg_date.isoformat() if greg_date else None
-            elif calendar_type == 'qamari':
-                parsed = parse_qamari_date(as_of_date)
-                if parsed:
-                    greg_date = qamari_to_gregorian(*parsed)
-                    as_of_date = greg_date.isoformat() if greg_date else None
-        
+        as_of_date = to_gregorian_date_str(as_of_date, calendar_type)
+
         result = AccountingService.get_balance_sheet(as_of_date)
         return Response(result)
 

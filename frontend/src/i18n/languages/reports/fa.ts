@@ -108,6 +108,14 @@ export const reportsFa = {
   export: "صادرات",
   income: "درآمد",
   advances: "پیش پرداخت ها",
+  overview: "نمای کلی",
+  accounting: "حسابداری",
+  payroll: "حقوق",
+  outflowsSummary: "خروجی ها",
+  totalOutflows: "مجموع خروجی",
+  netCashPosition: "موقعیت نقدی خالص",
+  allTime: "تمام دوره",
+  selectCustomDateRange: "لطفاً برای دوره سفارشی هر دو تاریخ شروع و پایان را انتخاب کنید.",
   
   // Report tabs
   students: "شاگردان"

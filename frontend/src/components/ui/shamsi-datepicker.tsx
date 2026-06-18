@@ -1,10 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
 import {
   gregorianToShamsi,
   shamsiToGregorian,
@@ -13,16 +11,21 @@ import {
   SHAMSI_MONTHS_PASHTO,
   shamsiToISO,
   dateToShamsi,
+  getCurrentShamsi,
+  formatCalendarParts,
+  type DateFormat,
 } from '@/utils/calendar';
 
 interface ShamsiDatePickerProps {
-  value?: string; // ISO date string (YYYY-MM-DD)
+  value?: string;
   onChange: (gregorianDate: string) => void;
   placeholder?: string;
   label?: string;
   required?: boolean;
   error?: string;
   disabled?: boolean;
+  dateFormat?: DateFormat;
+  language?: 'fa' | 'ps' | 'en';
 }
 
 export function ShamsiDatePicker({
@@ -33,63 +36,47 @@ export function ShamsiDatePicker({
   required,
   error,
   disabled,
+  dateFormat = 'YYYY/MM/DD',
+  language = 'fa',
 }: ShamsiDatePickerProps) {
-  const { language } = useLanguage();
   const [open, setOpen] = useState(false);
-
-  // Get month names based on language
   const monthNames = language === 'ps' ? SHAMSI_MONTHS_PASHTO : SHAMSI_MONTHS_DARI;
+  const currentShamsi = currentShamsiFromValue(value);
+  const todayShamsi = getCurrentShamsi();
 
-   // Parse current value to Shamsi
-   const currentShamsi = useMemo(() => {
-     if (!value) return null;
-     const result = dateToShamsi(value);
-     return result;
-   }, [value]);
+  const [viewYear, setViewYear] = useState(currentShamsi?.year ?? todayShamsi.year);
+  const [viewMonth, setViewMonth] = useState(currentShamsi?.month ?? todayShamsi.month);
 
-  // Display value
+  useEffect(() => {
+    if (open) {
+      const target = currentShamsi ?? todayShamsi;
+      setViewYear(target.year);
+      setViewMonth(target.month);
+    }
+  }, [open, value]);
+
   const displayValue = currentShamsi
-    ? `${currentShamsi.year}/${String(currentShamsi.month).padStart(2, '0')}/${String(currentShamsi.day).padStart(2, '0')}`
+    ? formatCalendarParts(currentShamsi.year, currentShamsi.month, currentShamsi.day, dateFormat, 'shamsi', language)
     : '';
 
-  // Calendar state
-  const [viewYear, setViewYear] = useState(currentShamsi?.year || 1403);
-  const [viewMonth, setViewMonth] = useState(currentShamsi?.month || 1);
-
-  // Get days in month
   const daysInMonth = getShamsiDaysInMonth(viewYear, viewMonth);
 
-  // Generate days array
   const days = useMemo(() => {
-    // Get first day of month in Gregorian to find week day
     const firstDayGregorian = shamsiToGregorian(viewYear, viewMonth, 1);
     const firstDayDate = new Date(firstDayGregorian.year, firstDayGregorian.month - 1, firstDayGregorian.day);
-    let startDayOfWeek = firstDayDate.getDay(); // 0 = Sunday
-    // Adjust for Saturday start (Afghanistan week starts on Saturday)
-    startDayOfWeek = (startDayOfWeek + 1) % 7; // Now 0 = Saturday
+    let startDayOfWeek = (firstDayDate.getDay() + 1) % 7;
 
-    const daysArray = [];
-    for (let i = 0; i < startDayOfWeek; i++) {
-      daysArray.push(null); // Empty cells
-    }
-    for (let day = 1; day <= daysInMonth; day++) {
-      daysArray.push(day);
-    }
+    const daysArray: (number | null)[] = [];
+    for (let i = 0; i < startDayOfWeek; i++) daysArray.push(null);
+    for (let day = 1; day <= daysInMonth; day++) daysArray.push(day);
     return daysArray;
   }, [viewYear, viewMonth, daysInMonth]);
 
-   // Handle day selection
-   const handleDaySelect = (day: number) => {
-     try {
-       const isoDate = shamsiToISO(viewYear, viewMonth, day);
-       onChange(isoDate);
-       setOpen(false);
-     } catch (error) {
-       console.error('Error in handleDaySelect:', error);
-     }
-   };
+  const handleDaySelect = (day: number) => {
+    onChange(shamsiToISO(viewYear, viewMonth, day));
+    setOpen(false);
+  };
 
-  // Navigate months
   const goToPrevMonth = () => {
     if (viewMonth === 1) {
       setViewMonth(12);
@@ -108,24 +95,14 @@ export function ShamsiDatePicker({
     }
   };
 
-  // Navigate years
-  const goToPrevYear = () => setViewYear(viewYear - 1);
-  const goToNextYear = () => setViewYear(viewYear + 1);
+  const weekDays = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'];
 
-  // Week day names (Saturday first)
-  const weekDays = language === 'ps' 
-    ? ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'] // Pashto abbreviations
-    : ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج']; // Dari abbreviations (شنبه، یکشنبه، دوشنبه، سه‌شنبه، چهارشنبه، پنجشنبه، جمعه)
-
-  // Quick year selector
   const years = useMemo(() => {
-    const currentYear = currentShamsi?.year || 1403;
+    const base = currentShamsi?.year ?? todayShamsi.year;
     const arr = [];
-    for (let y = currentYear - 50; y <= currentYear + 10; y++) {
-      arr.push(y);
-    }
+    for (let y = base - 50; y <= base + 10; y++) arr.push(y);
     return arr;
-  }, [currentShamsi]);
+  }, [currentShamsi, todayShamsi.year]);
 
   return (
     <div className="space-y-2">
@@ -141,28 +118,27 @@ export function ShamsiDatePicker({
             className={`w-full justify-start text-right font-normal h-10 ${!displayValue ? 'text-muted-foreground' : ''}`}
             disabled={disabled}
           >
-            <Calendar className="ml-2 h-4 w-4" />
-            {displayValue || placeholder}
+            <Calendar className="ml-2 h-4 w-4 shrink-0" />
+            <span className="truncate">{displayValue || placeholder}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <div className="p-3" dir="rtl">
-            {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex gap-1">
-                <Button variant="outline" size="icon" className="h-7 w-7" onClick={goToNextYear}>
+                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setViewYear(viewYear + 1)}>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
                 <Button variant="outline" size="icon" className="h-7 w-7" onClick={goToNextMonth}>
                   <ChevronRight className="h-3 w-3" />
                 </Button>
               </div>
-              
+
               <div className="flex gap-2 items-center">
                 <select
                   value={viewMonth}
-                  onChange={(e) => setViewMonth(parseInt(e.target.value))}
-                  className="border rounded px-2 py-1 text-sm bg-background"
+                  onChange={(e) => setViewMonth(parseInt(e.target.value, 10))}
+                  className="border rounded px-2 py-1 text-sm bg-background max-w-[110px]"
                 >
                   {monthNames.map((name, idx) => (
                     <option key={idx + 1} value={idx + 1}>{name}</option>
@@ -170,7 +146,7 @@ export function ShamsiDatePicker({
                 </select>
                 <select
                   value={viewYear}
-                  onChange={(e) => setViewYear(parseInt(e.target.value))}
+                  onChange={(e) => setViewYear(parseInt(e.target.value, 10))}
                   className="border rounded px-2 py-1 text-sm bg-background w-20"
                 >
                   {years.map((y) => (
@@ -178,18 +154,17 @@ export function ShamsiDatePicker({
                   ))}
                 </select>
               </div>
-              
+
               <div className="flex gap-1">
                 <Button variant="outline" size="icon" className="h-7 w-7" onClick={goToPrevMonth}>
                   <ChevronLeft className="h-3 w-3" />
                 </Button>
-                <Button variant="outline" size="icon" className="h-7 w-7" onClick={goToPrevYear}>
+                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setViewYear(viewYear - 1)}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
-            {/* Week days */}
             <div className="grid grid-cols-7 gap-1 mb-2">
               {weekDays.map((day, idx) => (
                 <div key={idx} className="text-center text-xs text-muted-foreground font-medium py-1">
@@ -198,9 +173,8 @@ export function ShamsiDatePicker({
               ))}
             </div>
 
-            {/* Days grid */}
             <div className="grid grid-cols-7 gap-1">
-              {days.map((day, idx) => (
+              {days.map((day, idx) =>
                 day !== null ? (
                   <Button
                     key={idx}
@@ -221,18 +195,17 @@ export function ShamsiDatePicker({
                 ) : (
                   <div key={idx} className="aspect-square" />
                 )
-              ))}
+              )}
             </div>
 
-            {/* Today button */}
             <div className="mt-3 pt-3 border-t flex justify-between">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => {
                   const today = new Date();
-                  const shamsi = gregorianToShamsi(today.getFullYear(), today.getMonth() + 1, today.getDate());
-                  onChange(today.toISOString().split('T')[0]);
+                  const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                  onChange(iso);
                   setOpen(false);
                 }}
               >
@@ -248,4 +221,9 @@ export function ShamsiDatePicker({
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
+}
+
+function currentShamsiFromValue(value?: string) {
+  if (!value) return null;
+  return dateToShamsi(value);
 }

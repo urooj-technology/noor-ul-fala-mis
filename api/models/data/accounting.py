@@ -29,16 +29,22 @@ class Account(BaseModel):
         return f"{self.code} - {self.name}"
 
     def get_balance(self):
-        """Calculate current balance from journal entries"""
+        """Calculate current balance from active (non-deleted) journal entries."""
         from django.db.models import Sum
-        debits = self.journal_entries.aggregate(total=Sum('debit'))['total'] or 0
-        credits = self.journal_entries.aggregate(total=Sum('credit'))['total'] or 0
+        entries = self.journal_entries.filter(is_deleted=False, transaction__is_deleted=False)
+        debits = entries.aggregate(total=Sum('debit'))['total'] or 0
+        credits = entries.aggregate(total=Sum('credit'))['total'] or 0
 
         # Asset/Expense: Debit increases, Credit decreases
         if self.account_type in ['asset', 'expense']:
             return debits - credits
         # Liability/Equity/Income: Credit increases, Debit decreases
         return credits - debits
+
+    def refresh_balance(self):
+        """Persist the computed balance on the account row."""
+        self.balance = self.get_balance()
+        self.save(update_fields=['balance'])
 
 
 class JournalEntry(BaseModel):
@@ -59,9 +65,12 @@ class JournalEntry(BaseModel):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        # Update account balance
-        self.account.balance = self.account.get_balance()
-        self.account.save(update_fields=['balance'])
+        self.account.refresh_balance()
+
+    @classmethod
+    def active(cls):
+        """Journal lines that should affect balances and financial reports."""
+        return cls.objects.filter(is_deleted=False, transaction__is_deleted=False)
 
 
 class Transaction(BaseModel):
@@ -104,11 +113,11 @@ class Transaction(BaseModel):
 
     @property
     def total_debit(self):
-        return sum(entry.debit for entry in self.entries.all())
+        return sum(entry.debit for entry in self.entries.filter(is_deleted=False))
 
     @property
     def total_credit(self):
-        return sum(entry.credit for entry in self.entries.all())
+        return sum(entry.credit for entry in self.entries.filter(is_deleted=False))
 
     def is_balanced(self):
         """Check if transaction is balanced (debits = credits)"""

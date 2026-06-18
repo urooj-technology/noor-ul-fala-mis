@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useLanguage } from '@/contexts/LanguageContext';
+import DatePicker from '@/components/ui/date-picker-calendar';
 
 interface Expense {
   id: string;
@@ -166,12 +167,10 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="expenseDate">{t('expenses.expenseDate', 'Expense Date')}</Label>
-              <Input
-                id="expenseDate"
-                type="date"
+              <DatePicker
+                label={t('expenses.expenseDate', 'Expense Date')}
                 value={formData.expenseDate}
-                onChange={(e) => handleChange('expenseDate', e.target.value)}
+                onChange={(d) => handleChange('expenseDate', d)}
                 required
               />
             </div>

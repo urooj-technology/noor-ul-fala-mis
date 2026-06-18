@@ -33,7 +33,9 @@ const TrialBalanceReport = () => {
 
   const trialBalance = data as any;
   const byCurrency = trialBalance?.by_currency || {};
-  const isBalanced = trialBalance?.is_balanced || false;
+  const isBalanced = trialBalance?.is_balanced ?? Object.values(byCurrency).every(
+    (cur: any) => cur?.is_balanced !== false && Math.abs((cur?.total_debit || 0) - (cur?.total_credit || 0)) < 0.01
+  );
 
   return (
     <div className="container mx-auto py-6 space-y-6">

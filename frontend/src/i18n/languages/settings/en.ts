@@ -1,6 +1,28 @@
 export const settingsEn = {
   title: "System Settings",
   description: "Manage system configuration including units, currencies, and exchange rates",
+
+  deletedItems: {
+    title: "Deleted Items",
+    description: "Review soft-deleted records and restore selected items. Restored accounting records will sync journal entries again.",
+    type: "Type",
+    item: "Item",
+    deletedAt: "Deleted At",
+    deletedBy: "Deleted By",
+    allTypes: "All types",
+    searchPlaceholder: "Search deleted items...",
+    restore: "Restore",
+    restoreSelected: "Restore selected",
+    restoreTitle: "Restore Items",
+    restoreConfirm: "Restore {{count}} selected item(s)? Accounting records will post the correct journal entries again.",
+    restoreSuccess: "Selected items restored successfully",
+    restoring: "Restoring...",
+    loading: "Loading deleted items...",
+    loadError: "Failed to load deleted items",
+    clearFilters: "Clear filters",
+    emptyTitle: "No deleted items",
+    emptyDescription: "Deleted records will appear here and can be restored.",
+  },
   
   units: {
     title: "Units",

@@ -268,6 +268,44 @@ def parse_qamari_date(qamari_str):
     return None
 
 
+def is_gregorian_date_str(date_str):
+    """Return True when a date string already uses a Gregorian calendar year."""
+    try:
+        year = int(str(date_str).replace('/', '-').split('-')[0])
+        return 1900 <= year <= 2100
+    except (TypeError, ValueError, IndexError, AttributeError):
+        return False
+
+
+def to_gregorian_date_str(date_str, calendar_type='gregorian'):
+    """
+    Normalize a report date to Gregorian ISO (YYYY-MM-DD).
+
+    DatePicker components always store Gregorian ISO dates. When those are sent
+    with calendar_type=shamsi/qamari, skip conversion instead of misreading the
+    year as a Shamsi/Qamari year.
+    """
+    if not date_str:
+        return None
+
+    date_str = str(date_str).strip()
+    if is_gregorian_date_str(date_str):
+        return date_str
+
+    if calendar_type == 'shamsi':
+        parsed = parse_shamsi_date(date_str)
+        if parsed:
+            greg_date = shamsi_to_gregorian(*parsed)
+            return greg_date.isoformat() if greg_date else date_str
+    elif calendar_type == 'qamari':
+        parsed = parse_qamari_date(date_str)
+        if parsed:
+            greg_date = qamari_to_gregorian(*parsed)
+            return greg_date.isoformat() if greg_date else date_str
+
+    return date_str
+
+
 def matches_shamsi_period(stored_month, stored_year, payment_date, target_month, target_year):
     """Check if a record belongs to the given Shamsi month/year period."""
     try:

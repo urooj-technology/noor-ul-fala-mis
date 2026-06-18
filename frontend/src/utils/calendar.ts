@@ -8,6 +8,67 @@
 
 import { CalendarType } from '@/contexts/CalendarContext';
 
+export type DateFormat = 'YYYY/MM/DD' | 'YYYY-MM-DD' | 'DD/MM/YYYY' | 'month-name';
+
+/**
+ * Parse YYYY-MM-DD without timezone shift (avoids off-by-one day bugs).
+ */
+export function parseISODateString(dateStr: string): { year: number; month: number; day: number } | null {
+  if (!dateStr) return null;
+  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
+  }
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  return { year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate() };
+}
+
+function getGregorianParts(date: Date | string): { year: number; month: number; day: number } | null {
+  if (typeof date === 'string') {
+    const parsed = parseISODateString(date);
+    if (parsed) return parsed;
+  }
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d.getTime())) return null;
+  return { year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate() };
+}
+
+const DEFAULT_DATE_FORMAT: DateFormat = 'YYYY/MM/DD';
+
+function resolveDateFormat(dateFormat?: DateFormat): DateFormat {
+  if (dateFormat) return dateFormat;
+  const saved = localStorage.getItem('date_format');
+  const valid: DateFormat[] = ['YYYY/MM/DD', 'YYYY-MM-DD', 'DD/MM/YYYY', 'month-name'];
+  return valid.includes(saved as DateFormat) ? (saved as DateFormat) : DEFAULT_DATE_FORMAT;
+}
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+export function formatCalendarParts(
+  year: number,
+  month: number,
+  day: number,
+  dateFormat: DateFormat,
+  calendarType: CalendarType,
+  lang: 'fa' | 'ps' | 'en' = 'fa'
+): string {
+  if (dateFormat === 'month-name') {
+    const monthNames = getMonthNames(calendarType, lang === 'en' ? 'fa' : lang);
+    const monthName = monthNames[month - 1] || String(month);
+    return `${day} ${monthName} ${year}`;
+  }
+  if (dateFormat === 'YYYY-MM-DD') {
+    return `${year}-${pad2(month)}-${pad2(day)}`;
+  }
+  if (dateFormat === 'DD/MM/YYYY') {
+    return `${pad2(day)}/${pad2(month)}/${year}`;
+  }
+  return `${year}/${pad2(month)}/${pad2(day)}`;
+}
+
 // Afghanistan Dari month names for Shamsi calendar
 export const SHAMSI_MONTHS_DARI = [
   'حمل',      // Aries - March 21 - April 20
@@ -237,15 +298,15 @@ export function parseShamsiString(shamsiStr: string): { year: number; month: num
  */
 export function dateToShamsi(date: Date | string): { year: number; month: number; day: number; formatted: string } | null {
   try {
-    const d = typeof date === 'string' ? new Date(date) : date;
-    if (isNaN(d.getTime())) return null;
-    
-    const { year, month, day } = gregorianToShamsi(d.getFullYear(), d.getMonth() + 1, d.getDate());
+    const parts = getGregorianParts(date);
+    if (!parts) return null;
+
+    const { year, month, day } = gregorianToShamsi(parts.year, parts.month, parts.day);
     return {
       year,
       month,
       day,
-      formatted: `${year}/${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}`,
+      formatted: `${year}/${pad2(month)}/${pad2(day)}`,
     };
   } catch {
     return null;
@@ -257,15 +318,15 @@ export function dateToShamsi(date: Date | string): { year: number; month: number
  */
 export function dateToQamari(date: Date | string): { year: number; month: number; day: number; formatted: string } | null {
   try {
-    const d = typeof date === 'string' ? new Date(date) : date;
-    if (isNaN(d.getTime())) return null;
-    
-    const { year, month, day } = gregorianToQamari(d.getFullYear(), d.getMonth() + 1, d.getDate());
+    const parts = getGregorianParts(date);
+    if (!parts) return null;
+
+    const { year, month, day } = gregorianToQamari(parts.year, parts.month, parts.day);
     return {
       year,
       month,
       day,
-      formatted: `${year}/${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}`,
+      formatted: `${year}/${pad2(month)}/${pad2(day)}`,
     };
   } catch {
     return null;
@@ -311,25 +372,45 @@ export function getCurrentQamari(): { year: number; month: number; day: number; 
 export function formatDateByCalendarType(
   date: Date | string,
   calendarType: CalendarType,
-  lang: 'fa' | 'ps' = 'fa'
+  lang: 'fa' | 'ps' | 'en' = 'fa',
+  dateFormat?: DateFormat
 ): string {
+  if (!date) return '';
+
+  const resolvedFormat = resolveDateFormat(dateFormat);
+
   if (calendarType === 'shamsi') {
     const shamsi = dateToShamsi(date);
     if (shamsi) {
-      return formatShamsi(shamsi.year, shamsi.month, shamsi.day, lang);
+      return formatCalendarParts(shamsi.year, shamsi.month, shamsi.day, resolvedFormat, 'shamsi', lang);
     }
   } else if (calendarType === 'qamari') {
     const qamari = dateToQamari(date);
     if (qamari) {
-      return formatQamari(qamari.year, qamari.month, qamari.day);
+      return formatCalendarParts(qamari.year, qamari.month, qamari.day, resolvedFormat, 'qamari', lang);
     }
   }
-  
-  // Fallback to original date string
-  if (typeof date === 'string') {
-    return date;
+
+  const parts = getGregorianParts(date);
+  if (parts) {
+    return formatCalendarParts(parts.year, parts.month, parts.day, resolvedFormat, calendarType, lang);
   }
+
+  if (typeof date === 'string') return date;
   return date.toLocaleDateString();
+}
+
+/**
+ * Format today's date for display in the selected calendar and format.
+ */
+export function formatToday(
+  calendarType: CalendarType,
+  dateFormat: DateFormat = 'YYYY/MM/DD',
+  lang: 'fa' | 'ps' | 'en' = 'fa'
+): string {
+  const now = new Date();
+  const iso = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+  return formatDateByCalendarType(iso, calendarType, lang, dateFormat);
 }
 
 /**

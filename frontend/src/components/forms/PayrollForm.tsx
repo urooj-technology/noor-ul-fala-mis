@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Calculator, DollarSign, Clock, Minus, Plus } from 'lucide-react';
+import DatePicker from '@/components/ui/date-picker-calendar';
 
 interface Employee {
   id: string;
@@ -226,15 +227,12 @@ export const PayrollForm: React.FC<PayrollFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="paymentDate">{t('payroll.paymentDate', 'Payment Date')} *</Label>
-              <Input
-                id="paymentDate"
-                type="date"
+              <DatePicker
+                label={`${t('payroll.paymentDate', 'Payment Date')} *`}
                 value={formData.paymentDate}
-                onChange={(e) => handleChange('paymentDate', e.target.value)}
-                className={errors.paymentDate ? 'border-destructive' : ''}
+                onChange={(d) => handleChange('paymentDate', d)}
+                error={errors.paymentDate}
               />
-              {errors.paymentDate && <p className="text-base text-destructivetext-xs">{errors.paymentDate}</p>}
             </div>
           </div>
 

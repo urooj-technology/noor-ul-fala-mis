@@ -56,13 +56,16 @@ class AccountingService:
         return txn
     
     @staticmethod
+    def _active_journal_entries(account):
+        return account.journal_entries.filter(is_deleted=False, transaction__is_deleted=False)
+
+    @staticmethod
     def _get_account_balance(account, as_of_date=None, start_date=None, end_date=None):
-        """Calculate account balance from journal entries with optional date filtering"""
+        """Calculate account balance from active journal entries with optional date filtering."""
         from django.db.models import Sum
-        
-        entries = account.journal_entries.all()
-        
-        # Filter by date range if provided
+
+        entries = AccountingService._active_journal_entries(account)
+
         if as_of_date:
             entries = entries.filter(date__lte=as_of_date)
         if start_date:
@@ -78,7 +81,13 @@ class AccountingService:
             return debits - credits
         # Liability/Equity/Income: Credit increases, Debit decreases
         return credits - debits
-    
+
+    @staticmethod
+    def recalculate_all_account_balances():
+        """Refresh cached account balances from active journal entries."""
+        for account in Account.objects.all():
+            account.refresh_balance()
+
     @staticmethod
     @transaction.atomic
     def record_student_payment(student_id, amount, date, description, reference=None, payment_cycle='monthly', currency='AFN'):
@@ -233,14 +242,8 @@ class AccountingService:
     
     @staticmethod
     @transaction.atomic
-    def record_payroll(employee_name, amount, date, reference=None):
+    def record_payroll(employee_name, amount, date, reference=None, currency='AFN'):
         """Record payroll payment"""
-        from api.models.data.payroll import Payroll
-        
-        # Get the most recent payroll to determine currency
-        last_payroll = Payroll.objects.filter(employee__full_name__icontains=employee_name).first()
-        currency = last_payroll.currency if last_payroll else 'AFN'
-        
         cash_account = Account.objects.filter(code=f'1000_{currency}').first()
         salary_account = Account.objects.filter(code=f'5000_{currency}').first()
         
@@ -260,20 +263,14 @@ class AccountingService:
     
     @staticmethod
     @transaction.atomic
-    def record_advance(employee_name, amount, date, reference=None):
-        """Record advance payment"""
-        from api.models.data.advance import Advance
-        
-        # Get the most recent advance to determine currency
-        last_advance = Advance.objects.filter(employee__full_name__icontains=employee_name).first()
-        currency = last_advance.currency if last_advance else 'AFN'
-        
+    def record_advance(employee_name, amount, date, reference=None, currency='AFN'):
+        """Record advance payment (Dr Employee Advances, Cr Cash)."""
         cash_account = Account.objects.filter(code=f'1000_{currency}').first()
         advance_account = Account.objects.filter(code=f'1210_{currency}').first()
-        
+
         if not cash_account or not advance_account:
             raise ValueError(f"Default accounts not configured for {currency}. Please run init_chart_of_accounts.")
-        
+
         return AccountingService.create_journal_entry(
             date=date,
             description=f"Advance Payment - {employee_name}",
@@ -284,6 +281,327 @@ class AccountingService:
             transaction_type='advance',
             reference=reference
         )
+
+    @staticmethod
+    def ensure_advance_journal(advance):
+        """Create the advance journal entry if it does not already exist."""
+        if advance.is_deleted:
+            return None
+
+        reference = f"ADVANCE-{advance.id}"
+        if Transaction.objects.filter(reference=reference).exists():
+            return None
+
+        return AccountingService.record_advance(
+            employee_name=advance.employee.full_name,
+            amount=advance.amount,
+            date=advance.payment_date,
+            reference=reference,
+            currency=advance.currency or 'AFN',
+        )
+
+    @staticmethod
+    def _expense_account_for_category(category, currency):
+        category_name = category.name.lower() if category else ''
+        if 'salary' in category_name or 'wage' in category_name:
+            account = Account.objects.filter(code=f'5000_{currency}').first()
+        else:
+            account = Account.objects.filter(code=f'5900_{currency}').first()
+        return account or Account.objects.filter(code=f'5900_{currency}').first()
+
+    @staticmethod
+    @transaction.atomic
+    def reverse_journal_by_reference(reference, date=None, reversal_reference=None, description=None):
+        """Post a reversing journal entry for an existing source-document transaction."""
+        original = (
+            Transaction.objects.filter(reference=reference)
+            .prefetch_related('entries')
+            .first()
+        )
+        if not original:
+            return None
+
+        rev_ref = reversal_reference or f"{reference}-VOID"
+        if Transaction.objects.filter(reference=rev_ref).exists():
+            return Transaction.objects.filter(reference=rev_ref).first()
+
+        lines = [
+            {'account_id': entry.account_id, 'debit': entry.credit, 'credit': entry.debit}
+            for entry in original.entries.all()
+        ]
+        if not lines:
+            return None
+
+        return AccountingService.create_journal_entry(
+            date=date or timezone.now().date(),
+            description=description or f"Void - {original.description}",
+            lines=lines,
+            transaction_type=original.transaction_type,
+            reference=rev_ref,
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def void_source_document_journals(base_reference, date=None, description=None):
+        """Void the original entry and every adjustment posted for one source document."""
+        from django.db.models import Q
+
+        transactions = (
+            Transaction.objects.filter(
+                Q(reference=base_reference) | Q(reference__startswith=f"{base_reference}-ADJ")
+            )
+            .exclude(reference__endswith='-VOID')
+            .order_by('id')
+        )
+
+        reversed_any = []
+        for txn in transactions:
+            if Transaction.objects.filter(reference=f"{txn.reference}-VOID").exists():
+                continue
+            reversed_txn = AccountingService.reverse_journal_by_reference(
+                txn.reference,
+                date=date,
+                description=description or f"Void - {txn.description}",
+            )
+            if reversed_txn:
+                reversed_any.append(reversed_txn)
+        return reversed_any
+
+    @staticmethod
+    @transaction.atomic
+    def record_payroll_reversal(employee_name, amount, date, reference=None, currency='AFN'):
+        amount = Decimal(str(amount))
+        if amount <= 0:
+            return None
+
+        cash_account = Account.objects.filter(code=f'1000_{currency}').first()
+        salary_account = Account.objects.filter(code=f'5000_{currency}').first()
+        if not cash_account or not salary_account:
+            raise ValueError(f"Default accounts not configured for {currency}. Please run init_chart_of_accounts.")
+
+        return AccountingService.create_journal_entry(
+            date=date,
+            description=f"Salary Payment Reversal - {employee_name}",
+            lines=[
+                {'account_id': salary_account.id, 'debit': 0, 'credit': amount},
+                {'account_id': cash_account.id, 'debit': amount, 'credit': 0},
+            ],
+            transaction_type='payroll',
+            reference=reference,
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def record_advance_reversal(employee_name, amount, date, reference=None, currency='AFN'):
+        amount = Decimal(str(amount))
+        if amount <= 0:
+            return None
+
+        cash_account = Account.objects.filter(code=f'1000_{currency}').first()
+        advance_account = Account.objects.filter(code=f'1210_{currency}').first()
+        if not cash_account or not advance_account:
+            raise ValueError(f"Default accounts not configured for {currency}. Please run init_chart_of_accounts.")
+
+        return AccountingService.create_journal_entry(
+            date=date,
+            description=f"Advance Payment Reversal - {employee_name}",
+            lines=[
+                {'account_id': advance_account.id, 'debit': 0, 'credit': amount},
+                {'account_id': cash_account.id, 'debit': amount, 'credit': 0},
+            ],
+            transaction_type='advance',
+            reference=reference,
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def record_expense_journal(expense, reference=None):
+        currency = expense.currency or 'AFN'
+        expense_account = AccountingService._expense_account_for_category(expense.category, currency)
+        cash_account = Account.objects.filter(code=f'1000_{currency}').first()
+        if not cash_account or not expense_account:
+            raise ValueError(f"Default accounts not configured for {currency}. Please run init_chart_of_accounts.")
+
+        category_name = expense.category.name if expense.category else 'Expense'
+        return AccountingService.create_journal_entry(
+            date=expense.expense_date,
+            description=f"Expense - {category_name}: {expense.description or ''}",
+            lines=[
+                {'account_id': expense_account.id, 'debit': expense.amount, 'credit': 0},
+                {'account_id': cash_account.id, 'debit': 0, 'credit': expense.amount},
+            ],
+            transaction_type='expense',
+            reference=reference or f"EXPENSE-{expense.id}",
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def record_expense_reversal(expense, amount, date=None, reference=None):
+        amount = Decimal(str(amount))
+        if amount <= 0:
+            return None
+
+        currency = expense.currency or 'AFN'
+        expense_account = AccountingService._expense_account_for_category(expense.category, currency)
+        cash_account = Account.objects.filter(code=f'1000_{currency}').first()
+        if not cash_account or not expense_account:
+            raise ValueError(f"Default accounts not configured for {currency}. Please run init_chart_of_accounts.")
+
+        category_name = expense.category.name if expense.category else 'Expense'
+        return AccountingService.create_journal_entry(
+            date=date or expense.expense_date,
+            description=f"Expense Reversal - {category_name}: {expense.description or ''}",
+            lines=[
+                {'account_id': expense_account.id, 'debit': 0, 'credit': amount},
+                {'account_id': cash_account.id, 'debit': amount, 'credit': 0},
+            ],
+            transaction_type='expense',
+            reference=reference,
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def record_other_income_journal(other_income, reference=None):
+        currency = other_income.currency or 'AFN'
+        cash_account = Account.objects.filter(code=f'1000_{currency}').first()
+        income_account = Account.objects.filter(code=f'4300_{currency}').first()
+        if not cash_account or not income_account:
+            raise ValueError(f"Default accounts not configured for {currency}. Please run init_chart_of_accounts.")
+
+        category_name = (
+            other_income.income_category.name
+            if other_income.income_category else 'General'
+        )
+        return AccountingService.create_journal_entry(
+            date=other_income.income_date,
+            description=f"Other Income - {category_name} - {other_income.source or 'N/A'}",
+            lines=[
+                {'account_id': cash_account.id, 'debit': other_income.amount, 'credit': 0},
+                {'account_id': income_account.id, 'debit': 0, 'credit': other_income.amount},
+            ],
+            transaction_type='other_income',
+            reference=reference or f"INCOME-{other_income.id}",
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def record_expense_adjustment(expense, amount, reference=None):
+        amount = Decimal(str(amount))
+        if amount <= 0:
+            return None
+
+        currency = expense.currency or 'AFN'
+        expense_account = AccountingService._expense_account_for_category(expense.category, currency)
+        cash_account = Account.objects.filter(code=f'1000_{currency}').first()
+        if not cash_account or not expense_account:
+            raise ValueError(f"Default accounts not configured for {currency}. Please run init_chart_of_accounts.")
+
+        category_name = expense.category.name if expense.category else 'Expense'
+        return AccountingService.create_journal_entry(
+            date=expense.expense_date,
+            description=f"Expense Adjustment - {category_name}: {expense.description or ''}",
+            lines=[
+                {'account_id': expense_account.id, 'debit': amount, 'credit': 0},
+                {'account_id': cash_account.id, 'debit': 0, 'credit': amount},
+            ],
+            transaction_type='expense',
+            reference=reference,
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def record_other_income_adjustment(other_income, amount, reference=None):
+        amount = Decimal(str(amount))
+        if amount <= 0:
+            return None
+
+        currency = other_income.currency or 'AFN'
+        cash_account = Account.objects.filter(code=f'1000_{currency}').first()
+        income_account = Account.objects.filter(code=f'4300_{currency}').first()
+        if not cash_account or not income_account:
+            raise ValueError(f"Default accounts not configured for {currency}. Please run init_chart_of_accounts.")
+
+        category_name = (
+            other_income.income_category.name
+            if other_income.income_category else 'General'
+        )
+        return AccountingService.create_journal_entry(
+            date=other_income.income_date,
+            description=f"Other Income Adjustment - {category_name} - {other_income.source or 'N/A'}",
+            lines=[
+                {'account_id': cash_account.id, 'debit': amount, 'credit': 0},
+                {'account_id': income_account.id, 'debit': 0, 'credit': amount},
+            ],
+            transaction_type='other_income',
+            reference=reference,
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def record_other_income_reversal(other_income, amount, date=None, reference=None):
+        amount = Decimal(str(amount))
+        if amount <= 0:
+            return None
+
+        currency = other_income.currency or 'AFN'
+        cash_account = Account.objects.filter(code=f'1000_{currency}').first()
+        income_account = Account.objects.filter(code=f'4300_{currency}').first()
+        if not cash_account or not income_account:
+            raise ValueError(f"Default accounts not configured for {currency}. Please run init_chart_of_accounts.")
+
+        category_name = (
+            other_income.income_category.name
+            if other_income.income_category else 'General'
+        )
+        return AccountingService.create_journal_entry(
+            date=date or other_income.income_date,
+            description=f"Other Income Reversal - {category_name} - {other_income.source or 'N/A'}",
+            lines=[
+                {'account_id': cash_account.id, 'debit': 0, 'credit': amount},
+                {'account_id': income_account.id, 'debit': amount, 'credit': 0},
+            ],
+            transaction_type='other_income',
+            reference=reference,
+        )
+
+    @staticmethod
+    def ensure_payroll_journal(payroll):
+        if payroll.is_deleted:
+            return None
+
+        reference = f"PAYROLL-{payroll.id}"
+        if Transaction.objects.filter(reference=reference).exists():
+            return None
+
+        return AccountingService.record_payroll(
+            employee_name=payroll.employee.full_name,
+            amount=payroll.salary,
+            date=payroll.payment_date,
+            reference=reference,
+            currency=payroll.currency or 'AFN',
+        )
+
+    @staticmethod
+    def ensure_expense_journal(expense):
+        if expense.is_deleted:
+            return None
+
+        reference = f"EXPENSE-{expense.id}"
+        if Transaction.objects.filter(reference=reference).exists():
+            return None
+
+        return AccountingService.record_expense_journal(expense, reference=reference)
+
+    @staticmethod
+    def ensure_other_income_journal(other_income):
+        if other_income.is_deleted:
+            return None
+
+        reference = f"INCOME-{other_income.id}"
+        if Transaction.objects.filter(reference=reference).exists():
+            return None
+
+        return AccountingService.record_other_income_journal(other_income, reference=reference)
     
     @staticmethod
     @transaction.atomic
@@ -507,17 +825,23 @@ class AccountingService:
                     
                     trial_balance[currency]['total_debit'] += debit
                     trial_balance[currency]['total_credit'] += credit
+
+            trial_balance[currency]['is_balanced'] = abs(
+                trial_balance[currency]['total_debit'] - trial_balance[currency]['total_credit']
+            ) < Decimal('0.01')
         
-        # Calculate grand totals
+        # Calculate grand totals (informational only — do not mix currencies for balance checks)
         grand_debit = sum(tb['total_debit'] for tb in trial_balance.values())
         grand_credit = sum(tb['total_credit'] for tb in trial_balance.values())
+        per_currency_balanced = all(tb.get('is_balanced', True) for tb in trial_balance.values())
         
         return {
             'date': as_of_date or timezone.now().date(),
             'by_currency': trial_balance,
             'grand_total_debit': float(grand_debit),
             'grand_total_credit': float(grand_credit),
-            'is_balanced': abs(grand_debit - grand_credit) < Decimal('0.01')
+            'is_balanced': per_currency_balanced,
+            'grand_totals_note': 'Grand totals sum AFN and USD without exchange conversion. Use per-currency totals.',
         }
     
     @staticmethod
@@ -586,13 +910,14 @@ class AccountingService:
                 'expenses': expense_items,
                 'total_expenses': float(total_expenses),
                 'net_income': float(net_income),
-                'is_profit': net_income > 0
+                'is_profit': net_income > 0,
             }
             
             result['grand_total_income'] += total_income
             result['grand_total_expenses'] += total_expenses
         
         result['grand_net_income'] = result['grand_total_income'] - result['grand_total_expenses']
+        result['grand_totals_note'] = 'Grand totals sum AFN and USD without exchange conversion. Use per-currency totals.'
         
         return result
     
@@ -707,7 +1032,8 @@ class AccountingService:
                 'total_liabilities': float(total_liabilities),
                 'equity': equity,
                 'total_equity': float(total_equity),
-                'total_liabilities_and_equity': float(total_liabilities + total_equity)
+                'total_liabilities_and_equity': float(total_liabilities + total_equity),
+                'is_balanced': abs(total_assets - (total_liabilities + total_equity)) < Decimal('0.01'),
             }
             
             result['grand_total_assets'] += total_assets
@@ -715,6 +1041,9 @@ class AccountingService:
             result['grand_total_equity'] += total_equity
         
         result['grand_total_liabilities_and_equity'] = result['grand_total_liabilities'] + result['grand_total_equity']
-        result['is_balanced'] = abs(result['grand_total_assets'] - result['grand_total_liabilities_and_equity']) < Decimal('0.01')
+        result['is_balanced'] = all(
+            cur.get('is_balanced', True) for cur in result['by_currency'].values()
+        )
+        result['grand_totals_note'] = 'Grand totals sum AFN and USD without exchange conversion. Use per-currency totals.'
         
         return result

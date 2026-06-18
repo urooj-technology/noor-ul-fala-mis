@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useAuth } from "@/contexts/AuthContext";
+import { applyUserCalendarPreference } from '@/contexts/CalendarContext';
 import { Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react";
 import useAdd from "@/api/useAdd";
 
@@ -88,6 +88,11 @@ export const LoginForm = () => {
         token: responseData.token || "",
       };
       
+      // Apply calendar preference before redirect
+      if (responseData.user?.preferred_calendar) {
+        applyUserCalendarPreference(responseData.user.preferred_calendar);
+      }
+
       // Set the user in the auth context (which handles localStorage)
       setUser(userData);
       

@@ -67,6 +67,7 @@ export const coreFa = {
     reports: 'گزارشات',
     settings: 'تنظیمات',
     calendarSettings: 'تنظیمات نیټه',
+    deletedItems: 'موارد حذف‌شده',
     activityLogs: 'گزارش فعالیتها',
     backups: 'بک اپ گیری',
     search: 'جستجو...',

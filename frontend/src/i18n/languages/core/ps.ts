@@ -64,6 +64,7 @@ export const corePs = {
     reports: 'راپورونه',
     settings: 'تنظیمات',
     calendarSettings: 'د نیټې تنظیمات',
+    deletedItems: 'ړنګ شوي توکي',
     activityLogs: 'د فعالیتونو راپورونه',
     backups: 'بیک اپ',
     search: 'پلټنه...',

@@ -108,6 +108,14 @@ export const reportsEn = {
   export: "Export",
   income: "Income",
   advances: "Advances",
+  overview: "Overview",
+  accounting: "Accounting",
+  payroll: "Payroll",
+  outflowsSummary: "Money Out",
+  totalOutflows: "Total Outflows",
+  netCashPosition: "Net Cash Position",
+  allTime: "All time",
+  selectCustomDateRange: "Please select both start and end dates for a custom period.",
   
   // Report tabs
   students: "Students"

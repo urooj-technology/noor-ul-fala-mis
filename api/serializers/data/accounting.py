@@ -26,11 +26,15 @@ class AccountSerializer(DataRootSerializer):
         return float(obj.get_balance())
 
     def get_total_debit(self, obj):
-        total = obj.journal_entries.aggregate(total=Sum('debit'))['total'] or Decimal('0')
+        total = obj.journal_entries.filter(
+            is_deleted=False, transaction__is_deleted=False
+        ).aggregate(total=Sum('debit'))['total'] or Decimal('0')
         return float(total)
 
     def get_total_credit(self, obj):
-        total = obj.journal_entries.aggregate(total=Sum('credit'))['total'] or Decimal('0')
+        total = obj.journal_entries.filter(
+            is_deleted=False, transaction__is_deleted=False
+        ).aggregate(total=Sum('credit'))['total'] or Decimal('0')
         return float(total)
 
 

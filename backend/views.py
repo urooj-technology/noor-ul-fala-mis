@@ -6,9 +6,13 @@ import mimetypes
 
 class FrontendView(View):
     def get(self, request, path=''):
+        # Unmatched API routes must not fall back to the SPA shell (index.html).
+        if path == 'api' or path.startswith('api/'):
+            raise Http404("API endpoint not found")
+
         frontend_dir = os.path.join(settings.BASE_DIR, 'static', 'frontend')
         
-        if path and not path.startswith('api/'):
+        if path:
             file_path = os.path.join(frontend_dir, path)
             if os.path.exists(file_path) and os.path.isfile(file_path):
                 content_type, _ = mimetypes.guess_type(file_path)

@@ -57,6 +57,7 @@ class LoginView(KnoxLoginView):
             "is_active": user.is_active,
             "is_staff": user.is_staff,
             "permissions": user.get_permissions(),
+            "preferred_calendar": user.preferred_calendar,
             "created_at": user.created_at,
             "updated_at": user.updated_at,
         }

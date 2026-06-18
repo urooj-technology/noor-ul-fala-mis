@@ -34,6 +34,7 @@ class Command(BaseCommand):
             # Assets (1xxx)
             {'name': f'Cash - {currency}', 'code': f'1000_{currency}', 'account_type': AccountType.ASSET, 'is_detail': True, 'currency': currency},
             {'name': f'Accounts Receivable - {currency}', 'code': f'1200_{currency}', 'account_type': AccountType.ASSET, 'is_detail': True, 'currency': currency},
+            {'name': f'Employee Advances - {currency}', 'code': f'1210_{currency}', 'account_type': AccountType.ASSET, 'is_detail': True, 'currency': currency},
             {'name': f'Rental Receivable - {currency}', 'code': f'1220_{currency}', 'account_type': AccountType.ASSET, 'is_detail': True, 'currency': currency},
             
             # Liabilities (2xxx)

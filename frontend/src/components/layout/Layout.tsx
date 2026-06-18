@@ -4,6 +4,7 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Footer } from './Footer';
+import { CalendarSync } from './CalendarSync';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +32,7 @@ export const Layout: React.FC = () => {
 
   return (
     <div className={cn("min-h-screen bg-background", direction)}>
+      <CalendarSync />
       <div className="flex h-screen overflow-hidden">
         {/* Sidebar - Desktop: always visible, Mobile: slide-in drawer */}
         <aside className={cn(

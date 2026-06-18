@@ -16,6 +16,7 @@ import {
   Receipt, 
   BarChart3, 
   Settings,
+  ArchiveRestore,
   ChevronDown,
   DollarSign,
   UsersIcon,
@@ -128,6 +129,7 @@ const navigationItems = [
     section: 'system',
     subItems: [
       { key: 'calendarSettings', icon: Calendar, path: '/settings/calendar' },
+      { key: 'deletedItems', icon: ArchiveRestore, path: '/settings/deleted' },
       { key: 'activityLogs', icon: Activity, path: '/activity-logs' },
       { key: 'backups', icon: Database, path: '/backups' }
     ]

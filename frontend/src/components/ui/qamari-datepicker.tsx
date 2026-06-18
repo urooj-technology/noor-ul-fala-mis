@@ -1,28 +1,30 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
 import {
-  gregorianToQamari,
   qamariToGregorian,
   QAMARI_MONTHS,
   qamariToISO,
   dateToQamari,
+  getCurrentQamari,
+  formatCalendarParts,
+  type DateFormat,
 } from '@/utils/calendar';
 
 interface QamariDatePickerProps {
-  value?: string; // ISO date string (YYYY-MM-DD)
+  value?: string;
   onChange: (gregorianDate: string) => void;
   placeholder?: string;
   label?: string;
   required?: boolean;
   error?: string;
   disabled?: boolean;
+  dateFormat?: DateFormat;
+  language?: 'fa' | 'ps' | 'en';
 }
 
-// Days in each Qamari month (approximate - actual depends on moon sighting)
 const QAMARI_DAYS = [30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29];
 
 export function QamariDatePicker({
@@ -33,64 +35,50 @@ export function QamariDatePicker({
   required,
   error,
   disabled,
+  dateFormat = 'YYYY/MM/DD',
+  language = 'fa',
 }: QamariDatePickerProps) {
-  const { language } = useLanguage();
   const [open, setOpen] = useState(false);
+  const currentQamari = value ? dateToQamari(value) : null;
+  const todayQamari = getCurrentQamari();
 
-   // Parse current value to Qamari
-   const currentQamari = useMemo(() => {
-     if (!value) return null;
-     const result = dateToQamari(value);
-     return result;
-   }, [value]);
+  const [viewYear, setViewYear] = useState(currentQamari?.year ?? todayQamari.year);
+  const [viewMonth, setViewMonth] = useState(currentQamari?.month ?? todayQamari.month);
 
-  // Display value
+  useEffect(() => {
+    if (open) {
+      const target = currentQamari ?? todayQamari;
+      setViewYear(target.year);
+      setViewMonth(target.month);
+    }
+  }, [open, value]);
+
   const displayValue = currentQamari
-    ? `${currentQamari.year}/${String(currentQamari.month).padStart(2, '0')}/${String(currentQamari.day).padStart(2, '0')}`
+    ? formatCalendarParts(currentQamari.year, currentQamari.month, currentQamari.day, dateFormat, 'qamari', language)
     : '';
 
-  // Calendar state
-  const [viewYear, setViewYear] = useState(currentQamari?.year || 1446);
-  const [viewMonth, setViewMonth] = useState(currentQamari?.month || 1);
-
-  // Get days in month (simplified - in reality, this depends on moon sighting)
   const daysInMonth = QAMARI_DAYS[viewMonth - 1] || 30;
 
-  // Generate days array
   const days = useMemo(() => {
-    // Get first day of month in Gregorian to find week day
     try {
       const firstDayGregorian = qamariToGregorian(viewYear, viewMonth, 1);
       const firstDayDate = new Date(firstDayGregorian.year, firstDayGregorian.month - 1, firstDayGregorian.day);
-      let startDayOfWeek = firstDayDate.getDay(); // 0 = Sunday
-      // Adjust for Saturday start (Islamic week starts on Saturday)
-      startDayOfWeek = (startDayOfWeek + 1) % 7; // Now 0 = Saturday
+      let startDayOfWeek = (firstDayDate.getDay() + 1) % 7;
 
-      const daysArray = [];
-      for (let i = 0; i < startDayOfWeek; i++) {
-        daysArray.push(null); // Empty cells
-      }
-      for (let day = 1; day <= daysInMonth; day++) {
-        daysArray.push(day);
-      }
+      const daysArray: (number | null)[] = [];
+      for (let i = 0; i < startDayOfWeek; i++) daysArray.push(null);
+      for (let day = 1; day <= daysInMonth; day++) daysArray.push(day);
       return daysArray;
     } catch {
       return [];
     }
   }, [viewYear, viewMonth, daysInMonth]);
 
-   // Handle day selection
-   const handleDaySelect = (day: number) => {
-     try {
-       const isoDate = qamariToISO(viewYear, viewMonth, day);
-       onChange(isoDate);
-       setOpen(false);
-     } catch (error) {
-       console.error('Error in handleDaySelect:', error);
-     }
-   };
+  const handleDaySelect = (day: number) => {
+    onChange(qamariToISO(viewYear, viewMonth, day));
+    setOpen(false);
+  };
 
-  // Navigate months
   const goToPrevMonth = () => {
     if (viewMonth === 1) {
       setViewMonth(12);
@@ -109,22 +97,14 @@ export function QamariDatePicker({
     }
   };
 
-  // Navigate years
-  const goToPrevYear = () => setViewYear(viewYear - 1);
-  const goToNextYear = () => setViewYear(viewYear + 1);
+  const weekDays = ['س', 'ح', 'ن', 'ث', 'ر', 'خ', 'ج'];
 
-  // Week day names (Saturday first) - Arabic for Qamari
-  const weekDays = ['س', 'ح', 'ن', 'ث', 'ر', 'خ', 'ج']; // السبت، الأحد، الاثنين، الثلاثاء، الأربعاء، الخميس، الجمعة
-
-  // Quick year selector
   const years = useMemo(() => {
-    const currentYear = currentQamari?.year || 1446;
+    const base = currentQamari?.year ?? todayQamari.year;
     const arr = [];
-    for (let y = currentYear - 50; y <= currentYear + 10; y++) {
-      arr.push(y);
-    }
+    for (let y = base - 50; y <= base + 10; y++) arr.push(y);
     return arr;
-  }, [currentQamari]);
+  }, [currentQamari, todayQamari.year]);
 
   return (
     <div className="space-y-2">
@@ -140,28 +120,27 @@ export function QamariDatePicker({
             className={`w-full justify-start text-right font-normal h-10 ${!displayValue ? 'text-muted-foreground' : ''}`}
             disabled={disabled}
           >
-            <Calendar className="ml-2 h-4 w-4" />
-            {displayValue || placeholder}
+            <Calendar className="ml-2 h-4 w-4 shrink-0" />
+            <span className="truncate">{displayValue || placeholder}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <div className="p-3" dir="rtl">
-            {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex gap-1">
-                <Button variant="outline" size="icon" className="h-7 w-7" onClick={goToNextYear}>
+                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setViewYear(viewYear + 1)}>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
                 <Button variant="outline" size="icon" className="h-7 w-7" onClick={goToNextMonth}>
                   <ChevronRight className="h-3 w-3" />
                 </Button>
               </div>
-              
+
               <div className="flex gap-2 items-center">
                 <select
                   value={viewMonth}
-                  onChange={(e) => setViewMonth(parseInt(e.target.value))}
-                  className="border rounded px-2 py-1 text-sm bg-background text-xs"
+                  onChange={(e) => setViewMonth(parseInt(e.target.value, 10))}
+                  className="border rounded px-2 py-1 text-sm bg-background max-w-[130px]"
                 >
                   {QAMARI_MONTHS.map((name, idx) => (
                     <option key={idx + 1} value={idx + 1}>{name}</option>
@@ -169,7 +148,7 @@ export function QamariDatePicker({
                 </select>
                 <select
                   value={viewYear}
-                  onChange={(e) => setViewYear(parseInt(e.target.value))}
+                  onChange={(e) => setViewYear(parseInt(e.target.value, 10))}
                   className="border rounded px-2 py-1 text-sm bg-background w-20"
                 >
                   {years.map((y) => (
@@ -177,18 +156,17 @@ export function QamariDatePicker({
                   ))}
                 </select>
               </div>
-              
+
               <div className="flex gap-1">
                 <Button variant="outline" size="icon" className="h-7 w-7" onClick={goToPrevMonth}>
                   <ChevronLeft className="h-3 w-3" />
                 </Button>
-                <Button variant="outline" size="icon" className="h-7 w-7" onClick={goToPrevYear}>
+                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setViewYear(viewYear - 1)}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
-            {/* Week days */}
             <div className="grid grid-cols-7 gap-1 mb-2">
               {weekDays.map((day, idx) => (
                 <div key={idx} className="text-center text-xs text-muted-foreground font-medium py-1">
@@ -197,9 +175,8 @@ export function QamariDatePicker({
               ))}
             </div>
 
-            {/* Days grid */}
             <div className="grid grid-cols-7 gap-1">
-              {days.map((day, idx) => (
+              {days.map((day, idx) =>
                 day !== null ? (
                   <Button
                     key={idx}
@@ -220,17 +197,17 @@ export function QamariDatePicker({
                 ) : (
                   <div key={idx} className="aspect-square" />
                 )
-              ))}
+              )}
             </div>
 
-            {/* Today button */}
             <div className="mt-3 pt-3 border-t flex justify-between">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => {
                   const today = new Date();
-                  onChange(today.toISOString().split('T')[0]);
+                  const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                  onChange(iso);
                   setOpen(false);
                 }}
               >

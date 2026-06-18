@@ -67,6 +67,7 @@ export const coreEn = {
     reports: 'Reports',
     settings: 'Settings',
     calendarSettings: 'Calendar Settings',
+    deletedItems: 'Deleted Items',
     units: 'Units',
     currencies: 'Currencies',
     exchangeRates: 'Exchange Rates',
