@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 
-interface User {
+export interface User {
   id: string;
   username: string;
   email: string;
@@ -12,7 +12,7 @@ interface User {
   phone?: string;
   address?: string;
   profile_picture?: string;
-  role: "admin" | "staff" | "customer" | "vendor" | "user";
+  role: string;
   is_buyer: boolean;
   is_seller: boolean;
   is_finance: boolean;
@@ -96,13 +96,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             typeof parsedUser.email === "string" &&
             typeof parsedUser.username === "string" &&
             typeof parsedUser.token === "string" &&
-            ["admin", "staff", "customer", "vendor", "user"].includes(parsedUser.role?.toLowerCase());
+            typeof parsedUser.role === "string";
 
           if (hasAllFields) {
-            // Normalize role to lowercase
             const normalizedUser = {
               ...parsedUser,
-              role: parsedUser.role.toLowerCase() as "admin" | "staff" | "customer" | "vendor" | "user"
+              role: parsedUser.role.toLowerCase(),
             };
             setUserState(normalizedUser);
           } else {
@@ -131,13 +130,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         typeof userData.email === "string" &&
         typeof userData.username === "string" &&
         typeof userData.token === "string" &&
-        ["admin", "staff", "customer", "vendor", "user"].includes(userData.role?.toLowerCase());
+        typeof userData.role === "string";
 
       if (hasAllFields) {
-        // Normalize role to lowercase before saving
         const normalizedUserData = {
           ...userData,
-          role: userData.role.toLowerCase() as "admin" | "staff" | "customer" | "vendor" | "user"
+          role: userData.role.toLowerCase(),
         };
         localStorage.setItem("user", JSON.stringify(normalizedUserData));
         setUserState(normalizedUserData);

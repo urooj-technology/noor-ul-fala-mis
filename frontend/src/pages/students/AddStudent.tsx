@@ -8,9 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DatePicker from '@/components/ui/date-picker-calendar';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { RotateCw, ArrowLeft, Upload, X, Eye, FileText, Image as ImageIcon, User, MapPin, Phone, File, GraduationCap, CreditCard, Info, DollarSign } from 'lucide-react';
+import { RotateCw, ArrowLeft, X, Image as ImageIcon, User, MapPin, Phone, File, Info } from 'lucide-react';
 import useAdd from '@/api/useAdd';
-import useFetchObjects from '@/api/useFetchObjects';
+import {
+  StudentDocumentUploadField,
+  STUDENT_DOCUMENT_FIELDS,
+  StudentDocumentField,
+} from '@/components/students/StudentDocumentUploadField';
 
 interface StudentFormData {
   full_name: string;
@@ -89,19 +93,9 @@ const AddStudent = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<StudentFormData>(defaultForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [previews, setPreviews] = useState<{
-    photo?: string;
-    tazkira_copy?: string;
-    parent_tazkira_copy?: string;
-    previous_result_card?: string;
-    payment_receipt?: string;
-  }>({});
+  const [previews, setPreviews] = useState<Partial<Record<StudentDocumentField | 'photo', string>>>({});
 
   const photoRef = useRef<HTMLInputElement>(null);
-  const tazkiraCopyRef = useRef<HTMLInputElement>(null);
-  const parentTazkiraCopyRef = useRef<HTMLInputElement>(null);
-  const previousResultCardRef = useRef<HTMLInputElement>(null);
-  const paymentReceiptRef = useRef<HTMLInputElement>(null);
 
   const { handleAdd, loading, isSuccess } = useAdd<StudentFormData>({
     queryKey: 'students',
@@ -116,9 +110,9 @@ const AddStudent = () => {
     }
   }, [isSuccess, navigate]);
 
-  const handleFileChange = (field: keyof typeof previews, file: File | null) => {
+  const handleFileChange = (field: StudentDocumentField | 'photo', file: File | null) => {
     setFormData((prev) => ({ ...prev, [field]: file }));
-    
+
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -130,47 +124,12 @@ const AddStudent = () => {
     }
   };
 
-  const clearFile = (field: keyof typeof previews, ref: React.RefObject<HTMLInputElement>) => {
+  const clearFile = (field: StudentDocumentField | 'photo') => {
     setFormData((prev) => ({ ...prev, [field]: null }));
     setPreviews((prev) => ({ ...prev, [field]: undefined }));
-    if (ref.current) ref.current.value = '';
-  };
-
-  const FilePreview = ({ 
-    preview, 
-    fieldName, 
-    onClear,
-    isImage = true
-  }: { 
-    preview?: string; 
-    fieldName: string; 
-    onClear: () => void;
-    isImage?: boolean;
-  }) => {
-    if (!preview) return null;
-    
-    return (
-      <div className="mt-2 relative inline-block">
-        {isImage ? (
-          <img 
-            src={preview} 
-            alt={fieldName} 
-            className="h-20 w-20 object-cover rounded-lg border" 
-          />
-        ) : (
-          <div className="h-20 w-20 flex items-center justify-center bg-muted rounded-lg border">
-            <FileText className="h-8 w-8 text-muted-foreground" />
-          </div>
-        )}
-        <button
-          type="button"
-          onClick={onClear}
-          className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-destructive text-white flex items-center justify-center hover:bg-destructive/80 shadow-sm"
-        >
-          <X className="h-3 w-3" />
-        </button>
-      </div>
-    );
+    if (field === 'photo' && photoRef.current) {
+      photoRef.current.value = '';
+    }
   };
 
   const validateForm = (): boolean => {
@@ -198,44 +157,6 @@ const AddStudent = () => {
     handleAdd(submitData);
   };
 
-  const FileUploadField = React.forwardRef<HTMLInputElement, { 
-    label: string; 
-    field: keyof typeof previews; 
-    accept?: string;
-    icon?: React.ReactNode;
-  }>(({ label, field, accept = "image/*,.pdf", icon }, forwardedRef) => (
-    <div className="space-y-2">
-      <Label className="font-medium">{label}</Label>
-      <div className="flex items-start gap-3">
-        <input
-          ref={forwardedRef}
-          type="file"
-          accept={accept}
-          className="hidden"
-          onChange={(e) => handleFileChange(field, e.target.files?.[0] || null)}
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => (forwardedRef as React.RefObject<HTMLInputElement>).current?.click()}
-          className="h-9"
-        >
-          {icon || <Upload className="h-4 w-4 mr-2" />}
-          {t('common.upload', 'Upload')}
-        </Button>
-        {previews[field] && (
-          <FilePreview 
-            preview={previews[field]} 
-            fieldName={label} 
-            onClear={() => clearFile(field, forwardedRef as React.RefObject<HTMLInputElement>)}
-            isImage={previews[field]?.startsWith('data:image')}
-          />
-        )}
-      </div>
-    </div>
-  ));
-
   const [activeTab, setActiveTab] = useState('personal');
 
   const tabs = [
@@ -243,7 +164,7 @@ const AddStudent = () => {
     { value: 'address', label: t('students.addressInformation'), icon: MapPin },
     { value: 'contact', label: t('students.contactInformation'), icon: Phone },
     { value: 'registration', label: t('students.registrationInformation'), icon: Info },
-    { value: 'academic', label: t('students.classFeeInformation'), icon: GraduationCap },
+    { value: 'documents', label: t('students.documents'), icon: File },
   ];
 
   const tabIndex = tabs.findIndex(t => t.value === activeTab);
@@ -334,7 +255,7 @@ const AddStudent = () => {
                   {previews.photo && (
                     <button
                       type="button"
-                      onClick={() => clearFile('photo', photoRef)}
+                      onClick={() => clearFile('photo')}
                       className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-white flex items-center justify-center hover:bg-destructive/80 shadow-md transition-transform hover:scale-110"
                     >
                       <X className="h-3 w-3" />
@@ -734,6 +655,35 @@ const AddStudent = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="class_level" className="font-semibold">
+                    {t("students.classLevel")} <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={formData.class_level}
+                    onValueChange={(value) => setFormData((prev) => ({ ...prev, class_level: value }))}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder={t("students.selectClassLevel")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {classLevels.map((cl) => (
+                        <SelectItem key={cl.id} value={String(cl.id)}>{cl.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4">
+                <div className="flex items-start gap-2">
+                  <Info className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+                  <div className="text-xs text-blue-800 dark:text-blue-200">
+                    <p className="font-medium mb-1">{t('students.feeAssignmentNote')}</p>
+                    <p className="text-blue-600 dark:text-blue-300">{t('students.feeAssignmentNote2')}</p>
+                  </div>
+                </div>
               </div>
 
               {/* Navigation Buttons */}
@@ -758,100 +708,44 @@ const AddStudent = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="academic" className="space-y-6">
+        <TabsContent value="documents" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5 text-primary" />
-                {t('students.classFeeInformation')}
+                <File className="h-5 w-5 text-primary" />
+                {t('students.documents')}
               </CardTitle>
               <CardDescription>
-                {t('students.classFeeInformation')}
+                {t('students.documentsDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="class_level" className="font-semibold">
-                    {t("students.classLevel")} <span className="text-destructive">*</span>
-                  </Label>
-                  <Select
-                    value={formData.class_level}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, class_level: value }))}
-                  >
-                    <SelectTrigger className="h-10">
-                      <SelectValue placeholder={t("students.selectClassLevel")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {classLevels.map((cl) => (
-                        <SelectItem key={cl.id} value={String(cl.id)}>{cl.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {STUDENT_DOCUMENT_FIELDS.map(({ field, labelKey, descriptionKey }) => (
+                  <StudentDocumentUploadField
+                    key={field}
+                    label={t(labelKey)}
+                    description={descriptionKey ? t(descriptionKey) : undefined}
+                    file={formData[field]}
+                    preview={previews[field]}
+                    onChange={(file) => handleFileChange(field, file)}
+                    onClear={() => clearFile(field)}
+                  />
+                ))}
               </div>
 
-              {/* Fee Info Box */}
-              <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4">
-                <div className="flex items-start gap-2">
-                  <Info className="h-4 w-4 text-blue-600 mt-0.5" />
-                  <div className="text-xs text-blue-800 dark:text-blue-200">
-                    <p className="font-medium mb-1">{t('students.feeAssignmentNote', 'After registration, fees will be auto-assigned from class defaults')}</p>
-                    <p className="text-blue-600 dark:text-blue-300">{t('students.feeAssignmentNote2', 'You can customize fees in Student Fee Assignments after registration')}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-6 border-t">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <File className="h-5 w-5 text-primary" />
-                  {t('students.documents')}
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FileUploadField 
-                    label={t("students.tazkiraCopy")} 
-                    field="tazkira_copy" 
-                    ref={tazkiraCopyRef}
-                    icon={<FileText className="h-4 w-4 mr-2" />}
-                  />
-                  <FileUploadField 
-                    label={t("students.parentTazkiraCopy")} 
-                    field="parent_tazkira_copy" 
-                    ref={parentTazkiraCopyRef}
-                    icon={<FileText className="h-4 w-4 mr-2" />}
-                  />
-                  <FileUploadField 
-                    label={t("students.previousResultCard")} 
-                    field="previous_result_card" 
-                    ref={previousResultCardRef}
-                    icon={<FileText className="h-4 w-4 mr-2" />}
-                  />
-                  <FileUploadField 
-                    label={t("students.paymentReceipt")} 
-                    field="payment_receipt" 
-                    ref={paymentReceiptRef}
-                    icon={<FileText className="h-4 w-4 mr-2" />}
-                  />
-                </div>
-              </div>
-
-              {/* Navigation Buttons */}
               <div className="flex justify-between pt-4 border-t mt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={handlePrev} 
+                <Button
+                  variant="outline"
+                  onClick={handlePrev}
                   disabled={!canPrev}
                   className="h-10 px-6"
                 >
                   {t('common.back', 'Back')}
                 </Button>
-                <Button 
-                  onClick={handleNext} 
-                  disabled={!canNext}
-                  className="h-10 px-6 bg-primary hover:bg-primary/90"
-                >
-                  {t('common.next', 'Next')}
-                </Button>
+                <p className="text-sm text-muted-foreground self-center hidden sm:block">
+                  {t('students.documentsReadyHint', 'Use Save below when you are finished')}
+                </p>
               </div>
             </CardContent>
           </Card>
