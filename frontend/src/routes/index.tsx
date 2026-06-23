@@ -19,6 +19,7 @@ import { studentPaymentRoutes } from './studentPaymentRoutes';
 import { shopRentalRoutes } from './shopRentalRoutes';
 import { otherIncomeRoutes } from './otherIncomeRoutes';
 import { reportsRoutes } from './reportsRoutes';
+import { equipmentRoutes } from './equipmentRoutes';
 import { guardRoute } from '@/lib/route-guards';
 
 export const appRoutes = (
@@ -55,6 +56,9 @@ export const appRoutes = (
     
     {/* Reports */}
     {reportsRoutes}
+
+    {/* Equipment / Warehouse */}
+    {equipmentRoutes}
     
     {/* Settings */}
     <Route path="settings" element={guardRoute(<Settings />, { permission: 'manage_settings' })} />

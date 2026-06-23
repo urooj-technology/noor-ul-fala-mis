@@ -27,6 +27,9 @@ from api.views.data.other_income import OtherIncomeViewSet, IncomeCategoryViewSe
 # ====================== EXPENSES ======================
 from api.views.data.expenses import ExpenseViewSet, ExpenseCategoryViewSet
 
+# ====================== EQUIPMENT / WAREHOUSE ======================
+from api.views.data.equipment import EquipmentViewSet, EquipmentCategoryViewSet
+
 # ====================== PERMISSIONS ======================
 from api.views.data.permissions import PermissionViewSet, UserPermissionViewSet
 
@@ -81,6 +84,10 @@ router.register(r'other-incomes', OtherIncomeViewSet, basename='other-income')
 # Expenses
 router.register(r'expense-categories', ExpenseCategoryViewSet, basename='expense-category')
 router.register(r'expenses', ExpenseViewSet, basename='expense')
+
+# Equipment / Warehouse (standalone — not linked to accounting)
+router.register(r'equipment-categories', EquipmentCategoryViewSet, basename='equipment-category')
+router.register(r'equipment', EquipmentViewSet, basename='equipment')
 
 # Permissions
 router.register(r'permissions', PermissionViewSet, basename='permission')

@@ -4,10 +4,10 @@ import { Plus, Edit, Trash2, Eye, User, GraduationCap, Printer, DollarSign } fro
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
+import { DatePicker } from '@/components/ui/date-picker';
 import DataTable, { TableColumn, TableAction } from '@/components/ui/data-table';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
-import { formatDateByCalendarType } from '@/utils/calendar';
+import { CalendarProvider } from '@/contexts/CalendarContext';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 import StudentPrint from './StudentPrint';
@@ -71,29 +71,55 @@ function formatCurrency(amount: string | number | undefined, currency: string = 
 
 
 
+type RegistrationPeriod = '' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom';
+
 export const StudentList = () => {
   const { t } = useLanguage();
-  const { calendarType } = useCalendar();
-  const lang = t('language.code') as 'fa' | 'ps';
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [classLevelFilter, setClassLevelFilter] = useState('');
+  const [registrationPeriodFilter, setRegistrationPeriodFilter] = useState<RegistrationPeriod>('');
+  const [customDateFrom, setCustomDateFrom] = useState('');
+  const [customDateTo, setCustomDateTo] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [selectedStudentIds, setSelectedStudentIds] = useState<Set<number | string>>(new Set());
   const [printStudent, setPrintStudent] = useState<StudentItem | null>(null);
   const [bulkPrintStudents, setBulkPrintStudents] = useState<(number | string)[]>([]);
 
+  const isRegistrationFilterActive = Boolean(registrationPeriodFilter);
+  const isCustomPeriodReady = registrationPeriodFilter !== 'custom' || (Boolean(customDateFrom) && Boolean(customDateTo));
+
   const { data: studentsData, isLoading } = useFetchObjects<PaginatedResponse>({
-    queryKey: ['students', currentPage.toString(), pageSize.toString(), searchTerm, statusFilter, classLevelFilter],
+    queryKey: [
+      'students',
+      currentPage.toString(),
+      pageSize.toString(),
+      searchTerm,
+      statusFilter,
+      classLevelFilter,
+      registrationPeriodFilter,
+      customDateFrom,
+      customDateTo,
+    ],
     endpoint: 'students/',
+    enabled: !isRegistrationFilterActive || isCustomPeriodReady,
     params: {
-      page: currentPage,
-      page_size: pageSize,
       search: searchTerm,
       ...(statusFilter && { status: statusFilter }),
       ...(classLevelFilter && { class_level: classLevelFilter }),
+      ...(isRegistrationFilterActive && isCustomPeriodReady && {
+        registration_period: registrationPeriodFilter,
+        ...(registrationPeriodFilter === 'custom' && {
+          registration_date_from: customDateFrom,
+          registration_date_to: customDateTo,
+        }),
+      }),
+      ...(!isRegistrationFilterActive && {
+        page: currentPage,
+        page_size: pageSize,
+      }),
     },
   });
 
@@ -258,7 +284,68 @@ export const StudentList = () => {
     { value: 'transferred', label: t('students.statusOptions.transferred') },
   ];
 
+  const registrationPeriodOptions = [
+    { value: 'daily', label: t('students.registrationPeriodOptions.daily') },
+    { value: 'weekly', label: t('students.registrationPeriodOptions.weekly') },
+    { value: 'monthly', label: t('students.registrationPeriodOptions.monthly') },
+    { value: 'yearly', label: t('students.registrationPeriodOptions.yearly') },
+    { value: 'custom', label: t('students.registrationPeriodOptions.custom') },
+  ];
+
   const customFilters = [
+    {
+      key: 'registration_period',
+      label: t('students.registrationPeriod'),
+      component: (
+        <Autocomplete
+          options={registrationPeriodOptions}
+          value={registrationPeriodFilter}
+          onChange={(value) => {
+            setRegistrationPeriodFilter((value as RegistrationPeriod) || '');
+            setCurrentPage(1);
+            if (value !== 'custom') {
+              setCustomDateFrom('');
+              setCustomDateTo('');
+            }
+          }}
+          placeholder={t('students.selectRegistrationPeriod')}
+          getOptionLabel={(option) => option.label}
+          getOptionValue={(option) => option.value}
+        />
+      ),
+    },
+    ...(registrationPeriodFilter === 'custom'
+      ? [
+          {
+            key: 'registration_date_from',
+            label: t('students.registrationDateFrom'),
+            component: (
+              <DatePicker
+                value={customDateFrom}
+                onChange={(value) => {
+                  setCustomDateFrom(value || '');
+                  setCurrentPage(1);
+                }}
+                placeholder={t('students.selectRegistrationDateFrom')}
+              />
+            ),
+          },
+          {
+            key: 'registration_date_to',
+            label: t('students.registrationDateTo'),
+            component: (
+              <DatePicker
+                value={customDateTo}
+                onChange={(value) => {
+                  setCustomDateTo(value || '');
+                  setCurrentPage(1);
+                }}
+                placeholder={t('students.selectRegistrationDateTo')}
+              />
+            ),
+          },
+        ]
+      : []),
     {
       key: 'class_level',
       label: t('students.classLevel'),
@@ -303,11 +390,14 @@ export const StudentList = () => {
   const handleClearFilters = () => {
     setStatusFilter('');
     setClassLevelFilter('');
+    setRegistrationPeriodFilter('');
+    setCustomDateFrom('');
+    setCustomDateTo('');
     setSearchTerm('');
     setCurrentPage(1);
   };
 
-  const hasActiveFilters = statusFilter || classLevelFilter || searchTerm;
+  const hasActiveFilters = statusFilter || classLevelFilter || searchTerm || registrationPeriodFilter;
 
   return (
     <div className="space-y-6 p-6">
@@ -340,16 +430,10 @@ export const StudentList = () => {
         subtitle={t('students.manageStudents')}
         icon={<User className="h-5 w-5" />}
         headerActions={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" />
-              {t('common.print', 'Print')}
-            </Button>
-            <Button onClick={() => navigate('/students/add')}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t('students.addStudent')}
-            </Button>
-          </div>
+          <Button onClick={() => navigate('/students/add')}>
+            <Plus className="mr-2 h-4 w-4" />
+            {t('students.addStudent')}
+          </Button>
         }
         selectable
         selectedRows={selectedRows}
@@ -363,18 +447,20 @@ export const StudentList = () => {
         clearFiltersLabel={t('students.clearFilters')}
         onClearFilters={handleClearFilters}
         rowActions={rowActions}
-        pagination={{
-          current: currentPage,
-          pageSize,
-          total: totalItems,
-          onPageChange: setCurrentPage,
-          showSizeChanger: true,
-          pageSizeOptions: [10, 25, 50, 100],
-          onPageSizeChange: (size) => {
-            setPageSize(size);
-            setCurrentPage(1);
-          }
-        }}
+        {...(!isRegistrationFilterActive && {
+          pagination: {
+            current: currentPage,
+            pageSize,
+            total: totalItems,
+            onPageChange: setCurrentPage,
+            showSizeChanger: true,
+            pageSizeOptions: [10, 25, 50, 100],
+            onPageSizeChange: (size: number) => {
+              setPageSize(size);
+              setCurrentPage(1);
+            },
+          },
+        })}
         emptyIcon={<User className="h-8 w-8 text-muted-foreground" />}
         emptyTitle={t('students.noStudentsFound')}
         emptyDescription={searchTerm ? t('students.tryAdjustingSearch') : t('students.addFirstStudent')}

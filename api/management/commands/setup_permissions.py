@@ -48,6 +48,13 @@ class Command(BaseCommand):
         {'name': 'Edit Expenses', 'codename': 'edit_expenses', 'module': 'expenses'},
         {'name': 'Delete Expenses', 'codename': 'delete_expenses', 'module': 'expenses'},
         {'name': 'Approve Expenses', 'codename': 'approve_expenses', 'module': 'expenses'},
+
+        # Equipment / Warehouse (standalone inventory — not accounting)
+        {'name': 'View Equipment', 'codename': 'view_equipment', 'module': 'equipment'},
+        {'name': 'Create Equipment', 'codename': 'create_equipment', 'module': 'equipment'},
+        {'name': 'Edit Equipment', 'codename': 'edit_equipment', 'module': 'equipment'},
+        {'name': 'Delete Equipment', 'codename': 'delete_equipment', 'module': 'equipment'},
+        {'name': 'Transfer Equipment Stock', 'codename': 'transfer_equipment_stock', 'module': 'equipment'},
         
         # Accounting
         {'name': 'View Accounting', 'codename': 'view_accounting', 'module': 'accounting'},

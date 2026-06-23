@@ -23,6 +23,7 @@ export const coreEn = {
     hr: 'Human Resources',
     education: 'Education',
     finance: 'Finance',
+    inventory: 'Inventory',
     system: 'System'
   },
   
@@ -73,6 +74,9 @@ export const coreEn = {
     exchangeRates: 'Exchange Rates',
     activityLogs: 'Activity Logs',
     backups: 'Backups',
+    equipment: 'Equipment',
+    equipmentList: 'Equipment List',
+    equipmentCategories: 'Equipment Categories',
     search: 'Search...',
     collapseAll: 'Collapse All'
   },

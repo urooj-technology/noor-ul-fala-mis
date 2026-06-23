@@ -1,21 +1,47 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import axios from '@/lib/axios';
+import { Button } from '@/components/ui/button';
+import { FileSpreadsheet } from 'lucide-react';
 
 interface StudentBulkPrintProps {
   studentIds: (number | string)[];
   onClose: () => void;
 }
 
-interface StudentFinancialInfo {
+interface FeeTypeColumn {
+  id: number;
+  name: string;
+}
+
+interface FeeBreakdownItem {
+  fee_type_id: number;
+  fee_type: string;
+  paid_amount: string;
+}
+
+interface StudentFinancialRow {
   student_id: number;
   student_name: string;
-  class_level_name: string;
+  registration_number?: string;
+  class_level?: string;
+  current_address?: string;
+  transportation?: string;
+  transportation_display?: string;
+  phone?: string;
   total_fee: string;
-  total_paid: string;
   remaining_amount: string;
   currency: string;
+  fee_breakdown: FeeBreakdownItem[];
 }
+
+interface BulkFinancialResponse {
+  students: StudentFinancialRow[];
+  fee_types: FeeTypeColumn[];
+  count: number;
+}
+
+const PRINT_COLUMN_THRESHOLD = 10;
 
 const formatCurrency = (amount: string | number | undefined, currency: string = 'AFN'): string => {
   const val = typeof amount === 'string' ? parseFloat(amount) || 0 : (amount ?? 0);
@@ -41,77 +67,144 @@ export const StudentBulkPrint = ({ studentIds, onClose }: StudentBulkPrintProps)
   const { t, language } = useLanguage();
   const isRTL = language === 'fa' || language === 'ps';
   const tableDirection = isRTL ? 'rtl' : 'ltr';
-  const [studentsData, setStudentsData] = useState<StudentFinancialInfo[]>([]);
+  const [reportData, setReportData] = useState<BulkFinancialResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currency, setCurrency] = useState<string>('AFN');
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
-    const fetchAllFinancialInfo = async () => {
+    const fetchBulkFinancialInfo = async () => {
       try {
-        const promises = studentIds.map(id =>
-          axios.get(`/student-payments/financial_info/?student=${id}`)
-        );
-        const responses = await Promise.all(promises);
-        
-        const data: StudentFinancialInfo[] = responses.map(res => ({
-          student_id: res.data.student_id,
-          student_name: res.data.student_name,
-          class_level_name: res.data.class_level || '-',
-          total_fee: res.data.total_fee,
-          total_paid: res.data.total_paid,
-          remaining_amount: res.data.remaining_amount,
-          currency: res.data.currency || 'AFN',
-        }));
-        
-        setStudentsData(data);
-        if (data.length > 0) {
-          setCurrency(data[0].currency);
-        }
+        const response = await axios.get<BulkFinancialResponse>('/student-payments/bulk_financial_info/', {
+          params: { students: studentIds.join(',') },
+        });
+        setReportData(response.data);
       } catch (error) {
-        console.error('Error fetching student financial info:', error);
+        console.error('Error fetching bulk financial info:', error);
       } finally {
         setLoading(false);
       }
     };
 
     if (studentIds.length > 0) {
-      fetchAllFinancialInfo();
+      fetchBulkFinancialInfo();
     }
   }, [studentIds]);
 
+  const feeTypes = reportData?.fee_types ?? [];
+  const studentsData = reportData?.students ?? [];
+  const currency = studentsData[0]?.currency || 'AFN';
+  const useWideLayout = 7 + feeTypes.length > PRINT_COLUMN_THRESHOLD;
+  const pageSize = useWideLayout ? 'A3 landscape' : 'A4 landscape';
+  const tableFontSize = useWideLayout ? '9px' : '10px';
+
+  const columnTotals = useMemo(() => {
+    const totals: Record<number, number> = {};
+    let totalRemaining = 0;
+    let totalFee = 0;
+
+    feeTypes.forEach((ft) => {
+      totals[ft.id] = 0;
+    });
+
+    studentsData.forEach((student) => {
+      student.fee_breakdown.forEach((item) => {
+        totals[item.fee_type_id] = (totals[item.fee_type_id] || 0) + (parseFloat(item.paid_amount) || 0);
+      });
+      totalRemaining += parseFloat(student.remaining_amount) || 0;
+      totalFee += parseFloat(student.total_fee) || 0;
+    });
+
+    return { feeTypeTotals: totals, totalRemaining, totalFee };
+  }, [studentsData, feeTypes]);
+
+  const getTransportLabel = (student: StudentFinancialRow) => {
+    if (student.transportation) {
+      const key = `students.transportationOptions.${student.transportation}`;
+      const translated = t(key);
+      if (translated !== key) return translated;
+    }
+    return student.transportation_display || '-';
+  };
+
+  const handleExportExcel = async () => {
+    setExporting(true);
+    try {
+      const response = await axios.get('/student-payments/bulk_financial_export/', {
+        params: { students: studentIds.join(',') },
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'student-financial-report.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting financial report:', error);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   useEffect(() => {
-    if (!loading) {
+    if (!loading && studentsData.length > 0) {
       const timer = setTimeout(() => {
         window.print();
       }, 500);
-      
+
       const handleAfterPrint = () => {
         onClose();
       };
-      
+
       window.addEventListener('afterprint', handleAfterPrint);
-      
+
       return () => {
         clearTimeout(timer);
         window.removeEventListener('afterprint', handleAfterPrint);
       };
     }
-  }, [loading, onClose]);
+  }, [loading, onClose, studentsData.length]);
 
-  const totalFee = studentsData.reduce((sum, s) => sum + parseFloat(s.total_fee || '0'), 0);
-  const totalPaid = studentsData.reduce((sum, s) => sum + parseFloat(s.total_paid || '0'), 0);
-  const totalRemaining = studentsData.reduce((sum, s) => sum + parseFloat(s.remaining_amount || '0'), 0);
-
-  if (loading) {
+  if (loading || !reportData) {
     return null;
   }
 
+  const thStyle = {
+    padding: '8px 6px',
+    textAlign: isRTL ? ('right' as const) : ('left' as const),
+    fontWeight: '600' as const,
+    border: '1px solid #cbd5e1',
+    borderBottom: '2px solid #94a3b8',
+    backgroundColor: 'transparent',
+    color: '#1f2937',
+    fontSize: tableFontSize,
+    whiteSpace: 'nowrap' as const,
+  };
+
+  const tdStyle = {
+    padding: '6px',
+    border: '1px solid #e2e8f0',
+    fontSize: tableFontSize,
+    verticalAlign: 'top' as const,
+  };
+
   return (
     <>
+      <div className="no-print fixed bottom-4 right-4 z-50 flex gap-2">
+        {useWideLayout && (
+          <Button variant="outline" onClick={handleExportExcel} disabled={exporting}>
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            {exporting ? t('students.exportingExcel', 'Exporting...') : t('students.exportExcel', 'Export Excel')}
+          </Button>
+        )}
+      </div>
+
       <style>
         {`
           @media print {
-            @page { size: A4; margin: 8mm; }
+            @page { size: ${pageSize}; margin: 6mm; }
             body * { visibility: hidden; }
             #student-bulk-print, #student-bulk-print * { visibility: visible; }
             #student-bulk-print { position: absolute; left: 0; top: 0; width: 100%; }
@@ -121,71 +214,106 @@ export const StudentBulkPrint = ({ studentIds, onClose }: StudentBulkPrintProps)
         `}
       </style>
 
-      <div id="student-bulk-print" style={{ fontFamily: 'Arial, sans-serif', fontSize: '11px', lineHeight: '1.4', color: '#333' }}>
-        <div style={{ textAlign: 'center', borderBottom: '3px solid #1e40af', paddingBottom: '15px', marginBottom: '15px' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '15px' }}>
-            <img src="/logo.jpeg" alt="School Logo" style={{ width: '80px', height: '80px', objectFit: 'contain', borderRadius: '10px' }} />
+      <div id="student-bulk-print" style={{ fontFamily: 'Arial, sans-serif', fontSize: tableFontSize, lineHeight: '1.35', color: '#333' }}>
+        <div style={{ textAlign: 'center', borderBottom: '3px solid #1e40af', paddingBottom: '12px', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+            <img src="/logo.jpeg" alt="School Logo" style={{ width: '70px', height: '70px', objectFit: 'contain', borderRadius: '8px' }} />
           </div>
-          <h1 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#1e40af' }}>
+          <h1 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 4px 0', color: '#1e40af' }}>
             {t('students.studentFinancialReport', 'Student Financial Report')}
           </h1>
-          <p style={{ fontSize: '11px', color: '#666', margin: '0 0 3px 0' }}>
+          <p style={{ fontSize: '10px', color: '#666', margin: '0 0 2px 0' }}>
             {t('students.totalStudents', 'Total Students')}: {studentsData.length}
           </p>
-          <p style={{ fontSize: '10px', color: '#888', margin: 0 }}>
-            {t('common.printed', 'Printed')}: {formatDate(new Date().toISOString())}
+          <p style={{ fontSize: '9px', color: '#888', margin: 0 }}>
+            {t('students.printed', 'Printed')}: {formatDate(new Date().toISOString())}
           </p>
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', direction: tableDirection, marginBottom: '15px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', direction: tableDirection, marginBottom: '12px', tableLayout: 'auto' }}>
           <thead>
-            <tr style={{ backgroundColor: '#1e40af', color: 'white' }}>
-              <th style={{ padding: '10px 8px', textAlign: isRTL ? 'right' : 'left', fontWeight: '600', border: '1px solid #1e40af', backgroundColor: '#1e40af', color: 'white' }}>#</th>
-              <th style={{ padding: '10px 8px', textAlign: isRTL ? 'right' : 'left', fontWeight: '600', border: '1px solid #1e40af', backgroundColor: '#1e40af', color: 'white' }}>{t('students.fullName')}</th>
-              <th style={{ padding: '10px 8px', textAlign: isRTL ? 'right' : 'left', fontWeight: '600', border: '1px solid #1e40af', backgroundColor: '#1e40af', color: 'white' }}>{t('students.classLevel')}</th>
-              <th style={{ padding: '10px 8px', textAlign: isRTL ? 'left' : 'right', fontWeight: '600', border: '1px solid #1e40af', backgroundColor: '#1e40af', color: 'white' }}>{t('students.totalFee')}</th>
-              <th style={{ padding: '10px 8px', textAlign: isRTL ? 'left' : 'right', fontWeight: '600', border: '1px solid #1e40af', backgroundColor: '#1e40af', color: 'white' }}>{t('students.paidFee')}</th>
-              <th style={{ padding: '10px 8px', textAlign: isRTL ? 'left' : 'right', fontWeight: '600', border: '1px solid #1e40af', backgroundColor: '#1e40af', color: 'white' }}>{t('students.remainingFee')}</th>
+            <tr>
+              <th style={thStyle}>#</th>
+              <th style={thStyle}>{t('students.printColumns.regNo')}</th>
+              <th style={thStyle}>{t('students.printColumns.name')}</th>
+              <th style={thStyle}>{t('students.printColumns.class')}</th>
+              <th style={thStyle}>{t('students.printColumns.address')}</th>
+              <th style={thStyle}>{t('students.printColumns.transport')}</th>
+              <th style={thStyle}>{t('students.printColumns.phone')}</th>
+              {feeTypes.map((feeType) => (
+                <th key={feeType.id} style={{ ...thStyle, textAlign: isRTL ? 'left' : 'right' }}>{feeType.name}</th>
+              ))}
+              <th style={{ ...thStyle, textAlign: isRTL ? 'left' : 'right' }}>{t('students.printColumns.remaining')}</th>
+              <th style={{ ...thStyle, textAlign: isRTL ? 'left' : 'right' }}>{t('students.printColumns.total')}</th>
             </tr>
           </thead>
           <tbody>
-            {studentsData.map((student, index) => (
-              <tr key={student.student_id} style={{ backgroundColor: index % 2 === 0 ? '#fff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                <td style={{ padding: '8px', textAlign: isRTL ? 'right' : 'left', border: '1px solid #e2e8f0' }}>{index + 1}</td>
-                <td style={{ padding: '8px', textAlign: isRTL ? 'right' : 'left', fontWeight: '500', border: '1px solid #e2e8f0' }}>{student.student_name}</td>
-                <td style={{ padding: '8px', textAlign: isRTL ? 'right' : 'left', border: '1px solid #e2e8f0' }}>{student.class_level_name}</td>
-                <td style={{ padding: '8px', textAlign: isRTL ? 'left' : 'right', fontWeight: '600', border: '1px solid #e2e8f0' }}>{formatCurrency(student.total_fee, student.currency)}</td>
-                <td style={{ padding: '8px', textAlign: isRTL ? 'left' : 'right', color: '#16a34a', fontWeight: '600', border: '1px solid #e2e8f0' }}>{formatCurrency(student.total_paid, student.currency)}</td>
-                <td style={{ padding: '8px', textAlign: isRTL ? 'left' : 'right', color: parseFloat(student.remaining_amount) > 0 ? '#dc2626' : '#16a34a', fontWeight: '600', border: '1px solid #e2e8f0' }}>
-                  {formatCurrency(student.remaining_amount, student.currency)}
-                </td>
-              </tr>
-            ))}
+            {studentsData.map((student, index) => {
+              const paidByType = Object.fromEntries(
+                student.fee_breakdown.map((item) => [item.fee_type_id, item.paid_amount])
+              );
+
+              return (
+                <tr key={student.student_id} style={{ backgroundColor: index % 2 === 0 ? '#fff' : '#f8fafc' }}>
+                  <td style={{ ...tdStyle, textAlign: isRTL ? 'right' : 'left' }}>{index + 1}</td>
+                  <td style={{ ...tdStyle, textAlign: isRTL ? 'right' : 'left' }}>{student.registration_number || '-'}</td>
+                  <td style={{ ...tdStyle, textAlign: isRTL ? 'right' : 'left', fontWeight: '500' }}>{student.student_name}</td>
+                  <td style={{ ...tdStyle, textAlign: isRTL ? 'right' : 'left' }}>{student.class_level || '-'}</td>
+                  <td style={{ ...tdStyle, textAlign: isRTL ? 'right' : 'left', maxWidth: '140px' }}>{student.current_address || '-'}</td>
+                  <td style={{ ...tdStyle, textAlign: isRTL ? 'right' : 'left' }}>{getTransportLabel(student)}</td>
+                  <td style={{ ...tdStyle, textAlign: isRTL ? 'right' : 'left' }}>{student.phone || '-'}</td>
+                  {feeTypes.map((feeType) => (
+                    <td key={feeType.id} style={{ ...tdStyle, textAlign: isRTL ? 'left' : 'right', color: '#16a34a', fontWeight: '600' }}>
+                      {formatCurrency(paidByType[feeType.id] || 0, student.currency || currency)}
+                    </td>
+                  ))}
+                  <td style={{
+                    ...tdStyle,
+                    textAlign: isRTL ? 'left' : 'right',
+                    color: parseFloat(student.remaining_amount) > 0 ? '#dc2626' : '#16a34a',
+                    fontWeight: '600',
+                  }}>
+                    {formatCurrency(student.remaining_amount, student.currency || currency)}
+                  </td>
+                  <td style={{ ...tdStyle, textAlign: isRTL ? 'left' : 'right', fontWeight: '600' }}>
+                    {formatCurrency(student.total_fee, student.currency || currency)}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
           <tfoot>
-            <tr style={{ backgroundColor: '#f0f4ff', fontWeight: 'bold' }}>
-              <td colSpan={3} style={{ padding: '10px 8px', textAlign: isRTL ? 'right' : 'left', border: '1px solid #1e40af', fontSize: '12px' }}>
-                {t('students.total', 'Total')}:
+            <tr style={{ fontWeight: 'bold' }}>
+              <td colSpan={7} style={{ ...tdStyle, border: '1px solid #cbd5e1', fontSize: '11px' }}>
+                {t('students.printColumns.total')}:
               </td>
-              <td style={{ padding: '10px 8px', textAlign: isRTL ? 'left' : 'right', border: '1px solid #1e40af', fontSize: '12px', color: '#1e40af' }}>
-                {formatCurrency(totalFee, currency)}
+              {feeTypes.map((feeType) => (
+                <td key={feeType.id} style={{ ...tdStyle, textAlign: isRTL ? 'left' : 'right', border: '1px solid #cbd5e1', color: '#16a34a' }}>
+                  {formatCurrency(columnTotals.feeTypeTotals[feeType.id] || 0, currency)}
+                </td>
+              ))}
+              <td style={{ ...tdStyle, textAlign: isRTL ? 'left' : 'right', border: '1px solid #cbd5e1', color: columnTotals.totalRemaining > 0 ? '#dc2626' : '#16a34a' }}>
+                {formatCurrency(columnTotals.totalRemaining, currency)}
               </td>
-              <td style={{ padding: '10px 8px', textAlign: isRTL ? 'left' : 'right', border: '1px solid #1e40af', fontSize: '12px', color: '#16a34a' }}>
-                {formatCurrency(totalPaid, currency)}
-              </td>
-              <td style={{ padding: '10px 8px', textAlign: isRTL ? 'left' : 'right', border: '1px solid #1e40af', fontSize: '12px', color: totalRemaining > 0 ? '#dc2626' : '#16a34a' }}>
-                {formatCurrency(totalRemaining, currency)}
+              <td style={{ ...tdStyle, textAlign: isRTL ? 'left' : 'right', border: '1px solid #cbd5e1', color: '#1f2937' }}>
+                {formatCurrency(columnTotals.totalFee, currency)}
               </td>
             </tr>
           </tfoot>
         </table>
 
-        <div style={{ marginTop: '25px', paddingTop: '15px', borderTop: '1px solid #ddd', display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: '#666' }}>
+        {useWideLayout && (
+          <p style={{ fontSize: '9px', color: '#666', marginBottom: '8px' }}>
+            {t('students.exportExcelHint', 'This report has many columns. Use Export Excel for a clearer view.')}
+          </p>
+        )}
+
+        <div style={{ marginTop: '20px', paddingTop: '12px', borderTop: '1px solid #ddd', display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: '#666' }}>
           <div>
-            <p style={{ margin: 0 }}>{t('common.signature', 'Signature')}: _________________</p>
+            <p style={{ margin: 0 }}>{t('students.signature', 'Signature')}: _________________</p>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <p style={{ margin: 0 }}>{t('common.generatedBy', 'Document generated by Student Management System')}</p>
+            <p style={{ margin: 0 }}>{t('students.generatedBy', 'Document generated by Student Management System')}</p>
           </div>
         </div>
       </div>

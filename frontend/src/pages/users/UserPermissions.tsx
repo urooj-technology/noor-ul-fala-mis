@@ -167,6 +167,7 @@ export const UserPermissions: React.FC = () => {
       accounting: <FileText className="w-5 h-5" />,
       rental: <Building className="w-5 h-5" />,
       income: <TrendingUp className="w-5 h-5" />,
+      equipment: <Package className="w-5 h-5" />,
       reports: <TrendingUp className="w-5 h-5" />,
       system: <Settings className="w-5 h-5" />,
       companies: <Building className="w-5 h-5" />,

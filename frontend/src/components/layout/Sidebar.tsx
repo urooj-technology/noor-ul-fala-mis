@@ -35,7 +35,8 @@ import {
   Briefcase,
   Home,
   FileBarChart,
-  Shield
+  Shield,
+  Package
 } from 'lucide-react';
 
 type NavSubItem = {
@@ -152,6 +153,19 @@ const navigationItems: NavItem[] = [
     permissionModule: 'reports',
   },
 
+  {
+    key: 'equipment',
+    icon: Package,
+    path: '/equipment',
+    isExpandable: true,
+    section: 'inventory',
+    permissionModule: 'equipment',
+    subItems: [
+      { key: 'equipmentList', icon: Package, path: '/equipment', permissionModule: 'equipment' },
+      { key: 'equipmentCategories', icon: Tag, path: '/equipment-categories', permissionModule: 'equipment' },
+    ],
+  },
+
   { 
     key: 'users', 
     icon: Shield, 
@@ -182,6 +196,7 @@ const sections = {
   finance: 'Finance',
   business: 'Business',
   education: 'Education',
+  inventory: 'Inventory',
   system: 'System'
 };
 

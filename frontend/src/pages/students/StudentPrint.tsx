@@ -78,6 +78,7 @@ export const StudentPrint = ({ student, onClose }: StudentPrintProps) => {
   const { t, language } = useLanguage();
   const isRTL = language === 'fa' || language === 'ps';
   const tableDirection = isRTL ? 'rtl' : 'ltr';
+  const [profile, setProfile] = useState<StudentPrintData>(student);
   const [feeBreakdown, setFeeBreakdown] = useState<FeeBreakdownItem[]>([]);
   const [totalFee, setTotalFee] = useState<number>(0);
   const [totalPaid, setTotalPaid] = useState<number>(0);
@@ -86,25 +87,32 @@ export const StudentPrint = ({ student, onClose }: StudentPrintProps) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchFeeBreakdown = async () => {
+    const fetchPrintData = async () => {
       try {
-        const response = await axios.get(`/student-payments/financial_info/?student=${student.id}`);
-        if (response.data) {
-          setFeeBreakdown(response.data.fee_breakdown || []);
-          setTotalFee(parseFloat(response.data.total_fee) || 0);
-          setTotalPaid(parseFloat(response.data.total_paid) || 0);
-          setTotalRemaining(parseFloat(response.data.remaining_amount) || 0);
-          setCurrency(response.data.currency || 'AFN');
+        const [studentRes, financialRes] = await Promise.all([
+          axios.get(`/students/${student.id}/`),
+          axios.get(`/student-payments/financial_info/?student=${student.id}`),
+        ]);
+
+        setProfile({ ...student, ...studentRes.data });
+
+        if (financialRes.data) {
+          setFeeBreakdown(financialRes.data.fee_breakdown || []);
+          setTotalFee(parseFloat(financialRes.data.total_fee) || 0);
+          setTotalPaid(parseFloat(financialRes.data.total_paid) || 0);
+          setTotalRemaining(parseFloat(financialRes.data.remaining_amount) || 0);
+          setCurrency(financialRes.data.currency || 'AFN');
         }
       } catch (error) {
-        console.error('Error fetching fee breakdown:', error);
+        console.error('Error fetching student print data:', error);
+        setProfile(student);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchFeeBreakdown();
-  }, [student.id]);
+    fetchPrintData();
+  }, [student]);
 
   useEffect(() => {
     if (!loading) {
@@ -135,6 +143,16 @@ export const StudentPrint = ({ student, onClose }: StudentPrintProps) => {
     };
     return labels[status] || status;
   };
+
+  const getTransportLabel = (): string => {
+    if (!profile.transportation) return '-';
+    const key = `students.transportationOptions.${profile.transportation}`;
+    const translated = t(key);
+    return translated !== key ? translated : profile.transportation;
+  };
+
+  const labelCell = { padding: '3px 0', color: '#666', width: '38%', verticalAlign: 'top' as const };
+  const valueCell = { padding: '3px 0', fontWeight: '500' as const, verticalAlign: 'top' as const };
 
   if (loading) {
     return null;
@@ -178,37 +196,90 @@ export const StudentPrint = ({ student, onClose }: StudentPrintProps) => {
           
           {/* Title and Info */}
           <h1 style={{ fontSize: '22px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#1e40af' }}>{t('students.studentInformation')}</h1>
-          <p style={{ fontSize: '12px', color: '#666', margin: '0 0 3px 0' }}>{t('students.registrationNumber')}: {student.registration_number || '-'}</p>
           <p style={{ fontSize: '10px', color: '#888', margin: 0 }}>{t('common.printed', 'Printed')}: {formatDate(new Date().toISOString())}</p>
         </div>
 
-        {/* Two Column Layout for Basic Info */}
-        <div style={{ display: 'flex', gap: '20px', marginBottom: '15px' }}>
-          {/* Left Column - Personal Info */}
+        {/* Student profile */}
+        <div style={{ display: 'flex', gap: '20px', marginBottom: '12px' }}>
           <div style={{ flex: 1 }}>
             <h2 style={{ fontSize: '12px', fontWeight: 'bold', borderBottom: '1px solid #ddd', paddingBottom: '4px', marginBottom: '6px' }}>{t('students.studentInformation')}</h2>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <tbody>
-                <tr><td style={{ padding: '2px 0', color: '#666', width: '40%' }}>{t('students.fullName')}:</td><td style={{ padding: '2px 0', fontWeight: '600' }}>{student.full_name || '-'}</td></tr>
-                <tr><td style={{ padding: '2px 0', color: '#666' }}>{t('students.fatherName')}:</td><td style={{ padding: '2px 0', fontWeight: '600' }}>{student.father_name || '-'}</td></tr>
-                <tr><td style={{ padding: '2px 0', color: '#666' }}>{t('students.grandfatherName')}:</td><td style={{ padding: '2px 0' }}>{student.grandfather_name || '-'}</td></tr>
-                <tr><td style={{ padding: '2px 0', color: '#666' }}>{t('students.genderLabel')}:</td><td style={{ padding: '2px 0' }}>{student.gender ? t(`students.gender.${student.gender}`) : '-'}</td></tr>
+                <tr>
+                  <td style={labelCell}>{t('students.printColumns.regNo')}:</td>
+                  <td style={{ ...valueCell, fontWeight: '600' }}>{profile.registration_number || '-'}</td>
+                </tr>
+                <tr>
+                  <td style={labelCell}>{t('students.fullName')}:</td>
+                  <td style={{ ...valueCell, fontWeight: '600' }}>{profile.full_name || '-'}</td>
+                </tr>
+                <tr>
+                  <td style={labelCell}>{t('students.fatherName')}:</td>
+                  <td style={valueCell}>{profile.father_name || '-'}</td>
+                </tr>
+                <tr>
+                  <td style={labelCell}>{t('students.grandfatherName')}:</td>
+                  <td style={valueCell}>{profile.grandfather_name || '-'}</td>
+                </tr>
+                <tr>
+                  <td style={labelCell}>{t('students.genderLabel')}:</td>
+                  <td style={valueCell}>{profile.gender ? t(`students.gender.${profile.gender}`) : '-'}</td>
+                </tr>
+                <tr>
+                  <td style={labelCell}>{t('students.registrationDate')}:</td>
+                  <td style={valueCell}>{formatDate(profile.registration_date)}</td>
+                </tr>
               </tbody>
             </table>
           </div>
 
-          {/* Right Column - Academic & Contact */}
           <div style={{ flex: 1 }}>
             <h2 style={{ fontSize: '12px', fontWeight: 'bold', borderBottom: '1px solid #ddd', paddingBottom: '4px', marginBottom: '6px' }}>{t('students.contactInformation')}</h2>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <tbody>
-                <tr><td style={{ padding: '2px 0', color: '#666', width: '40%' }}>{t('students.classLevel')}:</td><td style={{ padding: '2px 0', fontWeight: '600' }}>{student.class_level_details?.name || '-'}</td></tr>
-                <tr><td style={{ padding: '2px 0', color: '#666' }}>{t('students.status')}:</td><td style={{ padding: '2px 0' }}>{getStatusLabel(student.status || 'inactive')}</td></tr>
-                <tr><td style={{ padding: '2px 0', color: '#666' }}>{t('students.phone')}:</td><td style={{ padding: '2px 0' }}>{student.phone || student.parent_phone || '-'}</td></tr>
-                <tr><td style={{ padding: '2px 0', color: '#666' }}>{t('students.province')}:</td><td style={{ padding: '2px 0' }}>{student.province || '-'}</td></tr>
+                <tr>
+                  <td style={labelCell}>{t('students.classLevel')}:</td>
+                  <td style={{ ...valueCell, fontWeight: '600' }}>{profile.class_level_details?.name || '-'}</td>
+                </tr>
+                <tr>
+                  <td style={labelCell}>{t('students.status')}:</td>
+                  <td style={valueCell}>{getStatusLabel(profile.status || 'inactive')}</td>
+                </tr>
+                <tr>
+                  <td style={labelCell}>{t('students.phone')}:</td>
+                  <td style={valueCell}>{profile.phone || profile.parent_phone || '-'}</td>
+                </tr>
+                <tr>
+                  <td style={labelCell}>{t('students.transportation')}:</td>
+                  <td style={valueCell}>{getTransportLabel()}</td>
+                </tr>
+                <tr>
+                  <td style={labelCell}>{t('students.province')}:</td>
+                  <td style={valueCell}>{profile.province || '-'}</td>
+                </tr>
               </tbody>
             </table>
           </div>
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <h2 style={{ fontSize: '12px', fontWeight: 'bold', borderBottom: '1px solid #ddd', paddingBottom: '4px', marginBottom: '6px' }}>{t('students.addressInformation')}</h2>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <tbody>
+              <tr>
+                <td style={{ ...labelCell, width: '18%' }}>{t('students.currentAddress')}:</td>
+                <td style={{ ...valueCell, lineHeight: '1.5' }}>{profile.current_address || '-'}</td>
+              </tr>
+              {(profile.district || profile.area) && (
+                <tr>
+                  <td style={labelCell}>{t('students.district')} / {t('students.area')}:</td>
+                  <td style={valueCell}>
+                    {[profile.district, profile.area].filter(Boolean).join(', ') || '-'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
 
         {/* Fee Breakdown Table */}

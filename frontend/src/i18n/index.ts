@@ -62,6 +62,10 @@ import { reportsEn } from "./languages/reports/en";
 import { reportsFa } from "./languages/reports/fa";
 import { reportsPs } from "./languages/reports/ps";
 
+import { equipmentEn } from "./languages/equipment/en";
+import { equipmentFa } from "./languages/equipment/fa";
+import { equipmentPs } from "./languages/equipment/ps";
+
 
 export type Language = "en" | "ps" | "fa";
 
@@ -193,6 +197,7 @@ const en = {
   otherIncome: otherIncomeEn,
   accounting: accountingEn,
   reports: reportsEn,
+  equipment: equipmentEn,
 };
 
 const fa = {
@@ -213,6 +218,7 @@ const fa = {
   otherIncome: otherIncomeFa,
   accounting: accountingFa,
   reports: reportsFa,
+  equipment: equipmentFa,
 };
 
 const ps = {
@@ -233,6 +239,7 @@ const ps = {
   otherIncome: otherIncomePs,
   accounting: accountingPs,
   reports: reportsPs,
+  equipment: equipmentPs,
 };
 
 export const languages = {

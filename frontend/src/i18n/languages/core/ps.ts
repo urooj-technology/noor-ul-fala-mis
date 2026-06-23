@@ -23,6 +23,7 @@ export const corePs = {
     hr: 'بشري سرچینې',
     education: 'زده کړه',
     finance: 'مالي',
+    inventory: 'ګودام',
     system: 'سیسټم'
   },
   
@@ -67,6 +68,9 @@ export const corePs = {
     deletedItems: 'ړنګ شوي توکي',
     activityLogs: 'د فعالیتونو راپورونه',
     backups: 'بیک اپ',
+    equipment: 'تجهیزات',
+    equipmentList: 'د تجهیزاتو لیست',
+    equipmentCategories: 'د تجهیزاتو کټګورۍ',
     search: 'پلټنه...',
     collapseAll: 'ټول بند کړئ'
   },

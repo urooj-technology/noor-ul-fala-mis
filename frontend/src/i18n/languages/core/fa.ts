@@ -23,6 +23,7 @@ export const coreFa = {
     hr: 'منابع بشری',
     education: 'آموزش',
     finance: 'مالی',
+    inventory: 'انبار',
     system: 'سیستم'
   },
   
@@ -70,6 +71,9 @@ export const coreFa = {
     deletedItems: 'موارد حذف‌شده',
     activityLogs: 'گزارش فعالیتها',
     backups: 'بک اپ گیری',
+    equipment: 'تجهیزات',
+    equipmentList: 'لیست تجهیزات',
+    equipmentCategories: 'دسته‌بندی تجهیزات',
     search: 'جستجو...',
     collapseAll: 'بستن همه'
   },

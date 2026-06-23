@@ -27,6 +27,8 @@ from api.serializers.data.student_finance import (
     StudentFeeAssignmentSerializer, StudentPaymentSerializer, FinanceLedgerSerializer
 )
 from api.views.data.base import DataRootViewSet
+from api.services.student_financial_info import build_student_financial_info
+from api.utils.excel_export import export_to_excel
 
 
 class FeeTypeViewSet(DataRootViewSet):
@@ -775,92 +777,115 @@ class StudentPaymentViewSet(DataRootViewSet):
     
     @action(detail=False, methods=['get'])
     def financial_info(self, request):
-        """Get comprehensive financial info for a student.
-        Shows total fees, total paid, remaining balance, and payment history.
-        
-        Query params:
-            student: Student ID (required)
-            class_level: Filter by class level (optional)
-            month: Filter by month (optional)
-            year: Filter by year (optional)
-        """
+        """Get comprehensive financial info for a student."""
         student_id = request.query_params.get('student')
-        
+
         if not student_id:
             return Response({'error': 'student parameter is required'}, status=400)
-        
+
         try:
             student = Student.objects.get(id=student_id)
         except Student.DoesNotExist:
             return Response({'error': 'Student not found'}, status=404)
-        
-        # Get the specific month/year if provided (for period-specific info)
-        month = request.query_params.get('month')
-        year = request.query_params.get('year')
-        
-        # Optionally filter by class_level when provided (so breakdown is per selected level)
+
         class_level = request.query_params.get('class_level')
-        assignments_qs = StudentFeeAssignment.objects.filter(student=student, is_active=True)
-        if class_level and class_level != 'all':
-            assignments_qs = assignments_qs.filter(class_level=class_level)
-        assignments = list(assignments_qs.select_related('fee_type'))
-        total_fee = sum(a.amount or Decimal('0') for a in assignments)
-        
-        # Calculate total completed payments (assignment-based, filtered by class_level)
-        payments_qs = StudentPayment.completed().filter(
-            assignment__student=student,
-        )
-        if class_level and class_level != 'all':
-            payments_qs = payments_qs.filter(assignment__class_level=class_level)
-        total_paid = payments_qs.aggregate(total_paid=Sum('amount'))['total_paid'] or Decimal('0')
-        
-        # Calculate remaining balance
-        remaining = total_fee - total_paid
-        if remaining < 0:
-            remaining = Decimal('0')
-        
-        # Get payment count (filtered by class_level)
-        total_payment_count = payments_qs.count()
-        
-        # Build fee breakdown by type
-        fee_breakdown = []
-        
-        for assignment in assignments:
-            # Get paid amount for this assignment
-            paid_for_assignment = StudentPayment.completed().filter(
-                assignment=assignment,
-            ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-            
-            fee_breakdown.append({
-                'fee_type_id': assignment.fee_type_id,
-                'fee_type': assignment.fee_type.name if assignment.fee_type else 'Unknown',
-                'fee_category': assignment.fee_type.category if assignment.fee_type else 'other',
-                'amount': str(assignment.amount or '0'),
-                'currency': assignment.currency,
-                'is_mandatory': assignment.is_mandatory,
-                'paid_amount': str(paid_for_assignment),
-                'remaining_amount': str(max(Decimal('0'), (assignment.amount or Decimal('0')) - paid_for_assignment)),
-                'class_level': assignment.class_level,
-                'class_level_name': dict(CLASS_LEVEL_CHOICES).get(assignment.class_level, assignment.class_level) if assignment.class_level else None,
-            })
-        
+        return Response(build_student_financial_info(student, class_level=class_level))
+
+    def _parse_student_ids(self, request):
+        ids_param = request.query_params.get('students') or request.query_params.get('ids') or ''
+        return [int(x) for x in ids_param.split(',') if x.strip().isdigit()]
+
+    def _collect_bulk_financial_data(self, student_ids):
+        students = Student.objects.filter(id__in=student_ids).order_by('full_name')
+        students_data = []
+        fee_type_map = {}
+
+        for student in students:
+            info = build_student_financial_info(student)
+            for item in info['fee_breakdown']:
+                if item['fee_type_id']:
+                    fee_type_map[item['fee_type_id']] = item['fee_type']
+            students_data.append(info)
+
+        fee_types = [
+            {'id': fee_id, 'name': name}
+            for fee_id, name in sorted(fee_type_map.items(), key=lambda item: item[1].lower())
+        ]
+        return students_data, fee_types
+
+    @action(detail=False, methods=['get'])
+    def bulk_financial_info(self, request):
+        """Financial info for multiple students with unified fee-type columns."""
+        student_ids = self._parse_student_ids(request)
+        if not student_ids:
+            return Response({'error': 'students parameter is required'}, status=400)
+
+        students_data, fee_types = self._collect_bulk_financial_data(student_ids)
         return Response({
-            'student_id': student.id,
-            'student_name': student.full_name,
-            'registration_number': student.registration_number,
-            'currency': assignments[0].currency if assignments else 'AFN',
-            'class_level': dict(CLASS_LEVEL_CHOICES).get(assignments[0].class_level, assignments[0].class_level) if assignments and assignments[0].class_level else None,
-            'class_level_id': assignments[0].class_level if assignments else None,
-            # Overall financial status
-            'total_fee': str(total_fee),
-            'total_paid': str(total_paid),
-            'remaining_amount': str(remaining),
-            'is_paid': total_paid >= total_fee and total_fee > 0,
-            'payment_percentage': float((total_paid / total_fee * 100) if total_fee > 0 else 0),
-            'total_payment_count': total_payment_count,
-            # Fee breakdown by type
-            'fee_breakdown': fee_breakdown,
+            'students': students_data,
+            'fee_types': fee_types,
+            'count': len(students_data),
         })
+
+    @action(detail=False, methods=['get'])
+    def bulk_financial_export(self, request):
+        """Export multi-student financial report to Excel."""
+        student_ids = self._parse_student_ids(request)
+        if not student_ids:
+            return Response({'error': 'students parameter is required'}, status=400)
+
+        students_data, fee_types = self._collect_bulk_financial_data(student_ids)
+        headers = [
+            '#', 'Reg. No.', 'Name', 'Class', 'Address',
+            'Transport', 'Phone',
+        ]
+        headers.extend(ft['name'] for ft in fee_types)
+        headers.extend(['Remaining', 'Total'])
+
+        rows = []
+        column_totals = {ft['id']: Decimal('0') for ft in fee_types}
+        total_remaining = Decimal('0')
+        total_fee_sum = Decimal('0')
+
+        for index, student in enumerate(students_data, start=1):
+            paid_by_type = {
+                item['fee_type_id']: Decimal(item['paid_amount'])
+                for item in student['fee_breakdown']
+            }
+            row = [
+                index,
+                student['registration_number'],
+                student['student_name'],
+                student['class_level'] or '-',
+                student['current_address'] or '-',
+                student['transportation_display'] or '-',
+                student['phone'] or '-',
+            ]
+            for fee_type in fee_types:
+                paid = paid_by_type.get(fee_type['id'], Decimal('0'))
+                column_totals[fee_type['id']] += paid
+                row.append(float(paid))
+            remaining = Decimal(student['remaining_amount'])
+            total_fee = Decimal(student['total_fee'])
+            total_remaining += remaining
+            total_fee_sum += total_fee
+            row.extend([float(remaining), float(total_fee)])
+            rows.append(row)
+
+        footer = ['', '', 'Total', '', '', '', '']
+        for fee_type in fee_types:
+            footer.append(float(column_totals[fee_type['id']]))
+        footer.extend([float(total_remaining), float(total_fee_sum)])
+        rows.append(footer)
+
+        return export_to_excel(
+            rows,
+            headers,
+            'student-financial-report.xlsx',
+            sheet_name='Students',
+            title='Student Financial Report',
+            metadata={'Total Students': len(students_data)},
+        )
     
     @action(detail=False, methods=['get'])
     def student_fee_assignments(self, request):

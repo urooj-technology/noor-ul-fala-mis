@@ -6,6 +6,7 @@ from django.utils import timezone
 from api.models.data.student import Student, CLASS_LEVEL_CHOICES
 from api.serializers.data.student import StudentSerializer
 from api.views.data.base import DataRootViewSet
+from api.utils.registration_dates import get_registration_date_range
 from decimal import Decimal
 from rest_framework import status as drf_status
 
@@ -49,7 +50,33 @@ class StudentViewSet(DataRootViewSet):
             ids = [int(i) for i in id_in.split(',') if i.strip().isdigit()]
             queryset = queryset.filter(id__in=ids)
 
+        registration_period = self.request.query_params.get('registration_period')
+        if registration_period:
+            date_from = self.request.query_params.get('registration_date_from')
+            date_to = self.request.query_params.get('registration_date_to')
+            start_date, end_date = get_registration_date_range(
+                registration_period, date_from, date_to
+            )
+            if start_date and end_date:
+                queryset = queryset.filter(
+                    registration_date__gte=start_date,
+                    registration_date__lte=end_date,
+                )
+            elif registration_period == 'custom':
+                queryset = queryset.none()
+
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        """Return all matching students without pagination when filtering by registration period."""
+        if request.query_params.get('registration_period'):
+            queryset = self.filter_queryset(self.get_queryset())
+            serializer = self.get_serializer(queryset, many=True)
+            return Response({
+                'count': queryset.count(),
+                'results': serializer.data,
+            })
+        return super().list(request, *args, **kwargs)
 
     @action(detail=True, methods=['get'])
     def financial_summary(self, request, pk=None):
