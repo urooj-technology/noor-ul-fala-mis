@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { usePermissions } from '@/contexts/PermissionContext';
+import { usePermissions, PermissionAction } from '@/contexts/PermissionContext';
 
 interface PermissionGuardProps {
   children: ReactNode;
@@ -7,7 +7,7 @@ interface PermissionGuardProps {
   permissions?: string[];
   requireAll?: boolean;
   module?: string;
-  action?: 'view' | 'add' | 'edit' | 'delete';
+  action?: PermissionAction;
   fallback?: ReactNode;
 }
 
@@ -20,25 +20,14 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
   action,
   fallback = null,
 }) => {
-  const { hasPermission, hasAnyPermission, hasAllPermissions, canView, canAdd, canEdit, canDelete } = usePermissions();
+  const { hasPermission, hasAnyPermission, hasAllPermissions, can } = usePermissions();
 
   let hasAccess = false;
 
   if (module && action) {
-    switch (action) {
-      case 'view':
-        hasAccess = canView(module);
-        break;
-      case 'add':
-        hasAccess = canAdd(module);
-        break;
-      case 'edit':
-        hasAccess = canEdit(module);
-        break;
-      case 'delete':
-        hasAccess = canDelete(module);
-        break;
-    }
+    hasAccess = can(module, action);
+  } else if (module) {
+    hasAccess = can(module, 'view');
   } else if (permission) {
     hasAccess = hasPermission(permission);
   } else if (permissions) {

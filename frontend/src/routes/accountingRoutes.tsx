@@ -13,29 +13,26 @@ import JournalEntryList from '@/pages/accounting/JournalEntryList';
 import AddJournalEntry from '@/pages/accounting/AddJournalEntry';
 import EditJournalEntry from '@/pages/accounting/EditJournalEntry';
 import JournalEntryDetails from '@/pages/accounting/JournalEntryDetails';
+import { guardRoute } from '@/lib/route-guards';
 
 export const accountingRoutes = (
   <>
-    {/* Accounts */}
-    <Route path="accounts" element={<AccountList />} />
-    <Route path="accounts/add" element={<AddAccount />} />
-    <Route path="accounts/:id" element={<AccountDetails />} />
-    <Route path="accounts/:id/edit" element={<EditAccount />} />
-    
-    {/* Transactions - Read Only (auto-generated from other modules) */}
-    <Route path="transactions" element={<TransactionList />} />
-    <Route path="transactions/:id" element={<TransactionDetails />} />
-    
-    {/* Fiscal Years */}
-    <Route path="fiscal-years" element={<FiscalYearList />} />
-    <Route path="fiscal-years/add" element={<AddFiscalYear />} />
-    <Route path="fiscal-years/:id" element={<FiscalYearDetails />} />
-    <Route path="fiscal-years/:id/edit" element={<EditFiscalYear />} />
-    
-    {/* Journal Entries */}
-    <Route path="journal-entries" element={<JournalEntryList />} />
-    <Route path="journal-entries/add" element={<AddJournalEntry />} />
-    <Route path="journal-entries/:id" element={<JournalEntryDetails />} />
-    <Route path="journal-entries/:id/edit" element={<EditJournalEntry />} />
+    <Route path="accounts" element={guardRoute(<AccountList />, { module: 'accounting' })} />
+    <Route path="accounts/add" element={guardRoute(<AddAccount />, { module: 'accounting', action: 'create' })} />
+    <Route path="accounts/:id" element={guardRoute(<AccountDetails />, { module: 'accounting' })} />
+    <Route path="accounts/:id/edit" element={guardRoute(<EditAccount />, { module: 'accounting', action: 'edit' })} />
+
+    <Route path="transactions" element={guardRoute(<TransactionList />, { module: 'accounting' })} />
+    <Route path="transactions/:id" element={guardRoute(<TransactionDetails />, { module: 'accounting' })} />
+
+    <Route path="fiscal-years" element={guardRoute(<FiscalYearList />, { module: 'accounting' })} />
+    <Route path="fiscal-years/add" element={guardRoute(<AddFiscalYear />, { module: 'accounting', action: 'create' })} />
+    <Route path="fiscal-years/:id" element={guardRoute(<FiscalYearDetails />, { module: 'accounting' })} />
+    <Route path="fiscal-years/:id/edit" element={guardRoute(<EditFiscalYear />, { module: 'accounting', action: 'edit' })} />
+
+    <Route path="journal-entries" element={guardRoute(<JournalEntryList />, { module: 'accounting' })} />
+    <Route path="journal-entries/add" element={guardRoute(<AddJournalEntry />, { permission: 'create_journal_entries' })} />
+    <Route path="journal-entries/:id" element={guardRoute(<JournalEntryDetails />, { module: 'accounting' })} />
+    <Route path="journal-entries/:id/edit" element={guardRoute(<EditJournalEntry />, { permission: 'edit_journal_entries' })} />
   </>
 );

@@ -23,6 +23,7 @@ from account.models import User
 from knox.models import AuthToken
 from knox.views import LoginView as KnoxLoginView
 from api.views.data.base import DataRootViewSet
+from api.permissions import IsAdmin
 
 
 class LoginView(KnoxLoginView):
@@ -327,62 +328,11 @@ class UserViewSet(DataRootViewSet):
     serializer_class = UserSerializer
     filterset_fields = ['role', 'is_active']
     search_fields = ['username', 'email', 'first_name', 'last_name', 'phone']
-    
+    permission_module = 'users'
+
     def get_permissions(self):
-        """Override permissions based on action"""
-        if self.action in ['create', 'destroy']:
-            permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
-        elif self.action in ['update', 'partial_update']:
-            # Allow users to update their own profile or admins to update any profile
-            permission_classes = [permissions.IsAuthenticated]
-        else:
-            permission_classes = [permissions.IsAuthenticated]
-        return [permission() for permission in permission_classes]
-    
-    def update(self, request, *args, **kwargs):
-        """Allow admins to update any profile, users can only update their own"""
-        instance = self.get_object()
-        is_admin = request.user.is_admin or request.user.is_staff
-        
-        # Non-admin users can only update their own profile
-        if instance != request.user and not is_admin:
-            return Response(
-                {"detail": "You can only update your own profile."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Non-admin users cannot change certain fields
-        if not is_admin:
-            restricted_fields = ['is_admin', 'is_staff', 'is_active', 'is_buyer', 'is_seller', 'is_finance', 'role', 'password']
-            for field in restricted_fields:
-                if field in request.data:
-                    return Response(
-                        {"detail": f"You don't have permission to change {field}."},
-                        status=status.HTTP_403_FORBIDDEN
-                    )
-        
-        return super().update(request, *args, **kwargs)
-    
-    def partial_update(self, request, *args, **kwargs):
-        """Allow admins to partially update any profile, users can only update their own"""
-        instance = self.get_object()
-        is_admin = request.user.is_admin or request.user.is_staff
-        
-        # Non-admin users can only update their own profile
-        if instance != request.user and not is_admin:
-            return Response(
-                {"detail": "You can only update your own profile."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Non-admin users cannot change certain fields
-        if not is_admin:
-            restricted_fields = ['is_admin', 'is_staff', 'is_active', 'is_buyer', 'is_seller', 'is_finance', 'role', 'password']
-            for field in restricted_fields:
-                if field in request.data:
-                    return Response(
-                        {"detail": f"You don't have permission to change {field}."},
-                        status=status.HTTP_403_FORBIDDEN
-                    )
-        
-        return super().partial_update(request, *args, **kwargs)
+        """User management is admin-only."""
+        return [permissions.IsAuthenticated(), IsAdmin()]
+
+    def perform_create(self, serializer):
+        serializer.save()

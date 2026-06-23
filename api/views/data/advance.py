@@ -3,6 +3,7 @@ from api.serializers.data.advance import AdvanceSerializer
 from api.views.data.base import DataRootViewSet
 
 class AdvanceViewSet(DataRootViewSet):
+    permission_module = 'advances'
     queryset = Advance.objects.all().order_by("-id")
     serializer_class = AdvanceSerializer
     filterset_fields = ["employee", "year", "month"]

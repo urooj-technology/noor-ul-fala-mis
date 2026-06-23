@@ -5,11 +5,13 @@ from rest_framework.permissions import IsAuthenticated
 
 from api.services.financial_report_service import build_financial_summary
 from api.utils.calendar import to_gregorian_date_str
+from api.permissions import HasCodenamePermission
 
 
 class FinancialReportView(APIView):
     """Dashboard financial overview from journal entries."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasCodenamePermission]
+    required_permission = 'view_dashboard'
 
     def get(self, request):
         period = request.query_params.get('period', 'monthly')

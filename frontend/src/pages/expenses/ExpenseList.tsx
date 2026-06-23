@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import DataTable, { TableColumn, TableAction } from '@/components/ui/data-table';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePermissions } from '@/contexts/PermissionContext';
+import { PermissionButton } from '@/components/ui/permission-button';
 import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
 import { formatDateByCalendarType } from '@/utils/calendar';
 import useFetchObjects from '@/api/useFetchObjects';
@@ -20,6 +22,7 @@ export const ExpenseList = () => {
 
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { canEdit, canDelete } = usePermissions();
 
   const { data: expensesData, isLoading } = useFetchObjects<{
     results: any[];
@@ -136,22 +139,22 @@ export const ExpenseList = () => {
       onClick: handleDetails,
       tooltip: t('expenses.viewDetails')
     },
-    {
+    ...(canEdit('expenses') ? [{
       key: 'edit',
       label: t('expenses.edit'),
       icon: <Edit className="h-4 w-4" />,
       onClick: handleEdit,
       tooltip: t('expenses.editExpense')
-    },
-    {
+    }] : []),
+    ...(canDelete('expenses') ? [{
       key: 'delete',
       label: t('expenses.delete'),
       icon: <Trash2 className="h-4 w-4" />,
-      onClick: (record) => handleDelete(record.id, `${record.category_details?.name || 'Expense'} - ${record.amount}`),
-      variant: 'ghost',
+      onClick: (record: any) => handleDelete(record.id, `${record.category_details?.name || 'Expense'} - ${record.amount}`),
+      variant: 'ghost' as const,
       className: 'text-red-600 hover:text-red-700',
       tooltip: t('expenses.deleteExpense')
-    }
+    }] : []),
   ];
 
   const expenseCustomFilters = [
@@ -211,10 +214,10 @@ export const ExpenseList = () => {
         subtitle={t('expenses.manageExpenseRecords')}
         icon={<Receipt className="h-5 w-5" />}
         headerActions={
-          <Button onClick={() => navigate('/expenses/add')}>
+          <PermissionButton module="expenses" action="create" onClick={() => navigate('/expenses/add')}>
             <Plus className="mr-2 h-4 w-4" />
             {t('expenses.addExpense')}
-          </Button>
+          </PermissionButton>
         }
         searchable
         searchPlaceholder={t('expenses.searchExpenses')}

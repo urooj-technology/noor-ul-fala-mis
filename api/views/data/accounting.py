@@ -14,6 +14,7 @@ from api.serializers.data.accounting import (
 
 
 class AccountViewSet(DataRootViewSet):
+    permission_module = 'accounting'
     queryset = Account.objects.all().order_by('code')
     serializer_class = AccountSerializer
     filterset_fields = ['account_type', 'is_active', 'is_detail']
@@ -21,13 +22,24 @@ class AccountViewSet(DataRootViewSet):
 
 
 class JournalEntryViewSet(DataRootViewSet):
+    permission_module = 'accounting'
     queryset = JournalEntry.objects.all().order_by('-date', '-id')
     serializer_class = JournalEntrySerializer
     filterset_fields = ['account', 'transaction', 'date']
     search_fields = ['description', 'reference']
 
+    def get_required_permission(self):
+        if self.action == 'create':
+            return 'create_journal_entries'
+        if self.action in ('update', 'partial_update', 'destroy'):
+            return 'edit_journal_entries'
+        if self.action in ('list', 'retrieve'):
+            return 'view_accounting'
+        return super().get_required_permission()
+
 
 class TransactionViewSet(DataRootViewSet):
+    permission_module = 'accounting'
     queryset = Transaction.objects.all().order_by('-date', '-id')
     serializer_class = TransactionSerializer
     filterset_fields = ['transaction_type', 'is_posted', 'date']
@@ -95,6 +107,7 @@ class TransactionViewSet(DataRootViewSet):
 
 
 class FiscalYearViewSet(DataRootViewSet):
+    permission_module = 'accounting'
     queryset = FiscalYear.objects.all().order_by('-start_date')
     serializer_class = FiscalYearSerializer
     filterset_fields = ['is_closed']

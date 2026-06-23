@@ -10,8 +10,9 @@ import { ArrowLeft, Edit, Shield, Mail, Phone, MapPin, Building, Calendar, User 
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import useFetchObjects from '@/api/useFetchObjects';
+import useFetchObject from '@/api/useFetchObject';
 import useDelete from '@/api/useDelete';
+import { normalizeUserRole } from '@/constants/userRoles';
 
 interface User {
   id: string;
@@ -51,9 +52,10 @@ export const UserDetails: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
-  const { data: user, isLoading } = useFetchObjects<User>({
-    queryKey: ['user', id],
+  const { data: user, isLoading } = useFetchObject<User>({
+    queryKey: ['user', id || ''],
     endpoint: `users/${id}/`,
+    enabled: !!id,
   });
 
   const { handleDelete, ConfirmDialog } = useDelete({
@@ -62,12 +64,15 @@ export const UserDetails: React.FC = () => {
   });
 
   const getRoleColor = (role: string) => {
-    switch (role.toLowerCase()) {
+    switch (normalizeUserRole(role)) {
       case 'admin':
+      case 'super_admin':
         return 'destructive';
-      case 'staff':
+      case 'accountant':
+      case 'cashier':
         return 'default';
-      case 'employee':
+      case 'hr_manager':
+      case 'registration_officer':
         return 'secondary';
       default:
         return 'outline';
@@ -141,7 +146,7 @@ export const UserDetails: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <p className="text-base text-muted-foregroundtext-xs">{user.email}</p>
                   <Badge variant={getRoleColor(user.role)} className="capitalize">
-                    {t(`user.roles.${user.role}`)}
+                    {t(`user.roles.${normalizeUserRole(user.role)}`, user.role)}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2 text-base text-muted-foreground">
@@ -423,10 +428,10 @@ export const UserDetails: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="text-base font-medium text-muted-foreground">{t('user.userRole')}</label>
-                    <p className="font-semibold text-base text-base mt-1 capitalizetext-xs">{t(`user.roles.${user.role}`)}</p>
+                    <p className="font-semibold text-base text-base mt-1 capitalizetext-xs">{t(`user.roles.${normalizeUserRole(user.role)}`, user.role)}</p>
                   </div>
                   <Badge variant={getRoleColor(user.role)} className="text-base px-3 py-1">
-                    {t(`user.roles.${user.role}`)}
+                    {t(`user.roles.${normalizeUserRole(user.role)}`, user.role)}
                   </Badge>
                 </div>
               </div>

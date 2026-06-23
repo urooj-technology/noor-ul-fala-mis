@@ -9,6 +9,7 @@ from decimal import Decimal
 
 
 class IncomeCategoryViewSet(DataRootViewSet):
+    permission_module = 'other_income'
     queryset = IncomeCategory.objects.all().order_by('name')
     serializer_class = IncomeCategorySerializer
     filterset_fields = ['category_type', 'is_active']
@@ -16,6 +17,7 @@ class IncomeCategoryViewSet(DataRootViewSet):
 
 
 class OtherIncomeViewSet(DataRootViewSet):
+    permission_module = 'other_income'
     queryset = OtherIncome.objects.all().order_by('-income_date')
     serializer_class = OtherIncomeSerializer
     filterset_fields = ['income_category', 'income_date']

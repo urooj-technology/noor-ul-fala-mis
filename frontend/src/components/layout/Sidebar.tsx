@@ -5,6 +5,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCalendar, CalendarType } from '@/contexts/CalendarContext';
 import { PermissionGuard } from '@/components/ui/permission-guard';
+import { usePermissions } from '@/contexts/PermissionContext';
+import { useIsAdmin } from '@/components/auth/AdminRoute';
 import { 
   LayoutDashboard, 
   TrendingUp, 
@@ -32,11 +34,33 @@ import {
   PieChart,
   Briefcase,
   Home,
-  FileBarChart
+  FileBarChart,
+  Shield
 } from 'lucide-react';
 
-const navigationItems = [
-  { key: 'dashboard', icon: LayoutDashboard, path: '/', section: 'main' },
+type NavSubItem = {
+  key: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  path: string;
+  permissionModule?: string;
+  permission?: string;
+  adminOnly?: boolean;
+};
+
+type NavItem = {
+  key: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  path: string;
+  section: string;
+  permissionModule?: string;
+  permission?: string;
+  adminOnly?: boolean;
+  isExpandable?: boolean;
+  subItems?: NavSubItem[];
+};
+
+const navigationItems: NavItem[] = [
+  { key: 'dashboard', icon: LayoutDashboard, path: '/', section: 'main', permissionModule: 'dashboard' },
 
   { 
     key: 'hr', 
@@ -44,10 +68,11 @@ const navigationItems = [
     path: '/employees',
     isExpandable: true,
     section: 'hr',
+    permissionModule: 'employees',
     subItems: [
-      { key: 'employees', icon: UserCheck, path: '/employees' },
-      { key: 'payroll', icon: Wallet, path: '/payroll' },
-      { key: 'advance', icon: DollarSign, path: '/advance' }
+      { key: 'employees', icon: UserCheck, path: '/employees', permissionModule: 'employees' },
+      { key: 'payroll', icon: Wallet, path: '/payroll', permissionModule: 'payroll' },
+      { key: 'advance', icon: DollarSign, path: '/advance', permissionModule: 'advances' }
     ]
   },
   { 
@@ -56,9 +81,10 @@ const navigationItems = [
     path: '/expenses',
     isExpandable: true,
     section: 'finance',
+    permissionModule: 'expenses',
     subItems: [
-      { key: 'expensesList', icon: Receipt, path: '/expenses' },
-      { key: 'expenseCategories', icon: Tag, path: '/expense-categories' }
+      { key: 'expensesList', icon: Receipt, path: '/expenses', permissionModule: 'expenses' },
+      { key: 'expenseCategories', icon: Tag, path: '/expense-categories', permissionModule: 'expenses' }
     ]
   },
   { 
@@ -67,9 +93,10 @@ const navigationItems = [
     path: '/other-incomes',
     isExpandable: true,
     section: 'finance',
+    permissionModule: 'other_income',
     subItems: [
-      { key: 'otherIncomeList', icon: TrendingUp, path: '/other-incomes' },
-      { key: 'incomeCategoryList', icon: Tag, path: '/income-categories' }
+      { key: 'otherIncomeList', icon: TrendingUp, path: '/other-incomes', permissionModule: 'other_income' },
+      { key: 'incomeCategoryList', icon: Tag, path: '/income-categories', permissionModule: 'other_income' }
     ]
   },
   { 
@@ -78,14 +105,15 @@ const navigationItems = [
     path: '/accounts',
     isExpandable: true,
     section: 'finance',
+    permissionModule: 'accounting',
     subItems: [
-      { key: 'accounts', icon: BookOpen, path: '/accounts' },
-      { key: 'transactions', icon: FileText, path: '/transactions' },
-      { key: 'fiscalYears', icon: Calendar, path: '/fiscal-years' },
-      { key: 'journalEntries', icon: FileText, path: '/journal-entries' },
-      { key: 'trialBalance', icon: PieChart, path: '/reports/trial-balance' },
-      { key: 'incomeStatement', icon: BarChart3, path: '/reports/income-statement' },
-      { key: 'balanceSheet', icon: FileBarChart, path: '/reports/balance-sheet' }
+      { key: 'accounts', icon: BookOpen, path: '/accounts', permissionModule: 'accounting' },
+      { key: 'transactions', icon: FileText, path: '/transactions', permissionModule: 'accounting' },
+      { key: 'fiscalYears', icon: Calendar, path: '/fiscal-years', permissionModule: 'accounting' },
+      { key: 'journalEntries', icon: FileText, path: '/journal-entries', permissionModule: 'accounting' },
+      { key: 'trialBalance', icon: PieChart, path: '/reports/trial-balance', permission: 'view_financial_reports' },
+      { key: 'incomeStatement', icon: BarChart3, path: '/reports/income-statement', permission: 'view_financial_reports' },
+      { key: 'balanceSheet', icon: FileBarChart, path: '/reports/balance-sheet', permission: 'view_financial_reports' }
     ]
   },
   { 
@@ -94,11 +122,12 @@ const navigationItems = [
     path: '/students',
     isExpandable: true,
     section: 'education',
+    permissionModule: 'students',
     subItems: [
-      { key: 'studentsList', icon: Users, path: '/students' },
-      { key: 'feeTypes', icon: Tag, path: '/fee-types' },
-      { key: 'feeAssignments', icon: Receipt, path: '/student-fee-assignments' },
-      { key: 'studentPayments', icon: CreditCard, path: '/student-payments' }
+      { key: 'studentsList', icon: Users, path: '/students', permissionModule: 'students' },
+      { key: 'feeTypes', icon: Tag, path: '/fee-types', permissionModule: 'students' },
+      { key: 'feeAssignments', icon: Receipt, path: '/student-fee-assignments', permissionModule: 'students' },
+      { key: 'studentPayments', icon: CreditCard, path: '/student-payments', permissionModule: 'student_payments' }
     ]
   },
   { 
@@ -107,11 +136,12 @@ const navigationItems = [
     path: '/shops',
     isExpandable: true,
     section: 'business',
+    permissionModule: 'shop_rentals',
     subItems: [
-      { key: 'shopsList', icon: Store, path: '/shops' },
-      { key: 'tenantsList', icon: Users, path: '/tenants' },
-      { key: 'shopRentalList', icon: Receipt, path: '/shop-rentals' },
-      { key: 'shopRentalPayments', icon: CreditCard, path: '/shop-rental-payments' }
+      { key: 'shopsList', icon: Store, path: '/shops', permissionModule: 'shop_rentals' },
+      { key: 'tenantsList', icon: Users, path: '/tenants', permissionModule: 'shop_rentals' },
+      { key: 'shopRentalList', icon: Receipt, path: '/shop-rentals', permissionModule: 'shop_rentals' },
+      { key: 'shopRentalPayments', icon: CreditCard, path: '/shop-rental-payments', permissionModule: 'shop_rentals' }
     ]
   },
   { 
@@ -119,6 +149,15 @@ const navigationItems = [
     icon: FileBarChart, 
     path: '/reports',
     section: 'finance',
+    permissionModule: 'reports',
+  },
+
+  { 
+    key: 'users', 
+    icon: Shield, 
+    path: '/users',
+    section: 'system',
+    adminOnly: true,
   },
 
   { 
@@ -127,11 +166,12 @@ const navigationItems = [
     path: '/settings',
     isExpandable: true,
     section: 'system',
+    permission: 'manage_settings',
     subItems: [
-      { key: 'calendarSettings', icon: Calendar, path: '/settings/calendar' },
-      { key: 'deletedItems', icon: ArchiveRestore, path: '/settings/deleted' },
-      { key: 'activityLogs', icon: Activity, path: '/activity-logs' },
-      { key: 'backups', icon: Database, path: '/backups' }
+      { key: 'calendarSettings', icon: Calendar, path: '/settings/calendar', permission: 'manage_settings' },
+      { key: 'deletedItems', icon: ArchiveRestore, path: '/settings/deleted', permission: 'manage_settings' },
+      { key: 'activityLogs', icon: Activity, path: '/activity-logs', permissionModule: 'activity_logs' },
+      { key: 'backups', icon: Database, path: '/backups', adminOnly: true }
     ]
   }
 ];
@@ -148,6 +188,8 @@ const sections = {
 export const Sidebar: React.FC = () => {
   const { t, direction } = useLanguage();
   const { user } = useAuth();
+  const { canView, hasPermission } = usePermissions();
+  const isAdmin = useIsAdmin();
   const { calendarType, setCalendarType } = useCalendar();
   const location = useLocation();
   const navRef = useRef<HTMLElement>(null);
@@ -157,6 +199,23 @@ export const Sidebar: React.FC = () => {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const isCustomer = user?.role === 'customer';
+
+  const canSeeNavItem = (item: NavSubItem | NavItem): boolean => {
+    if (item.adminOnly && !isAdmin) return false;
+    if (item.permission && !hasPermission(item.permission)) return false;
+    if (item.permissionModule && !canView(item.permissionModule)) return false;
+    return true;
+  };
+
+  const getVisibleSubItems = (subItems?: NavSubItem[]) =>
+    subItems?.filter(canSeeNavItem) ?? [];
+
+  const canSeeParentItem = (item: NavItem): boolean => {
+    if (item.subItems?.length) {
+      return getVisibleSubItems(item.subItems).length > 0;
+    }
+    return canSeeNavItem(item);
+  };
 
   useEffect(() => {
     localStorage.setItem('sidebar-expanded', JSON.stringify(expandedSections));
@@ -173,6 +232,7 @@ export const Sidebar: React.FC = () => {
     if (isStudentsRoute(currentPath)) sectionsToExpand.push('students');
     if (isShopRentalRoute(currentPath)) sectionsToExpand.push('shopRental');
     if (isReportsRoute(currentPath)) sectionsToExpand.push('reports');
+    if (isUsersRoute(currentPath)) sectionsToExpand.push('users');
     if (isSettingsRoute(currentPath)) sectionsToExpand.push('settings');
 
     setExpandedSections(prev => {
@@ -237,6 +297,10 @@ export const Sidebar: React.FC = () => {
     return path.startsWith('/reports');
   };
 
+  const isUsersRoute = (path: string) => {
+    return path.startsWith('/users');
+  };
+
   const isSettingsRoute = (path: string) => {
     return path.startsWith('/settings') || path.startsWith('/activity-logs') || path.startsWith('/backups');
   };
@@ -251,7 +315,7 @@ export const Sidebar: React.FC = () => {
     if (!acc[section]) acc[section] = [];
     acc[section].push(item);
     return acc;
-  }, {} as Record<string, typeof navigationItems>);
+  }, {} as Record<string, NavItem[]>);
 
   return (
     <div className={cn(
@@ -332,9 +396,11 @@ export const Sidebar: React.FC = () => {
               return false;
             }
 
+            if (!canSeeParentItem(item)) return false;
+
             const itemLabel = t(`core.navigation.${item.key}`, item.key).toLowerCase();
             const matchesSearch = itemLabel.includes(searchQuery.toLowerCase());
-            const hasMatchingSubItem = item.subItems?.some(sub => 
+            const hasMatchingSubItem = getVisibleSubItems(item.subItems).some(sub => 
               t(`core.navigation.${sub.key}`, sub.key).toLowerCase().includes(searchQuery.toLowerCase())
             );
             return matchesSearch || hasMatchingSubItem;
@@ -407,7 +473,7 @@ export const Sidebar: React.FC = () => {
                           "mt-1 space-y-0.5 overflow-hidden transition-all duration-300 ease-in-out",
                           direction === 'rtl' ? 'pr-7' : 'pl-7'
                         )}>
-                          {item.subItems.filter(subItem => {
+                          {getVisibleSubItems(item.subItems).filter(subItem => {
                             if (!searchQuery) return true;
                             return t(`core.navigation.${subItem.key}`, subItem.key).toLowerCase().includes(searchQuery.toLowerCase());
                           }).map((subItem) => {
@@ -444,7 +510,9 @@ export const Sidebar: React.FC = () => {
                     <PermissionGuard key={item.key} permission={item.permission}>
                       {navigationItem}
                     </PermissionGuard>
-                  ) : navigationItem;
+                  ) : (
+                    navigationItem
+                  );
                 })}
               </div>
             </div>

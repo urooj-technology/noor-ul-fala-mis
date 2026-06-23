@@ -7,6 +7,9 @@ class Command(BaseCommand):
     help = 'Create default permissions for the ERP system'
     
     PERMISSIONS = [
+        # Dashboard
+        {'name': 'View Dashboard', 'codename': 'view_dashboard', 'module': 'dashboard'},
+
         # User Management
         {'name': 'View Users', 'codename': 'view_users', 'module': 'users'},
         {'name': 'Create Users', 'codename': 'create_users', 'module': 'users'},
@@ -20,6 +23,8 @@ class Command(BaseCommand):
         {'name': 'Delete Students', 'codename': 'delete_students', 'module': 'students'},
         {'name': 'View Student Payments', 'codename': 'view_student_payments', 'module': 'students'},
         {'name': 'Create Student Payments', 'codename': 'create_student_payments', 'module': 'students'},
+        {'name': 'Edit Student Payments', 'codename': 'edit_student_payments', 'module': 'students'},
+        {'name': 'Delete Student Payments', 'codename': 'delete_student_payments', 'module': 'students'},
         
         # HR Management
         {'name': 'View Employees', 'codename': 'view_employees', 'module': 'hr'},
@@ -31,8 +36,11 @@ class Command(BaseCommand):
         {'name': 'View Payroll', 'codename': 'view_payroll', 'module': 'payroll'},
         {'name': 'Create Payroll', 'codename': 'create_payroll', 'module': 'payroll'},
         {'name': 'Edit Payroll', 'codename': 'edit_payroll', 'module': 'payroll'},
+        {'name': 'Delete Payroll', 'codename': 'delete_payroll', 'module': 'payroll'},
         {'name': 'View Advances', 'codename': 'view_advances', 'module': 'payroll'},
         {'name': 'Create Advances', 'codename': 'create_advances', 'module': 'payroll'},
+        {'name': 'Edit Advances', 'codename': 'edit_advances', 'module': 'payroll'},
+        {'name': 'Delete Advances', 'codename': 'delete_advances', 'module': 'payroll'},
         
         # Expenses
         {'name': 'View Expenses', 'codename': 'view_expenses', 'module': 'expenses'},
@@ -45,6 +53,7 @@ class Command(BaseCommand):
         {'name': 'View Accounting', 'codename': 'view_accounting', 'module': 'accounting'},
         {'name': 'Create Journal Entries', 'codename': 'create_journal_entries', 'module': 'accounting'},
         {'name': 'Edit Journal Entries', 'codename': 'edit_journal_entries', 'module': 'accounting'},
+        {'name': 'Delete Journal Entries', 'codename': 'delete_journal_entries', 'module': 'accounting'},
         {'name': 'View Financial Reports', 'codename': 'view_financial_reports', 'module': 'accounting'},
         {'name': 'Export Reports', 'codename': 'export_reports', 'module': 'accounting'},
         
@@ -52,10 +61,13 @@ class Command(BaseCommand):
         {'name': 'View Shop Rentals', 'codename': 'view_shop_rentals', 'module': 'rental'},
         {'name': 'Create Shop Rentals', 'codename': 'create_shop_rentals', 'module': 'rental'},
         {'name': 'Edit Shop Rentals', 'codename': 'edit_shop_rentals', 'module': 'rental'},
+        {'name': 'Delete Shop Rentals', 'codename': 'delete_shop_rentals', 'module': 'rental'},
         
         # Other Income
         {'name': 'View Other Income', 'codename': 'view_other_income', 'module': 'income'},
         {'name': 'Create Other Income', 'codename': 'create_other_income', 'module': 'income'},
+        {'name': 'Edit Other Income', 'codename': 'edit_other_income', 'module': 'income'},
+        {'name': 'Delete Other Income', 'codename': 'delete_other_income', 'module': 'income'},
         
         # Reports
         {'name': 'View Reports', 'codename': 'view_reports', 'module': 'reports'},
@@ -69,7 +81,7 @@ class Command(BaseCommand):
     ]
     
     def handle(self, *args, **options):
-        self.stdout.info('Creating default permissions...')
+        self.stdout.write('Creating default permissions...')
         
         created_count = 0
         for perm_data in self.PERMISSIONS:
@@ -79,8 +91,8 @@ class Command(BaseCommand):
             )
             if created:
                 created_count += 1
-                self.stdout.info(f'Created permission: {permission.name}')
+                self.stdout.write(f'Created permission: {permission.name}')
         
-        self.stdout.info(
+        self.stdout.write(
             self.style.SUCCESS(f'Successfully created {created_count} permissions')
         )

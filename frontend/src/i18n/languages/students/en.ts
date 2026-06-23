@@ -2,6 +2,8 @@ export const studentsEn = {
   students: "Students",
   addStudent: "Add Student",
   editStudent: "Edit Student",
+  addStudentDesc: "Register a new student",
+  editStudentDesc: "Update student information",
   studentDetails: "Student Details",
   studentInformation: "Student Information",
   addressInformation: "Address Information",

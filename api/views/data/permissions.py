@@ -4,13 +4,14 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from api.models.data.permissions import Permission, UserPermission
 from api.serializers.data.permissions import PermissionSerializer, UserPermissionSerializer, UserPermissionUpdateSerializer
+from api.permissions import IsAdmin
 from account.models import User
 
 
 class PermissionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Permission.objects.all()
     serializer_class = PermissionSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -22,7 +23,7 @@ class PermissionViewSet(viewsets.ReadOnlyModelViewSet):
 
 class UserPermissionViewSet(viewsets.ModelViewSet):
     serializer_class = UserPermissionSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
     
     def get_queryset(self):
         user_id = self.kwargs.get('user_id')

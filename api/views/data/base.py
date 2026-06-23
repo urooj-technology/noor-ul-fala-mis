@@ -4,11 +4,24 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from api.views.data.pagination import CustomPagination
+from api.permissions import HasModelPermission
+
 
 class DataRootViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasModelPermission]
+    permission_module = None
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
+
+    def get_required_permission(self):
+        """Return permission codename for the current action, or None to allow."""
+        module = self.permission_module
+        if not module:
+            return None
+        prefix = HasModelPermission.ACTION_PREFIX.get(self.action)
+        if not prefix:
+            return None
+        return f'{prefix}_{module}'
 
     def get_queryset(self):
         """Return active records only for soft-deletable models."""

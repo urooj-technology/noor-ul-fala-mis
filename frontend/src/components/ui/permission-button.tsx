@@ -7,7 +7,7 @@ interface PermissionButtonProps extends ButtonProps {
   permissions?: string[];
   requireAll?: boolean;
   module?: string;
-  action?: 'view' | 'add' | 'edit' | 'delete';
+  action?: 'view' | 'add' | 'create' | 'edit' | 'delete';
 }
 
 export const PermissionButton: React.FC<PermissionButtonProps> = ({

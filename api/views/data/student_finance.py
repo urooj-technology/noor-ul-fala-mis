@@ -31,6 +31,7 @@ from api.views.data.base import DataRootViewSet
 
 class FeeTypeViewSet(DataRootViewSet):
     """API endpoint for FeeType management | مدیریت انواع فیس"""
+    permission_module = 'students'
     queryset = FeeType.objects.all().order_by('name')
     serializer_class = FeeTypeSerializer
     filterset_fields = ['is_active', 'is_mandatory', 'category']
@@ -42,6 +43,7 @@ class FeeTypeViewSet(DataRootViewSet):
 
 class StudentFeeAssignmentViewSet(DataRootViewSet):
     """API endpoint for StudentFeeAssignment management | مدیریت تخصیص فیس شاگردان"""
+    permission_module = 'students'
     queryset = StudentFeeAssignment.objects.all().select_related('student', 'fee_type')
     serializer_class = StudentFeeAssignmentSerializer
     filterset_fields = ['student', 'fee_type', 'is_active', 'is_mandatory', 'class_level']
@@ -267,6 +269,7 @@ class StudentFeeAssignmentViewSet(DataRootViewSet):
 
 class StudentPaymentViewSet(DataRootViewSet):
     """API endpoint for StudentPayment management | مدیریت پرداخت شاگردان"""
+    permission_module = 'student_payments'
     queryset = StudentPayment.objects.all().order_by('-payment_date')
     serializer_class = StudentPaymentSerializer
     filterset_fields = ['assignment', 'payment_status', 'payment_date']

@@ -11,6 +11,7 @@ from decimal import Decimal
 
 
 class ShopViewSet(DataRootViewSet):
+    permission_module = 'shop_rentals'
     queryset = Shop.objects.all().order_by('shop_number')
     serializer_class = ShopSerializer
     filterset_fields = ['status']
@@ -37,12 +38,14 @@ class ShopViewSet(DataRootViewSet):
 
 
 class TenantViewSet(DataRootViewSet):
+    permission_module = 'shop_rentals'
     queryset = Tenant.objects.all().order_by('full_name')
     serializer_class = TenantSerializer
     search_fields = ['full_name', 'phone', 'email', 'tazkira_number']
 
 
 class ShopRentalViewSet(DataRootViewSet):
+    permission_module = 'shop_rentals'
     queryset = ShopRental.objects.all().order_by('-start_date')
     serializer_class = ShopRentalSerializer
     filterset_fields = ['shop', 'tenant', 'rental_status']

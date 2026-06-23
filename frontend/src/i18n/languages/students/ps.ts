@@ -2,6 +2,8 @@ export const studentsPs = {
   students: "زده کونکي",
   addStudent: "زده کونکی زياتول",
   editStudent: "زده کونکی سمول",
+  addStudentDesc: "نوی زده کونکی ثبت کړئ",
+  editStudentDesc: "د زده کونکي معلومات تازه کړئ",
   studentDetails: "د زده کونکي معلومات",
   studentInformation: "د زده کونکي معلومات",
   addressInformation: "د پتې معلومات",

@@ -14,6 +14,7 @@ from decimal import Decimal
 
 
 class ShopRentalPaymentViewSet(DataRootViewSet):
+    permission_module = 'shop_rentals'
     queryset = ShopRentalPayment.objects.select_related(
         'rental__shop',
         'rental__tenant',

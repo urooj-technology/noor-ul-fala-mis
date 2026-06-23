@@ -3,12 +3,14 @@ from api.serializers.data.expenses import ExpenseSerializer, ExpenseCategorySeri
 from api.views.data.base import DataRootViewSet
 
 class ExpenseCategoryViewSet(DataRootViewSet):
+    permission_module = 'expenses'
     queryset = ExpenseCategory.objects.all().order_by("-id")
     serializer_class = ExpenseCategorySerializer
     filterset_fields = []
     search_fields = ["name"]
 
 class ExpenseViewSet(DataRootViewSet):
+    permission_module = 'expenses'
     queryset = Expense.objects.all().order_by("-id")
     serializer_class = ExpenseSerializer
     filterset_fields = ["category", "user"]

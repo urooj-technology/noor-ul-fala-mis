@@ -3,6 +3,7 @@ from api.serializers.data.payroll import PayrollSerializer
 from api.views.data.base import DataRootViewSet
 
 class PayrollViewSet(DataRootViewSet):
+    permission_module = 'payroll'
     queryset = Payroll.objects.all().order_by("-id")
     serializer_class = PayrollSerializer
     filterset_fields = ["employee", "year", "month"]

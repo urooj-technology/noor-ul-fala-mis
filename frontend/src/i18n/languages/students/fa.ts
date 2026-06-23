@@ -2,6 +2,8 @@ export const studentsFa = {
   students: "شاگردان",
   addStudent: "افزودن شاگرد",
   editStudent: "ویرایش شاگرد",
+  addStudentDesc: "ثبت شاگرد جدید",
+  editStudentDesc: "به‌روزرسانی معلومات شاگرد",
   studentDetails: "جزئیات شاگرد",
   studentInformation: "اطلاعات شاگرد",
   addressInformation: "اطلاعات آدرس",

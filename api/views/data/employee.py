@@ -6,6 +6,7 @@ from api.views.data.base import DataRootViewSet
 from datetime import datetime
 
 class EmployeeViewSet(DataRootViewSet):
+    permission_module = 'employees'
     queryset = Employee.objects.all().order_by("-id")
     serializer_class = EmployeeSerializer
     filterset_fields = ["is_active"]

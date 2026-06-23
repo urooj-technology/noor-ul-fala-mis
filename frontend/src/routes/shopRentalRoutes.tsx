@@ -13,29 +13,28 @@ import ShopRentalPaymentList from '@/pages/shop-rental/ShopRentalPaymentList';
 import AddShopRentalPayment from '@/pages/shop-rental/AddShopRentalPayment';
 import EditShopRentalPayment from '@/pages/shop-rental/EditShopRentalPayment';
 import ShopRentalPaymentDetails from '@/pages/shop-rental/ShopRentalPaymentDetails';
+import { guardRoute } from '@/lib/route-guards';
+
+const rental = { module: 'shop_rentals' as const };
 
 export const shopRentalRoutes = (
   <>
-    {/* Shops */}
-    <Route path="shops" element={<ShopRentalList />} />
-    <Route path="shops/add" element={<AddShop />} />
-    <Route path="shops/:id/edit" element={<EditShop />} />
-    
-    {/* Tenants */}
-    <Route path="tenants" element={<TenantList />} />
-    <Route path="tenants/add" element={<AddTenant />} />
-    <Route path="tenants/:id/edit" element={<EditTenant />} />
-    
-    {/* Shop Rentals */}
-    <Route path="shop-rentals" element={<ShopRentalListPage />} />
-    <Route path="shop-rentals/add" element={<AddShopRental />} />
-    <Route path="shop-rentals/:id" element={<ShopRentalDetails />} />
-    <Route path="shop-rentals/:id/edit" element={<EditShopRental />} />
-    
-    {/* Shop Rental Payments */}
-    <Route path="shop-rental-payments" element={<ShopRentalPaymentList />} />
-    <Route path="shop-rental-payments/add" element={<AddShopRentalPayment />} />
-    <Route path="shop-rental-payments/:id" element={<ShopRentalPaymentDetails />} />
-    <Route path="shop-rental-payments/:id/edit" element={<EditShopRentalPayment />} />
+    <Route path="shops" element={guardRoute(<ShopRentalList />, rental)} />
+    <Route path="shops/add" element={guardRoute(<AddShop />, { ...rental, action: 'create' })} />
+    <Route path="shops/:id/edit" element={guardRoute(<EditShop />, { ...rental, action: 'edit' })} />
+
+    <Route path="tenants" element={guardRoute(<TenantList />, rental)} />
+    <Route path="tenants/add" element={guardRoute(<AddTenant />, { ...rental, action: 'create' })} />
+    <Route path="tenants/:id/edit" element={guardRoute(<EditTenant />, { ...rental, action: 'edit' })} />
+
+    <Route path="shop-rentals" element={guardRoute(<ShopRentalListPage />, rental)} />
+    <Route path="shop-rentals/add" element={guardRoute(<AddShopRental />, { ...rental, action: 'create' })} />
+    <Route path="shop-rentals/:id" element={guardRoute(<ShopRentalDetails />, rental)} />
+    <Route path="shop-rentals/:id/edit" element={guardRoute(<EditShopRental />, { ...rental, action: 'edit' })} />
+
+    <Route path="shop-rental-payments" element={guardRoute(<ShopRentalPaymentList />, rental)} />
+    <Route path="shop-rental-payments/add" element={guardRoute(<AddShopRentalPayment />, { ...rental, action: 'create' })} />
+    <Route path="shop-rental-payments/:id" element={guardRoute(<ShopRentalPaymentDetails />, rental)} />
+    <Route path="shop-rental-payments/:id/edit" element={guardRoute(<EditShopRentalPayment />, { ...rental, action: 'edit' })} />
   </>
 );

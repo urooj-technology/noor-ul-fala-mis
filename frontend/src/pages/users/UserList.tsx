@@ -8,6 +8,7 @@ import DataTable, { TableColumn, TableAction, FilterOption } from '@/components/
 import { useLanguage } from '@/contexts/LanguageContext';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
+import { USER_ROLE_OPTIONS, normalizeUserRole } from '@/constants/userRoles';
 
 export const UserList = () => {
   const { t } = useLanguage();
@@ -25,7 +26,7 @@ export const UserList = () => {
     previous: string | null;
   }>({
     queryKey: ['users', currentPage.toString(), pageSize.toString(), searchTerm, roleFilter, statusFilter],
-    endpoint: 'users',
+    endpoint: 'users/',
     params: {
       page: currentPage,
       page_size: pageSize,
@@ -52,12 +53,15 @@ export const UserList = () => {
   };
 
   const getRoleColor = (role: string) => {
-    switch (role.toLowerCase()) {
+    switch (normalizeUserRole(role)) {
       case 'admin':
+      case 'super_admin':
         return 'destructive';
-      case 'staff':
+      case 'accountant':
+      case 'cashier':
         return 'default';
-      case 'employee':
+      case 'hr_manager':
+      case 'registration_officer':
         return 'secondary';
       default:
         return 'outline';
@@ -101,7 +105,7 @@ export const UserList = () => {
       title: t('user.role'),
       render: (value) => (
         <Badge variant={getRoleColor(value)}>
-          {t(`user.roles.${value}`)}
+          {t(`user.roles.${normalizeUserRole(value)}`, value)}
         </Badge>
       ),
     },
@@ -166,14 +170,10 @@ export const UserList = () => {
       label: t('user.role'),
       placeholder: t('user.filterByRole'),
       width: 'sm:w-40',
-      options: [
-        { value: 'admin', label: t('user.roles.admin') },
-        { value: 'staff', label: t('user.roles.staff') },
-        { value: 'employee', label: t('user.roles.employee') },
-        { value: 'customer', label: t('user.roles.customer') },
-        { value: 'vendor', label: t('user.roles.vendor') },
-
-      ]
+      options: USER_ROLE_OPTIONS.map((role) => ({
+        value: role.value,
+        label: t(role.labelKey),
+      })),
     },
     {
       key: 'status',

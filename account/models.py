@@ -71,7 +71,7 @@ class User(AbstractBaseUser):
     last_name = models.CharField(max_length=200, null=True, blank=True)
     profile_picture = models.ImageField(upload_to="authors/", blank=True, null=True)
 
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='staff')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='viewer')
     preferred_calendar = models.CharField(
         max_length=20, 
         choices=CALENDAR_CHOICES, 
@@ -108,7 +108,7 @@ class User(AbstractBaseUser):
     
     def has_permission(self, permission_codename):
         """Check if user has a specific permission"""
-        if self.is_admin or self.is_superuser or self.role == 'super_admin':
+        if self.is_admin or self.is_superuser or self.role in ('super_admin', 'admin'):
             return True
         
         try:
@@ -121,7 +121,7 @@ class User(AbstractBaseUser):
     
     def get_permissions(self):
         """Get all permissions for this user"""
-        if self.is_admin or self.is_superuser:
+        if self.is_admin or self.is_superuser or self.role in ('super_admin', 'admin'):
             from api.models.data.permissions import Permission
             return list(Permission.objects.values_list('codename', flat=True))
         

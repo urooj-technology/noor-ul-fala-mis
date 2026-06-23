@@ -19,11 +19,12 @@ import { studentPaymentRoutes } from './studentPaymentRoutes';
 import { shopRentalRoutes } from './shopRentalRoutes';
 import { otherIncomeRoutes } from './otherIncomeRoutes';
 import { reportsRoutes } from './reportsRoutes';
+import { guardRoute } from '@/lib/route-guards';
 
 export const appRoutes = (
   <>
     {/* Dashboard */}
-    <Route index element={<Dashboard />} />
+    <Route index element={guardRoute(<Dashboard />, { module: 'dashboard', fallbackPath: '/profile' })} />
     
     {/* Financial Management */}
     {expenseRoutes}
@@ -56,8 +57,8 @@ export const appRoutes = (
     {reportsRoutes}
     
     {/* Settings */}
-    <Route path="settings" element={<Settings />} />
-    <Route path="backups" element={<BackupList />} />
+    <Route path="settings" element={guardRoute(<Settings />, { permission: 'manage_settings' })} />
+    <Route path="backups" element={guardRoute(<BackupList />, { adminOnly: true })} />
     {settingsRoutes}
     
     {/* Other Routes */}

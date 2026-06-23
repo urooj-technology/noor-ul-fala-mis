@@ -11,6 +11,7 @@ from rest_framework import status as drf_status
 
 
 class StudentViewSet(DataRootViewSet):
+    permission_module = 'students'
     queryset = Student.objects.all().order_by('-registration_date')
     serializer_class = StudentSerializer
     filterset_fields = ['status', 'gender', 'class_level']
