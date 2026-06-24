@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import DataTable, { TableColumn, TableAction } from '@/components/ui/data-table';
+import { PermissionButton } from '@/components/ui/permission-button';
+import { useCrudPermissions } from '@/hooks/useCrudPermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCalendar } from '@/contexts/CalendarContext';
 import { formatDateByCalendarType } from '@/utils/calendar';
@@ -15,6 +17,7 @@ import { formatNumber } from '@/lib/formatNumber';
 
 export const ShopRentalPaymentList = () => {
   const { t } = useLanguage();
+  const { canEdit, canDelete } = useCrudPermissions('shop_rentals');
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [rentalFilter, setRentalFilter] = useState('');
@@ -163,22 +166,22 @@ export const ShopRentalPaymentList = () => {
       onClick: handleDetails,
       tooltip: t('shop-rental.viewDetails')
     },
-    {
+    ...(canEdit ? [{
       key: 'edit',
       label: t('shop-rental.edit'),
       icon: <Edit className="h-4 w-4" />,
       onClick: handleEdit,
       tooltip: t('shop-rental.editPayment')
-    },
-    {
+    }] : []),
+    ...(canDelete ? [{
       key: 'delete',
       label: t('shop-rental.delete'),
       icon: <Trash2 className="h-4 w-4" />,
-      onClick: (record) => handleDelete(record.id, record.reference_number || t('shop-rental.payments')),
-      variant: 'ghost',
+      onClick: (record: { id: number; reference_number?: string }) => handleDelete(record.id, record.reference_number || t('shop-rental.payments')),
+      variant: 'ghost' as const,
       className: 'text-red-600 hover:text-red-700',
       tooltip: t('shop-rental.deletePayment')
-    }
+    }] : []),
   ];
 
   const customFilters = [
@@ -241,10 +244,10 @@ export const ShopRentalPaymentList = () => {
         subtitle={t('shop-rental.managePayments')}
         icon={<CreditCard className="h-5 w-5" />}
         headerActions={
-          <Button onClick={() => navigate('/shop-rental-payments/add')}>
+          <PermissionButton module="shop_rentals" action="create" onClick={() => navigate('/shop-rental-payments/add')}>
             <Plus className="mr-2 h-4 w-4" />
             {t('shop-rental.addPayment')}
-          </Button>
+          </PermissionButton>
         }
         searchable
         searchPlaceholder={t('shop-rental.searchPayments')}

@@ -8,6 +8,7 @@ import DataTable, { TableColumn } from '@/components/ui/data-table';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { CalendarProvider, useCalendar } from '@/contexts/CalendarContext';
 import { SHAMSI_MONTHS_DARI, SHAMSI_MONTHS_PASHTO, formatDateByCalendarType } from '@/utils/calendar';
+import { useCrudPermissions } from '@/hooks/useCrudPermissions';
 import useFetchObjects from '@/api/useFetchObjects';
 import { formatNumber } from '@/lib/formatNumber';
 import ExpenseReportPrint from './ExpenseReportPrint';
@@ -41,6 +42,7 @@ const isPeriodReady = (filters: ReportFilters) =>
 const ExpenseReportContent = () => {
   const { t, language } = useLanguage();
   const { calendarType } = useCalendar();
+  const { canExport } = useCrudPermissions('expenses');
   const lang = t('language.code') as 'fa' | 'ps';
   const monthNames = language === 'ps' ? SHAMSI_MONTHS_PASHTO : SHAMSI_MONTHS_DARI;
 
@@ -330,6 +332,7 @@ const ExpenseReportContent = () => {
             title={t('expenses.reports')}
             icon={<Receipt className="h-5 w-5" />}
             headerActions={
+              canExport ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -339,6 +342,7 @@ const ExpenseReportContent = () => {
                 <Printer className="mr-2 h-4 w-4" />
                 {t('expenses.printReport')}
               </Button>
+              ) : null
             }
             searchable
             searchPlaceholder={t('expenses.searchExpenses')}

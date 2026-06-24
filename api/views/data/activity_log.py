@@ -8,6 +8,9 @@ from api.views.data.base import DataRootViewSet
 
 class ActivityLogViewSet(DataRootViewSet):
     permission_module = 'activity_logs'
+    action_permissions = {
+        'stats': 'view_activity_logs',
+    }
     queryset = ActivityLog.objects.select_related('user').all()
     serializer_class = ActivityLogSerializer
     filterset_fields = ['action', 'model_name', 'user']

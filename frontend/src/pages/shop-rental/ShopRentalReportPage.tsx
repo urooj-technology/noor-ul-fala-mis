@@ -8,6 +8,7 @@ import DataTable, { TableColumn } from '@/components/ui/data-table';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { CalendarProvider, useCalendar } from '@/contexts/CalendarContext';
 import { getMonthNames } from '@/utils/calendar';
+import { useCrudPermissions } from '@/hooks/useCrudPermissions';
 import useFetchObjects from '@/api/useFetchObjects';
 import { useFormattedDate } from '@/hooks/useFormattedDate';
 import { formatNumber } from '@/lib/formatNumber';
@@ -26,6 +27,7 @@ const getCurrentShamsiYear = () => {
 const ShopRentalReportContent = () => {
   const { t } = useLanguage();
   const { calendarType } = useCalendar();
+  const { canExport } = useCrudPermissions('shop_rentals');
   const { formatDate } = useFormattedDate();
   const lang = t('language.code') as 'fa' | 'ps';
 
@@ -216,6 +218,7 @@ const ShopRentalReportContent = () => {
                 </div>
               </>
             )}
+            {canExport && (
             <Button
               variant="outline"
               onClick={() => setShowPrint(true)}
@@ -224,6 +227,7 @@ const ShopRentalReportContent = () => {
               <Printer className="mr-2 h-4 w-4" />
               {t('shop-rental.printReport')}
             </Button>
+            )}
           </div>
         </CardContent>
       </Card>

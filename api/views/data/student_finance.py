@@ -46,6 +46,11 @@ class FeeTypeViewSet(DataRootViewSet):
 class StudentFeeAssignmentViewSet(DataRootViewSet):
     """API endpoint for StudentFeeAssignment management | مدیریت تخصیص فیس شاگردان"""
     permission_module = 'students'
+    action_permissions = {
+        'by_student': 'view_students',
+        'fee_assignment_data': 'view_students',
+        'bulk_assign_fees': 'edit_students',
+    }
     queryset = StudentFeeAssignment.objects.all().select_related('student', 'fee_type')
     serializer_class = StudentFeeAssignmentSerializer
     filterset_fields = ['student', 'fee_type', 'is_active', 'is_mandatory', 'class_level']
@@ -272,6 +277,21 @@ class StudentFeeAssignmentViewSet(DataRootViewSet):
 class StudentPaymentViewSet(DataRootViewSet):
     """API endpoint for StudentPayment management | مدیریت پرداخت شاگردان"""
     permission_module = 'student_payments'
+    action_permissions = {
+        'daily_summary': 'view_student_payments',
+        'monthly_summary': 'view_student_payments',
+        'mark_as_paid': 'edit_student_payments',
+        'mark_as_refunded': 'edit_student_payments',
+        'create_payments_for_assignments': 'create_student_payments',
+        'financial_info': 'view_student_payments',
+        'bulk_financial_info': 'view_students',
+        'bulk_financial_export': 'export_reports',
+        'student_fee_assignments': 'view_students',
+        'student_fee_assignments_with_months': 'view_students',
+        'fee_assignment_data': 'view_students',
+        'bulk_assign_fees': 'edit_students',
+        'create_payments': 'create_student_payments',
+    }
     queryset = StudentPayment.objects.all().order_by('-payment_date')
     serializer_class = StudentPaymentSerializer
     filterset_fields = ['assignment', 'payment_status', 'payment_date']
@@ -1413,6 +1433,11 @@ class FinanceLedgerViewSet(DataRootViewSet):
     """API endpoint for FinanceLedger - Audit trail for all financial transactions
     ویوی لیجر مالی - ردیابی کامل تراکنشهای مالی"""
     permission_module = 'students'
+    action_permissions = {
+        'by_student': 'view_students',
+        'trial_balance': 'view_financial_reports',
+        'student_statement': 'view_students',
+    }
     queryset = FinanceLedger.objects.all().select_related('student')
     serializer_class = FinanceLedgerSerializer
     filterset_fields = ['student', 'entry_type', 'account', 'entry_side']

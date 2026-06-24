@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import DataTable, { TableColumn, TableAction } from '@/components/ui/data-table';
+import { PermissionButton } from '@/components/ui/permission-button';
+import { useCrudPermissions } from '@/hooks/useCrudPermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
@@ -27,6 +29,7 @@ const CLASS_LEVELS = [
 
 export const StudentFeeAssignmentList = () => {
   const { t } = useLanguage();
+  const { canEdit, canDelete } = useCrudPermissions('students');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const studentIdFromUrl = searchParams.get('student');
@@ -164,22 +167,22 @@ export const StudentFeeAssignmentList = () => {
   ];
 
   const rowActions: TableAction[] = [
-    {
+    ...(canEdit ? [{
       key: 'edit',
       label: t('students.edit'),
       icon: <Edit className="h-4 w-4" />,
       onClick: handleEdit,
       tooltip: t('students.editFeeAssignment')
-    },
-    {
+    }] : []),
+    ...(canDelete ? [{
       key: 'delete',
       label: t('students.delete'),
       icon: <Trash2 className="h-4 w-4" />,
-      onClick: (record) => handleDelete(record.id, t('students.feeAssignment')),
-      variant: 'ghost',
+      onClick: (record: { id: number }) => handleDelete(record.id, t('students.feeAssignment')),
+      variant: 'ghost' as const,
       className: 'text-red-600 hover:text-red-700',
       tooltip: t('students.deleteFeeAssignment')
-    }
+    }] : []),
   ];
 
   const customFilters = [
@@ -264,10 +267,10 @@ export const StudentFeeAssignmentList = () => {
         subtitle={t('students.manageFeeAssignments')}
         icon={<DollarSign className="h-5 w-5" />}
         headerActions={
-          <Button onClick={() => navigate('/student-fee-assignments/add')}>
+          <PermissionButton module="students" action="create" onClick={() => navigate('/student-fee-assignments/add')}>
             <Plus className="mr-2 h-4 w-4" />
             {t('students.addFeeAssignment')}
-          </Button>
+          </PermissionButton>
         }
         searchable
         searchPlaceholder={t('students.searchFeeAssignments')}

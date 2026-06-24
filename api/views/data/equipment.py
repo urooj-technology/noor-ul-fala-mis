@@ -3,10 +3,11 @@ from decimal import Decimal
 from django.db import transaction
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from api.models.data.equipment import Equipment, EquipmentCategory, EquipmentStockMovement
-from api.permissions import user_is_admin
+from api.permissions import HasAnyCodenamePermission, user_is_admin
 from api.serializers.data.equipment import (
     EquipmentCategorySerializer,
     EquipmentSerializer,
@@ -31,10 +32,20 @@ class EquipmentCategoryViewSet(DataRootViewSet):
 
 class EquipmentViewSet(DataRootViewSet):
     permission_module = 'equipment'
+    action_permissions = {
+        'movements': 'view_equipment',
+        'summary': 'view_equipment',
+    }
     queryset = Equipment.objects.select_related('category').all().order_by('-id')
     serializer_class = EquipmentSerializer
     filterset_fields = ['category', 'is_active']
     search_fields = ['name', 'barcode', 'brand', 'model', 'description']
+
+    def get_permissions(self):
+        if self.action in ('transfer_stock', 'add_stock'):
+            self.any_required_permissions = ['edit_equipment', 'transfer_equipment_stock']
+            return [IsAuthenticated(), HasAnyCodenamePermission()]
+        return super().get_permissions()
 
     def get_queryset(self):
         queryset = super().get_queryset()

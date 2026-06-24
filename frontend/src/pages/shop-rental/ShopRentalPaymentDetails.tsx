@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCrudPermissions } from '@/hooks/useCrudPermissions';
 import { useCalendar } from '@/contexts/CalendarContext';
 import { formatDateByCalendarType } from '@/utils/calendar';
 import useFetchObject from '@/api/useFetchObject';
@@ -13,6 +14,7 @@ import { formatNumber } from '@/lib/formatNumber';
 
 const ShopRentalPaymentDetails = () => {
   const { t } = useLanguage();
+  const { canEdit } = useCrudPermissions('shop_rentals');
   const { calendarType } = useCalendar();
   const navigate = useNavigate();
   const { id } = useParams();
@@ -70,10 +72,12 @@ const ShopRentalPaymentDetails = () => {
           {t('common.back')}
         </Button>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate(`/shop-rental-payments/${id}/edit`)}>
-            <Edit className="mr-2 h-4 w-4" />
-            {t('common.edit')}
-          </Button>
+          {canEdit && (
+            <Button variant="outline" onClick={() => navigate(`/shop-rental-payments/${id}/edit`)}>
+              <Edit className="mr-2 h-4 w-4" />
+              {t('common.edit')}
+            </Button>
+          )}
         </div>
       </div>
 

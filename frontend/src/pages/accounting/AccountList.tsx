@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Eye, BookOpen } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { PermissionButton } from '@/components/ui/permission-button';
 import { Badge } from '@/components/ui/badge';
 import DataTable, { TableColumn, TableAction, FilterOption } from '@/components/ui/data-table';
+import { useCrudPermissions } from '@/hooks/useCrudPermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { CalendarProvider } from '@/contexts/CalendarContext';
 import { getCurrencySymbol } from '@/utils/currency';
@@ -13,6 +14,7 @@ import useDelete from '@/api/useDelete';
 
 export const AccountList = () => {
   const { t } = useLanguage();
+  const { canEdit, canDelete } = useCrudPermissions('accounting');
   const lang = t('language.code', 'en') as 'en' | 'fa' | 'ps';
   const locale = lang === 'fa' ? 'fa-AF' : lang === 'ps' ? 'ps-AF' : 'en-US';
   const navigate = useNavigate();
@@ -155,22 +157,22 @@ export const AccountList = () => {
       onClick: handleDetails,
       tooltip: t('accounting.viewDetails')
     },
-    {
+    ...(canEdit ? [{
       key: 'edit',
       label: t('accounting.edit'),
       icon: <Edit className="h-4 w-4" />,
       onClick: handleEdit,
       tooltip: t('accounting.editAccount')
-    },
-    {
+    }] : []),
+    ...(canDelete ? [{
       key: 'delete',
       label: t('accounting.delete'),
       icon: <Trash2 className="h-4 w-4" />,
-      onClick: (record) => handleDelete(record.id, record.name || 'Account'),
-      variant: 'ghost',
+      onClick: (record: Account) => handleDelete(record.id, record.name || 'Account'),
+      variant: 'ghost' as const,
       className: 'text-red-600 hover:text-red-700',
       tooltip: t('accounting.deleteAccount')
-    }
+    }] : []),
   ];
 
   const filters: FilterOption[] = [
@@ -222,10 +224,10 @@ export const AccountList = () => {
         subtitle={t('accounting.chartOfAccounts')}
         icon={<BookOpen className="h-5 w-5" />}
         headerActions={
-          <Button onClick={() => navigate('/accounts/add')}>
+          <PermissionButton module="accounting" action="create" onClick={() => navigate('/accounts/add')}>
             <Plus className="mr-2 h-4 w-4" />
             {t('accounting.addAccount')}
-          </Button>
+          </PermissionButton>
         }
         searchable
         searchPlaceholder={t('accounting.searchAccounts')}

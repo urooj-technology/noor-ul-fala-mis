@@ -78,19 +78,19 @@ class LoginView(KnoxLoginView):
 class UserListView(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]  # Only admins can list users
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
 
 
 class UserDetailView(generics.RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]  # Any authenticated user can view details
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
 
 
 class UserEditView(generics.UpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]  # Only admins can edit
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -109,8 +109,8 @@ class UserEditView(generics.UpdateAPIView):
 
 class UserDeleteView(generics.DestroyAPIView):
     queryset = User.objects.all()
-    serializer_class = UserSerializer  # You can use UserSerializer or create a simpler one if needed
-    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]  # Only admins can delete
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()

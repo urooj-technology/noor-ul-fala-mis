@@ -10,11 +10,16 @@ from api.permissions import HasModelPermission
 class DataRootViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, HasModelPermission]
     permission_module = None
+    action_permissions = {}
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
 
     def get_required_permission(self):
-        """Return permission codename for the current action, or None to allow."""
+        """Return permission codename for the current action, or None to deny."""
+        custom = self.action_permissions.get(self.action)
+        if custom:
+            return custom
+
         module = self.permission_module
         if not module:
             return None

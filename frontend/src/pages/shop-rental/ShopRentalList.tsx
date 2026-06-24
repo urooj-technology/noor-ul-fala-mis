@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Eye, Store } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { PermissionButton } from '@/components/ui/permission-button';
 import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import DataTable, { TableColumn, TableAction } from '@/components/ui/data-table';
+import { useCrudPermissions } from '@/hooks/useCrudPermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCalendar } from '@/contexts/CalendarContext';
 import { formatDateByCalendarType } from '@/utils/calendar';
@@ -14,6 +15,7 @@ import useDelete from '@/api/useDelete';
 
 export const ShopRentalList = () => {
   const { t } = useLanguage();
+  const { canEdit, canDelete } = useCrudPermissions('shop_rentals');
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -111,22 +113,22 @@ export const ShopRentalList = () => {
       onClick: handleDetails,
       tooltip: t('shop-rental.viewDetails')
     },
-    {
+    ...(canEdit ? [{
       key: 'edit',
       label: t('shop-rental.edit'),
       icon: <Edit className="h-4 w-4" />,
       onClick: handleEdit,
       tooltip: t('shop-rental.editShop')
-    },
-    {
+    }] : []),
+    ...(canDelete ? [{
       key: 'delete',
       label: t('shop-rental.delete'),
       icon: <Trash2 className="h-4 w-4" />,
-      onClick: (record) => handleDelete(record.id, record.shop_number || 'Shop'),
-      variant: 'ghost',
+      onClick: (record: { id: number; shop_number?: string }) => handleDelete(record.id, record.shop_number || 'Shop'),
+      variant: 'ghost' as const,
       className: 'text-red-600 hover:text-red-700',
       tooltip: t('shop-rental.deleteShop')
-    }
+    }] : []),
   ];
 
   const handleSearch = (value: string) => {
@@ -153,10 +155,10 @@ export const ShopRentalList = () => {
         subtitle={t('shop-rental.manageShops')}
         icon={<Store className="h-5 w-5" />}
         headerActions={
-          <Button onClick={() => navigate('/shops/add')}>
+          <PermissionButton module="shop_rentals" action="create" onClick={() => navigate('/shops/add')}>
             <Plus className="mr-2 h-4 w-4" />
             {t('shop-rental.addShop')}
-          </Button>
+          </PermissionButton>
         }
         searchable
         searchPlaceholder={t('shop-rental.searchShops')}

@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from api.permissions import HasReportPermission
 from datetime import timedelta
 from django.utils import timezone
 from django.db.models import Sum
@@ -21,7 +22,7 @@ from api.utils.calendar import to_gregorian_date_str
 
 class ComprehensiveReportView(APIView):
     """Clean comprehensive reports backed by journal entries."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasReportPermission]
 
     def get(self, request):
         report_type = request.query_params.get('type', 'overview')
@@ -170,7 +171,7 @@ class ComprehensiveReportView(APIView):
 
 class DailyReportView(APIView):
     """Daily financial snapshot."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasReportPermission]
 
     def get(self, request):
         date = request.query_params.get('date', timezone.now().date().isoformat())

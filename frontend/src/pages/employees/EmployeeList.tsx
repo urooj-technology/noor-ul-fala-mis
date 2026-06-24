@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Eye, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { PermissionButton } from '@/components/ui/permission-button';
 import { Badge } from '@/components/ui/badge';
 import DataTable, { TableColumn, TableAction, FilterOption } from '@/components/ui/data-table';
+import { useCrudPermissions } from '@/hooks/useCrudPermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCalendar } from '@/contexts/CalendarContext';
 import useFetchObjects from '@/api/useFetchObjects';
@@ -26,6 +27,7 @@ const getCurrentShamsiMonth = () => {
 export const EmployeeList = () => {
   const { t, language } = useLanguage();
   const { calendarType } = useCalendar();
+  const { canEdit, canDelete } = useCrudPermissions('employees');
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -183,22 +185,22 @@ export const EmployeeList = () => {
       onClick: handleDetails,
       tooltip: t('employees.viewDetails')
     },
-    {
+    ...(canEdit ? [{
       key: 'edit',
       label: t('employees.edit'),
       icon: <Edit className="h-4 w-4" />,
       onClick: handleEdit,
       tooltip: t('employees.editEmployee')
-    },
-    {
+    }] : []),
+    ...(canDelete ? [{
       key: 'delete',
       label: t('employees.delete'),
       icon: <Trash2 className="h-4 w-4" />,
-      onClick: (record) => handleDelete(record.id, record.full_name || 'Employee'),
-      variant: 'ghost',
+      onClick: (record: Employee) => handleDelete(record.id, record.full_name || 'Employee'),
+      variant: 'ghost' as const,
       className: 'text-red-600 hover:text-red-700',
       tooltip: t('employees.deleteEmployee')
-    }
+    }] : []),
   ];
 
   const filters: FilterOption[] = [
@@ -286,10 +288,10 @@ export const EmployeeList = () => {
         subtitle={`${t('employees.manageEmployeeRecords')} — ${periodLabel}`}
         icon={<Users className="h-5 w-5" />}
         headerActions={
-          <Button onClick={() => navigate('/employees/add')}>
+          <PermissionButton module="employees" action="create" onClick={() => navigate('/employees/add')}>
             <Plus className="mr-2 h-4 w-4" />
             {t('employees.addEmployee')}
-          </Button>
+          </PermissionButton>
         }
         searchable
         searchPlaceholder={t('employees.searchEmployees')}

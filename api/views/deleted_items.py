@@ -3,11 +3,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from api.permissions import HasManageSettingsPermission
 from api.services.deleted_items_service import list_deleted_items, restore_deleted_items
 
 
 class DeletedItemsView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasManageSettingsPermission]
 
     def get(self, request):
         model_key = request.query_params.get('model', 'all')
@@ -24,7 +25,7 @@ class DeletedItemsView(APIView):
 
 
 class DeletedItemsRestoreView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasManageSettingsPermission]
 
     def post(self, request):
         items = request.data.get('items', [])

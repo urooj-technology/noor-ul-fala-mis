@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import { DatePicker } from '@/components/ui/date-picker';
 import DataTable, { TableColumn, TableAction } from '@/components/ui/data-table';
+import { PermissionButton } from '@/components/ui/permission-button';
+import { useCrudPermissions } from '@/hooks/useCrudPermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { CalendarProvider } from '@/contexts/CalendarContext';
 import useFetchObjects from '@/api/useFetchObjects';
@@ -75,6 +77,7 @@ type RegistrationPeriod = '' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'cust
 
 export const StudentList = () => {
   const { t } = useLanguage();
+  const { canEdit, canDelete, canExport } = useCrudPermissions('students');
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -244,36 +247,36 @@ export const StudentList = () => {
       onClick: handleDetails,
       tooltip: t('students.viewDetails')
     },
-    {
+    ...(canExport ? [{
       key: 'print',
       label: t('common.print', 'Print'),
       icon: <Printer className="h-4 w-4" />,
       onClick: handlePrint,
       tooltip: t('common.print', 'Print Student Info')
-    },
+    }] : []),
     {
       key: 'fees',
       label: t('students.manageFeeAssignments', 'Manage Fees'),
       icon: <DollarSign className="h-4 w-4" />,
-      onClick: (record) => navigate(`/student-fee-assignments?student=${record.id}`),
+      onClick: (record: { id: number | string }) => navigate(`/student-fee-assignments?student=${record.id}`),
       tooltip: t('students.manageFeeAssignments', 'Manage Fee Assignments')
     },
-    {
+    ...(canEdit ? [{
       key: 'edit',
       label: t('students.edit'),
       icon: <Edit className="h-4 w-4" />,
       onClick: handleEdit,
       tooltip: t('students.editStudent')
-    },
-    {
+    }] : []),
+    ...(canDelete ? [{
       key: 'delete',
       label: t('students.delete'),
       icon: <Trash2 className="h-4 w-4" />,
-      onClick: (record) => handleDelete(record.id, record.full_name || t('students.student')),
-      variant: 'ghost',
+      onClick: (record: StudentItem) => handleDelete(record.id, record.full_name || t('students.student')),
+      variant: 'ghost' as const,
       className: 'text-red-600 hover:text-red-700',
       tooltip: t('students.deleteStudent')
-    }
+    }] : []),
   ];
 
   const statusOptions = [
@@ -408,10 +411,12 @@ export const StudentList = () => {
           <span className="text-sm font-medium">
             {selectedStudentIds.size} {t('students.studentsSelected', 'students selected')}
           </span>
-          <Button size="sm" onClick={() => setBulkPrintStudents(Array.from(selectedStudentIds))}>
-            <Printer className="mr-2 h-4 w-4" />
-            {t('students.printSelected', 'Print Selected')}
-          </Button>
+          {canExport && (
+            <Button size="sm" onClick={() => setBulkPrintStudents(Array.from(selectedStudentIds))}>
+              <Printer className="mr-2 h-4 w-4" />
+              {t('students.printSelected', 'Print Selected')}
+            </Button>
+          )}
           <Button size="sm" onClick={handleBulkChangeClass}>
             <GraduationCap className="mr-2 h-4 w-4" />
             {t('students.changeClassLevel', 'Change Class Level')}
@@ -430,10 +435,10 @@ export const StudentList = () => {
         subtitle={t('students.manageStudents')}
         icon={<User className="h-5 w-5" />}
         headerActions={
-          <Button onClick={() => navigate('/students/add')}>
+          <PermissionButton module="students" action="create" onClick={() => navigate('/students/add')}>
             <Plus className="mr-2 h-4 w-4" />
             {t('students.addStudent')}
-          </Button>
+          </PermissionButton>
         }
         selectable
         selectedRows={selectedRows}

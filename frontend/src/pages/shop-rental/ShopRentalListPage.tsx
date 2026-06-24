@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Eye, Receipt, DollarSign } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import DataTable, { TableColumn, TableAction } from '@/components/ui/data-table';
+import { PermissionButton } from '@/components/ui/permission-button';
+import { useCrudPermissions } from '@/hooks/useCrudPermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
 import { getMonthNames } from '@/utils/calendar';
@@ -23,6 +24,7 @@ const getCurrentShamsiYear = () => {
 
 export const ShopRentalListPage = () => {
   const { t } = useLanguage();
+  const { canEdit, canDelete, canCreate } = useCrudPermissions('shop_rentals');
   const navigate = useNavigate();
   const { calendarType } = useCalendar();
   const { formatDate } = useFormattedDate();
@@ -175,17 +177,17 @@ export const ShopRentalListPage = () => {
   ];
 
   const rowActions: TableAction[] = [
-    { key: 'add_payment', label: t('shop-rental.addPayment'), icon: <DollarSign className="h-4 w-4" />, onClick: handleAddPayment },
+    ...(canCreate ? [{ key: 'add_payment', label: t('shop-rental.addPayment'), icon: <DollarSign className="h-4 w-4" />, onClick: handleAddPayment }] : []),
     { key: 'view', label: t('shop-rental.viewDetails'), icon: <Eye className="h-4 w-4" />, onClick: handleDetails },
-    { key: 'edit', label: t('shop-rental.edit'), icon: <Edit className="h-4 w-4" />, onClick: handleEdit },
-    {
+    ...(canEdit ? [{ key: 'edit', label: t('shop-rental.edit'), icon: <Edit className="h-4 w-4" />, onClick: handleEdit }] : []),
+    ...(canDelete ? [{
       key: 'delete',
       label: t('shop-rental.delete'),
       icon: <Trash2 className="h-4 w-4" />,
-      onClick: (record) => handleDelete(record.id, `Rental ${record.shop_details?.name || ''}`),
-      variant: 'ghost',
+      onClick: (record: { id: number; shop_details?: { name?: string } }) => handleDelete(record.id, `Rental ${record.shop_details?.name || ''}`),
+      variant: 'ghost' as const,
       className: 'text-red-600 hover:text-red-700',
-    },
+    }] : []),
   ];
 
   const rentalStatusOptions = [
@@ -206,10 +208,10 @@ export const ShopRentalListPage = () => {
           subtitle={t('shop-rental.manageRentals')}
           icon={<Receipt className="h-5 w-5" />}
           headerActions={
-            <Button onClick={() => navigate('/shop-rentals/add')}>
+            <PermissionButton module="shop_rentals" action="create" onClick={() => navigate('/shop-rentals/add')}>
               <Plus className="mr-2 h-4 w-4" />
               {t('shop-rental.addRental')}
-            </Button>
+            </PermissionButton>
           }
           searchable
           searchPlaceholder={t('shop-rental.searchRentals')}

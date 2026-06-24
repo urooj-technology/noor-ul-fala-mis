@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePermissions } from '@/contexts/PermissionContext';
 import { ArrowLeft, Edit, Shield, Mail, Phone, MapPin, Building, Calendar, User as UserIcon, Plus, Trash2, Eye, Settings, MoreVertical } from 'lucide-react';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -51,6 +52,7 @@ export const UserDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { isAdmin } = usePermissions();
 
   const { data: user, isLoading } = useFetchObject<User>({
     queryKey: ['user', id || ''],
@@ -157,29 +159,36 @@ export const UserDetails: React.FC = () => {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button
-                onClick={() => navigate('/users/add')}
-                className="flex items-center gap-2"
-              >
-                <Plus size={16} />
-                {t('user.addUser')}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate(`/users/${user.id}/edit`)}
-                className="flex items-center gap-2"
-              >
-                <Edit size={16} />
-                {t('user.editUser')}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate(`/users/${user.id}/permissions`)}
-                className="flex items-center gap-2"
-              >
-                <Shield size={16} />
-                {t('user.managePermissions')}
-              </Button>
+              {isAdmin && (
+                <Button
+                  onClick={() => navigate('/users/add')}
+                  className="flex items-center gap-2"
+                >
+                  <Plus size={16} />
+                  {t('user.addUser')}
+                </Button>
+              )}
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(`/users/${user.id}/edit`)}
+                  className="flex items-center gap-2"
+                >
+                  <Edit size={16} />
+                  {t('user.editUser')}
+                </Button>
+              )}
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(`/users/${user.id}/permissions`)}
+                  className="flex items-center gap-2"
+                >
+                  <Shield size={16} />
+                  {t('user.managePermissions')}
+                </Button>
+              )}
+              {isAdmin && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm">
@@ -220,6 +229,7 @@ export const UserDetails: React.FC = () => {
                   </AlertDialog>
                 </DropdownMenuContent>
               </DropdownMenu>
+              )}
             </div>
           </div>
         </div>

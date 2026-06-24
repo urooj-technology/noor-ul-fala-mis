@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { resolveQueryKeyBase, toQueryKeyArray } from "@/lib/queryKey";
 
 interface UseUpdateProps<T> {
@@ -95,6 +96,15 @@ const useUpdate = <T,>({
       setLoading(false);
       setSuccess(false);
       setIsSuccess(false);
+      if (error.response?.status === 403) {
+        toast.error("Forbidden", {
+          description: getApiErrorMessage(error, t("api.use_update.updateFailed") || "Update failed"),
+          style: { background: "#fee2e2", border: "1px solid #fca5a5" },
+          duration: 6000,
+          position: "top-right",
+        });
+        return;
+      }
       const backendErrors = error.response?.data;
       if (backendErrors && typeof backendErrors === "object") {
         // Handle field-specific errors

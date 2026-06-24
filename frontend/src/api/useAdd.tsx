@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { getApiErrorMessage } from "@/lib/api-errors";
 
 interface UseAddProps<T> {
   queryKey: string;
@@ -158,6 +159,15 @@ const useAdd = <T,>({
       setIsSuccess(false);
       setError(error);
       if (showErrorToast) {
+        if (error.response?.status === 403) {
+          toast.error("Forbidden", {
+            description: getApiErrorMessage(error, errorMessage),
+            style: { background: "#fee2e2", border: "1px solid #fca5a5" },
+            duration: 6000,
+            position: "top-right",
+          });
+          return;
+        }
         const backendErrors = error.response?.data;
         if (backendErrors && typeof backendErrors === "object") {
           // Handle field-specific errors

@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Tag } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { PermissionButton } from '@/components/ui/permission-button';
 import { Badge } from '@/components/ui/badge';
 import DataTable, { TableColumn, TableAction } from '@/components/ui/data-table';
+import { useCrudPermissions } from '@/hooks/useCrudPermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 
 export const FeeTypeList = () => {
   const { t } = useLanguage();
+  const { canEdit, canDelete } = useCrudPermissions('students');
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -93,22 +95,22 @@ export const FeeTypeList = () => {
   ];
 
   const rowActions: TableAction[] = [
-    {
+    ...(canEdit ? [{
       key: 'edit',
       label: t('students.edit'),
       icon: <Edit className="h-4 w-4" />,
       onClick: handleEdit,
       tooltip: t('students.editFeeType', 'Edit Fee Type')
-    },
-    {
+    }] : []),
+    ...(canDelete ? [{
       key: 'delete',
       label: t('students.delete'),
       icon: <Trash2 className="h-4 w-4" />,
-      onClick: (record) => handleDelete(record.id, record.name),
-      variant: 'ghost',
+      onClick: (record: { id: number; name: string }) => handleDelete(record.id, record.name),
+      variant: 'ghost' as const,
       className: 'text-red-600 hover:text-red-700',
       tooltip: t('students.deleteFeeType', 'Delete Fee Type')
-    }
+    }] : []),
   ];
 
   return (
@@ -121,10 +123,10 @@ export const FeeTypeList = () => {
         subtitle={t('students.manageFeeTypes', 'Manage fee types')}
         icon={<Tag className="h-5 w-5" />}
         headerActions={
-          <Button onClick={() => navigate('/fee-types/add')}>
+          <PermissionButton module="students" action="create" onClick={() => navigate('/fee-types/add')}>
             <Plus className="mr-2 h-4 w-4" />
             {t('students.addFeeType', 'Add Fee Type')}
-          </Button>
+          </PermissionButton>
         }
         searchable
         searchPlaceholder={t('students.searchFeeTypes', 'Search fee types...')}

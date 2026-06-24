@@ -16,6 +16,9 @@ import openpyxl
 
 class ShopViewSet(DataRootViewSet):
     permission_module = 'shop_rentals'
+    action_permissions = {
+        'statistics': 'view_shop_rentals',
+    }
     queryset = Shop.objects.all().order_by('shop_number')
     serializer_class = ShopSerializer
     filterset_fields = ['status']
@@ -50,6 +53,17 @@ class TenantViewSet(DataRootViewSet):
 
 class ShopRentalViewSet(DataRootViewSet):
     permission_module = 'shop_rentals'
+    action_permissions = {
+        'bulk_rental_info': 'view_shop_rentals',
+        'bulk_rental_export': 'export_reports',
+        'period_report': 'view_shop_rentals',
+        'active_rentals': 'view_shop_rentals',
+        'expiring_rentals': 'view_shop_rentals',
+        'monthly_income': 'view_shop_rentals',
+        'payments': 'view_shop_rentals',
+        'add_payment': 'create_shop_rentals',
+        'financial_info': 'view_shop_rentals',
+    }
     queryset = ShopRental.objects.all().order_by('-start_date')
     serializer_class = ShopRentalSerializer
     filterset_fields = ['shop', 'tenant', 'rental_status']

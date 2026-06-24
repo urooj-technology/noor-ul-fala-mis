@@ -18,6 +18,11 @@ class IncomeCategoryViewSet(DataRootViewSet):
 
 class OtherIncomeViewSet(DataRootViewSet):
     permission_module = 'other_income'
+    action_permissions = {
+        'daily_summary': 'view_other_income',
+        'monthly_summary': 'view_other_income',
+        'by_category': 'view_other_income',
+    }
     queryset = OtherIncome.objects.all().order_by('-income_date')
     serializer_class = OtherIncomeSerializer
     filterset_fields = ['income_category', 'income_date']

@@ -7,6 +7,9 @@ from datetime import datetime
 
 class EmployeeViewSet(DataRootViewSet):
     permission_module = 'employees'
+    action_permissions = {
+        'financial_summary': 'view_employees',
+    }
     queryset = Employee.objects.all().order_by("-id")
     serializer_class = EmployeeSerializer
     filterset_fields = ["is_active"]

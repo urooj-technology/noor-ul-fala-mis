@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Tag } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { PermissionButton } from '@/components/ui/permission-button';
 import { Badge } from '@/components/ui/badge';
 import DataTable, { TableColumn, TableAction } from '@/components/ui/data-table';
+import { useCrudPermissions } from '@/hooks/useCrudPermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 
 export const IncomeCategoryList = () => {
   const { t } = useLanguage();
+  const { canEdit, canDelete } = useCrudPermissions('other_income');
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -72,22 +74,22 @@ export const IncomeCategoryList = () => {
   ];
 
   const rowActions: TableAction[] = [
-    {
+    ...(canEdit ? [{
       key: 'edit',
       label: t('other-income.edit'),
       icon: <Edit className="h-4 w-4" />,
       onClick: handleEdit,
       tooltip: t('other-income.editCategory')
-    },
-    {
+    }] : []),
+    ...(canDelete ? [{
       key: 'delete',
       label: t('other-income.delete'),
       icon: <Trash2 className="h-4 w-4" />,
-      onClick: (record) => handleDelete(record.id, record.name || 'Category'),
-      variant: 'ghost',
+      onClick: (record: { id: number; name?: string }) => handleDelete(record.id, record.name || 'Category'),
+      variant: 'ghost' as const,
       className: 'text-red-600 hover:text-red-700',
       tooltip: t('other-income.deleteCategory')
-    }
+    }] : []),
   ];
 
   return (
@@ -100,10 +102,10 @@ export const IncomeCategoryList = () => {
         subtitle={t('other-income.manageCategories')}
         icon={<Tag className="h-5 w-5" />}
         headerActions={
-          <Button onClick={() => navigate('/income-categories/add')}>
+          <PermissionButton module="other_income" action="create" onClick={() => navigate('/income-categories/add')}>
             <Plus className="mr-2 h-4 w-4" />
             {t('other-income.addCategory')}
-          </Button>
+          </PermissionButton>
         }
         searchable
         searchPlaceholder={t('other-income.searchCategories')}

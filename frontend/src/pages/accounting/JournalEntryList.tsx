@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Eye, FileText } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { PermissionButton } from '@/components/ui/permission-button';
 import { Badge } from '@/components/ui/badge';
 import DataTable, { TableColumn, TableAction, FilterOption } from '@/components/ui/data-table';
+import { usePermissions } from '@/contexts/PermissionContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
 import { formatDateByCalendarType } from '@/utils/calendar';
@@ -13,6 +14,9 @@ import useDelete from '@/api/useDelete';
 export const JournalEntryList = () => {
   const { t } = useLanguage();
   const { calendarType } = useCalendar();
+  const { hasPermission } = usePermissions();
+  const canEdit = hasPermission('edit_journal_entries');
+  const canDelete = hasPermission('delete_journal_entries');
   const lang = t('language.code') as 'fa' | 'ps';
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -114,22 +118,22 @@ export const JournalEntryList = () => {
       onClick: handleDetails,
       tooltip: t('accounting.viewDetails')
     },
-    {
+    ...(canEdit ? [{
       key: 'edit',
       label: t('accounting.edit'),
       icon: <Edit className="h-4 w-4" />,
       onClick: handleEdit,
       tooltip: t('accounting.edit')
-    },
-    {
+    }] : []),
+    ...(canDelete ? [{
       key: 'delete',
       label: t('accounting.delete'),
       icon: <Trash2 className="h-4 w-4" />,
-      onClick: (record) => handleDelete(record.id, record.description || 'Journal Entry'),
-      variant: 'ghost',
+      onClick: (record: { id: number; description?: string }) => handleDelete(record.id, record.description || 'Journal Entry'),
+      variant: 'ghost' as const,
       className: 'text-red-600 hover:text-red-700',
       tooltip: t('accounting.deleteJournalEntry')
-    }
+    }] : []),
   ];
 
   const filters: FilterOption[] = [
@@ -175,10 +179,10 @@ export const JournalEntryList = () => {
         subtitle={t('accounting.doubleEntryBookkeeping')}
         icon={<FileText className="h-5 w-5" />}
         headerActions={
-          <Button onClick={() => navigate('/journal-entries/add')}>
+          <PermissionButton permission="create_journal_entries" onClick={() => navigate('/journal-entries/add')}>
             <Plus className="mr-2 h-4 w-4" />
             {t('accounting.addTransaction')}
-          </Button>
+          </PermissionButton>
         }
         searchable
         searchPlaceholder={t('accounting.searchJournalEntries')}

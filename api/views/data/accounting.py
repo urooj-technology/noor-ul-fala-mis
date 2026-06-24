@@ -31,8 +31,10 @@ class JournalEntryViewSet(DataRootViewSet):
     def get_required_permission(self):
         if self.action == 'create':
             return 'create_journal_entries'
-        if self.action in ('update', 'partial_update', 'destroy'):
+        if self.action in ('update', 'partial_update'):
             return 'edit_journal_entries'
+        if self.action == 'destroy':
+            return 'delete_journal_entries'
         if self.action in ('list', 'retrieve'):
             return 'view_accounting'
         return super().get_required_permission()
@@ -40,6 +42,11 @@ class JournalEntryViewSet(DataRootViewSet):
 
 class TransactionViewSet(DataRootViewSet):
     permission_module = 'accounting'
+    action_permissions = {
+        'trial_balance': 'view_financial_reports',
+        'income_statement': 'view_financial_reports',
+        'balance_sheet': 'view_financial_reports',
+    }
     queryset = Transaction.objects.all().order_by('-date', '-id')
     serializer_class = TransactionSerializer
     filterset_fields = ['transaction_type', 'is_posted', 'date']

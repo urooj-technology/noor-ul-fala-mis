@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCrudPermissions } from '@/hooks/useCrudPermissions';
 import useFetchObject from '@/api/useFetchObject';
 import { useCalendar } from '@/contexts/CalendarContext';
 import {
@@ -149,6 +150,7 @@ const sectionAccents: Record<string, string> = {
 
 const StudentDetails = () => {
   const { t } = useLanguage();
+  const { canEdit } = useCrudPermissions('students');
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
 
@@ -308,10 +310,12 @@ const StudentDetails = () => {
             <Printer className="h-4 w-4" />
             {t('common.print', 'Print')}
           </Button>
-          <Button onClick={() => navigate(`/students/${id}/edit`)} className="gap-2">
-            <Edit className="h-4 w-4" />
-            {t('common.edit')}
-          </Button>
+          {canEdit && (
+            <Button onClick={() => navigate(`/students/${id}/edit`)} className="gap-2">
+              <Edit className="h-4 w-4" />
+              {t('common.edit')}
+            </Button>
+          )}
         </div>
       </div>
 

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { resolveQueryKeyBase, toQueryKeyArray } from "@/lib/queryKey";
 
 interface UseDeleteProps {
@@ -58,8 +59,7 @@ const useDelete = ({ queryKey, endpoint, invalidateQueryKeys = [] }: UseDeletePr
           logout();
         }
         throw new Error(
-          (error as AxiosError<{ detail?: string }>).response?.data?.detail ||
-            t("api.use_delete.deleteFailed")
+          getApiErrorMessage(error, t("api.use_delete.deleteFailed"))
         );
       }
     },
@@ -82,10 +82,10 @@ const useDelete = ({ queryKey, endpoint, invalidateQueryKeys = [] }: UseDeletePr
       });
     },
     onError: (error: AxiosError<{ detail?: string }>) => {
-      const errorMessage = error.response?.data?.detail ||
-        error.message ||
-        t("api.use_delete.deleteFailed") ||
-        "Failed to delete item";
+      const errorMessage = getApiErrorMessage(
+        error,
+        t("api.use_delete.deleteFailed") || "Failed to delete item",
+      );
       toast.error("Error", {
         description: errorMessage,
         style: {

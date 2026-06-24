@@ -6,15 +6,27 @@ from django.contrib.auth.password_validation import validate_password
 from django.utils.translation import gettext_lazy as _
 
 
+from account.models import User
+from api.serializers.base import DataRootSerializer
+from rest_framework import serializers
+from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
+from django.utils.translation import gettext_lazy as _
+
+
 class UserSerializer(DataRootSerializer):
     password = serializers.CharField(write_only=True, required=False)
-    
+    permissions = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = User
         fields = "__all__"
         extra_kwargs = {
             'password': {'write_only': True, 'required': False}
         }
+
+    def get_permissions(self, obj):
+        return obj.get_permissions()
 
     def create(self, validated_data):
         password = validated_data.pop('password', None)

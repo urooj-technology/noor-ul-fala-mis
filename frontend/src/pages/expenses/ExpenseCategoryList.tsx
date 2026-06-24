@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Eye, Package } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Autocomplete } from '@/components/ui/autocomplete';
+import { PermissionButton } from '@/components/ui/permission-button';
 import DataTable, { TableColumn, TableAction } from '@/components/ui/data-table';
+import { useCrudPermissions } from '@/hooks/useCrudPermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import useFetchObjects from '@/api/useFetchObjects';
@@ -11,6 +11,7 @@ import useDelete from '@/api/useDelete';
 
 const ExpenseCategoryList = () => {
   const { t } = useLanguage();
+  const { canEdit, canDelete } = useCrudPermissions('expenses');
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -73,22 +74,22 @@ const ExpenseCategoryList = () => {
       onClick: handleDetails,
       tooltip: t('expenses.viewDetails')
     },
-    {
+    ...(canEdit ? [{
       key: 'edit',
       label: t('expenses.edit'),
       icon: <Edit className="h-4 w-4" />,
       onClick: handleEdit,
       tooltip: t('expenses.editCategory')
-    },
-    {
+    }] : []),
+    ...(canDelete ? [{
       key: 'delete',
       label: t('expenses.delete'),
       icon: <Trash2 className="h-4 w-4" />,
-      onClick: (record) => handleDelete(record.id, record.name),
-      variant: 'ghost',
+      onClick: (record: { id: number; name: string }) => handleDelete(record.id, record.name),
+      variant: 'ghost' as const,
       className: 'text-red-600 hover:text-red-700',
       tooltip: t('expenses.deleteCategory')
-    }
+    }] : []),
   ];
 
   const customFilters: any[] = [];
@@ -110,10 +111,10 @@ const ExpenseCategoryList = () => {
         subtitle={t('expenses.manageExpenseCategories')}
         icon={<Package className="h-5 w-5" />}
         headerActions={
-          <Button onClick={() => navigate('/expense-categories/add')}>
+          <PermissionButton module="expenses" action="create" onClick={() => navigate('/expense-categories/add')}>
             <Plus className="mr-2 h-4 w-4" />
             {t('expenses.categories.addCategory')}
-          </Button>
+          </PermissionButton>
         }
         searchable
         searchPlaceholder={t('expenses.searchCategories')}

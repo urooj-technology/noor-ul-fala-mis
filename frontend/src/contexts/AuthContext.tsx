@@ -73,6 +73,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       });
 
       if (response.status === 200) {
+        const profile = response.data;
+        if (profile?.permissions && Array.isArray(profile.permissions)) {
+          const updatedUser = {
+            ...parsedUser,
+            permissions: profile.permissions,
+            role: (profile.role || parsedUser.role).toLowerCase(),
+            is_admin: profile.is_admin ?? parsedUser.is_admin,
+            is_staff: profile.is_staff ?? parsedUser.is_staff,
+          };
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+          setUserState(updatedUser);
+        }
         return true;
       }
       return false;
@@ -104,6 +116,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               role: parsedUser.role.toLowerCase(),
             };
             setUserState(normalizedUser);
+            validateToken();
           } else {
             console.warn("Stored user data is incomplete:", parsedUser);
             localStorage.removeItem("user");

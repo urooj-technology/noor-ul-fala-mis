@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { PermissionButton } from '@/components/ui/permission-button';
 import DataTable, { TableColumn, TableAction } from '@/components/ui/data-table';
+import { useCrudPermissions } from '@/hooks/useCrudPermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 
 export const TenantList = () => {
   const { t } = useLanguage();
+  const { canEdit, canDelete } = useCrudPermissions('shop_rentals');
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -63,22 +65,22 @@ export const TenantList = () => {
   ];
 
   const rowActions: TableAction[] = [
-    {
+    ...(canEdit ? [{
       key: 'edit',
       label: t('shop-rental.edit'),
       icon: <Edit className="h-4 w-4" />,
       onClick: handleEdit,
       tooltip: t('shop-rental.editTenant')
-    },
-    {
+    }] : []),
+    ...(canDelete ? [{
       key: 'delete',
       label: t('shop-rental.delete'),
       icon: <Trash2 className="h-4 w-4" />,
-      onClick: (record) => handleDelete(record.id, record.full_name || 'Tenant'),
-      variant: 'ghost',
+      onClick: (record: { id: number; full_name?: string }) => handleDelete(record.id, record.full_name || 'Tenant'),
+      variant: 'ghost' as const,
       className: 'text-red-600 hover:text-red-700',
       tooltip: t('shop-rental.deleteTenant')
-    }
+    }] : []),
   ];
 
   return (
@@ -91,10 +93,10 @@ export const TenantList = () => {
         subtitle={t('shop-rental.manageTenants')}
         icon={<Users className="h-5 w-5" />}
         headerActions={
-          <Button onClick={() => navigate('/tenants/add')}>
+          <PermissionButton module="shop_rentals" action="create" onClick={() => navigate('/tenants/add')}>
             <Plus className="mr-2 h-4 w-4" />
             {t('shop-rental.addTenant')}
-          </Button>
+          </PermissionButton>
         }
         searchable
         searchPlaceholder={t('shop-rental.searchTenants')}

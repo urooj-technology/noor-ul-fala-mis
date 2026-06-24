@@ -4,6 +4,8 @@ import { Plus, Edit, Trash2, Eye, DollarSign, Calendar, Printer } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import DataTable, { TableColumn, TableAction, FilterOption } from '@/components/ui/data-table';
+import { PermissionButton } from '@/components/ui/permission-button';
+import { useCrudPermissions } from '@/hooks/useCrudPermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
 import { formatDateByCalendarType } from '@/utils/calendar';
@@ -13,6 +15,7 @@ import AdvanceReportPrint from './AdvanceReportPrint';
 
 export const AdvanceList = () => {
   const { t } = useLanguage();
+  const { canEdit, canDelete, canExport } = useCrudPermissions('advances');
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [employeeFilter, setEmployeeFilter] = useState('all');
@@ -152,25 +155,25 @@ export const AdvanceList = () => {
       onClick: (record) => navigate(`/advance/${record.id}`),
       tooltip: t('advance.viewDetails')
     },
-    {
+    ...(canEdit ? [{
       key: 'edit',
       label: t('advance.edit'),
       icon: <Edit className="h-4 w-4" />,
       onClick: handleEdit,
       tooltip: t('advance.editAdvance')
-    },
-    {
+    }] : []),
+    ...(canDelete ? [{
       key: 'delete',
       label: t('advance.delete'),
       icon: <Trash2 className="h-4 w-4" />,
-      onClick: (record) => {
+      onClick: (record: { id: number; employee_details?: { full_name?: string }; amount: number; month: string; year: number }) => {
         const employeeName = record.employee_details?.full_name || 'Advance';
         handleDelete(record.id, `${employeeName} - ${record.amount} (${record.month} ${record.year})`);
       },
-      variant: 'ghost',
+      variant: 'ghost' as const,
       className: 'text-red-600 hover:text-red-700',
       tooltip: t('advance.deleteAdvance')
-    }
+    }] : []),
   ];
 
   const filters: FilterOption[] = [
@@ -244,14 +247,16 @@ export const AdvanceList = () => {
         icon={<DollarSign className="h-5 w-5" />}
         headerActions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setShowPrint(true)} disabled={advances.length === 0}>
-              <Printer className="mr-2 h-4 w-4" />
-              {t('advance.printReport', 'Print')}
-            </Button>
-            <Button onClick={() => navigate('/advance/add')}>
+            {canExport && (
+              <Button variant="outline" onClick={() => setShowPrint(true)} disabled={advances.length === 0}>
+                <Printer className="mr-2 h-4 w-4" />
+                {t('advance.printReport', 'Print')}
+              </Button>
+            )}
+            <PermissionButton module="advances" action="create" onClick={() => navigate('/advance/add')}>
               <Plus className="mr-2 h-4 w-4" />
               {t('advance.addAdvance')}
-            </Button>
+            </PermissionButton>
           </div>
         }
         searchable

@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
 import DataTable, { TableColumn, TableAction, FilterOption } from '@/components/ui/data-table';
+import { PermissionButton } from '@/components/ui/permission-button';
+import { useCrudPermissions } from '@/hooks/useCrudPermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
 import { formatDateByCalendarType } from '@/utils/calendar';
@@ -15,6 +17,7 @@ import PayrollReportPrint from './PayrollReportPrint';
 export const PayrollList = () => {
   const { t } = useLanguage();
   const { calendarType } = useCalendar();
+  const { canEdit, canDelete, canExport } = useCrudPermissions('payroll');
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [employeeFilter, setEmployeeFilter] = useState('');
@@ -156,25 +159,25 @@ export const PayrollList = () => {
       onClick: handleDetails,
       tooltip: t('payroll.viewDetails')
     },
-    {
+    ...(canEdit ? [{
       key: 'edit',
       label: t('payroll.edit'),
       icon: <Edit className="h-4 w-4" />,
       onClick: handleEdit,
       tooltip: t('payroll.editPayroll')
-    },
-    {
+    }] : []),
+    ...(canDelete ? [{
       key: 'delete',
       label: t('payroll.delete'),
       icon: <Trash2 className="h-4 w-4" />,
-      onClick: (record) => {
+      onClick: (record: { id: number; employee_details?: { full_name?: string }; month: string; year: number }) => {
         const employeeName = record.employee_details?.full_name || 'Payroll';
         handleDelete(record.id, `${employeeName} - ${record.month} ${record.year}`);
       },
-      variant: 'ghost',
+      variant: 'ghost' as const,
       className: 'text-red-600 hover:text-red-700',
       tooltip: t('payroll.deletePayroll')
-    }
+    }] : []),
   ];
 
   const filters: FilterOption[] = [
@@ -257,14 +260,16 @@ export const PayrollList = () => {
         icon={<DollarSign className="h-5 w-5" />}
         headerActions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setShowPrint(true)} disabled={payrolls.length === 0}>
-              <Printer className="mr-2 h-4 w-4" />
-              {t('payroll.printReport', 'Print')}
-            </Button>
-            <Button onClick={() => navigate('/payroll/add')}>
+            {canExport && (
+              <Button variant="outline" onClick={() => setShowPrint(true)} disabled={payrolls.length === 0}>
+                <Printer className="mr-2 h-4 w-4" />
+                {t('payroll.printReport', 'Print')}
+              </Button>
+            )}
+            <PermissionButton module="payroll" action="create" onClick={() => navigate('/payroll/add')}>
               <Plus className="mr-2 h-4 w-4" />
               {t('payroll.addPayroll')}
-            </Button>
+            </PermissionButton>
           </div>
         }
         searchable
