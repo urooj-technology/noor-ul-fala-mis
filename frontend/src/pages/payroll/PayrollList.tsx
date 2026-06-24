@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, Eye, DollarSign, Calendar, User } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, DollarSign, Calendar, User, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
@@ -10,6 +10,7 @@ import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
 import { formatDateByCalendarType } from '@/utils/calendar';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
+import PayrollReportPrint from './PayrollReportPrint';
 
 export const PayrollList = () => {
   const { t } = useLanguage();
@@ -21,6 +22,7 @@ export const PayrollList = () => {
   const [monthFilter, setMonthFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const [showPrint, setShowPrint] = useState(false);
 
   const { data: payrollsData, isLoading } = useFetchObjects<{
     results: any[];
@@ -254,10 +256,16 @@ export const PayrollList = () => {
         subtitle={t('payroll.manageEmployeePayrolls')}
         icon={<DollarSign className="h-5 w-5" />}
         headerActions={
-          <Button onClick={() => navigate('/payroll/add')}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('payroll.addPayroll')}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setShowPrint(true)} disabled={payrolls.length === 0}>
+              <Printer className="mr-2 h-4 w-4" />
+              {t('payroll.printReport', 'Print')}
+            </Button>
+            <Button onClick={() => navigate('/payroll/add')}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t('payroll.addPayroll')}
+            </Button>
+          </div>
         }
         searchable
         searchPlaceholder={t('payroll.searchPayrolls')}
@@ -293,6 +301,10 @@ export const PayrollList = () => {
       />
 
       <ConfirmDialog />
+
+      {showPrint && (
+        <PayrollReportPrint payrolls={payrolls} onClose={() => setShowPrint(false)} />
+      )}
     </div>
   );
 };

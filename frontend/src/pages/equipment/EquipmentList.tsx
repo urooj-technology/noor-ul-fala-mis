@@ -65,7 +65,7 @@ export const EquipmentList = () => {
   });
 
   const { handleDelete, ConfirmDialog } = useDelete({
-    queryKey: 'equipment',
+    queryKey: ['equipment'],
     endpoint: 'equipment',
   });
 

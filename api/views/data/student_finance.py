@@ -1412,6 +1412,7 @@ class StudentPaymentViewSet(DataRootViewSet):
 class FinanceLedgerViewSet(DataRootViewSet):
     """API endpoint for FinanceLedger - Audit trail for all financial transactions
     ویوی لیجر مالی - ردیابی کامل تراکنشهای مالی"""
+    permission_module = 'students'
     queryset = FinanceLedger.objects.all().select_related('student')
     serializer_class = FinanceLedgerSerializer
     filterset_fields = ['student', 'entry_type', 'account', 'entry_side']
@@ -1474,7 +1475,11 @@ class FinanceLedgerViewSet(DataRootViewSet):
     @action(detail=True, methods=['get'])
     def student_statement(self, request, pk=None):
         """Get student financial statement | صورت وضعیت مالی شاگرد"""
-        student = self.get_object()
+        entry = self.get_object()
+        student = entry.student
+        if not student:
+            return Response({'error': 'No student linked to this ledger entry'}, status=drf_status.HTTP_404_NOT_FOUND)
+
         entries = FinanceLedger.objects.filter(student=student).order_by('created_at')
         serializer = self.get_serializer(entries, many=True)
         

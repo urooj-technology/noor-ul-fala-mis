@@ -5,9 +5,10 @@ import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { resolveQueryKeyBase, toQueryKeyArray } from "@/lib/queryKey";
 
 interface UseUpdateProps<T> {
-  queryKey: string[];
+  queryKey: string | string[];
   redirectPath?: string;
 }
 
@@ -51,9 +52,8 @@ const useUpdate = <T,>({
           headers['Content-Type'] = 'application/json';
         }
 
-        const endpoint = queryKey[0] === 'profile' 
-          ? 'profile'
-          : `${queryKey[0]}/${id}`;
+        const baseKey = resolveQueryKeyBase(queryKey);
+        const endpoint = baseKey === 'profile' ? 'profile' : `${baseKey}/${id}`;
         
         const response: AxiosResponse<T> = await api.patch(
           endpoint,
@@ -89,7 +89,7 @@ const useUpdate = <T,>({
         setSuccess(false);
         setIsSuccess(false);
       }, 100);
-      queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: toQueryKeyArray(queryKey) });
     },
     onError: (error: AxiosError<Record<string, string | string[]>>) => {
       setLoading(false);

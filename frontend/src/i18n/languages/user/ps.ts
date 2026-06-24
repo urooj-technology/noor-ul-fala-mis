@@ -190,6 +190,16 @@ export const userPs = {
   permissionsCount: "{count} اجازې",
   activeCount: "{count} فعال",
 
+  setupDefaultPermissions: "اجازې تنظیم کړئ",
+  setupDefaultPermissionsTitle: "ډیفالټ اجازې تنظیم شي؟",
+  setupDefaultPermissionsDescription:
+    "د سیسټم ټولې معیاري اجازې (ډشبورډ، زده‌کوونکي، بشري سرچینې، معاشات، لګښتونه، محاسبه او نور) جوړېږي. موجودې اجازې نه حذفېږي.",
+  setupDefaultPermissionsConfirm: "تنظیم",
+  setupPermissionsSuccessGeneric: "ډیفالټ اجازې په بریالیتوب سره تنظیم شوې",
+  setupPermissionsFailed: "د اجازو تنظیم ناکام شو",
+  settingUpPermissions: "په تنظیم کې...",
+  cancel: "لغوه",
+
   permissionModules: {
     dashboard: "ډشبورډ",
     users: "کاروونکي",

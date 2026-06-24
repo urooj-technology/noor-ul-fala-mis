@@ -26,9 +26,21 @@ import {
   Search,
   Grid,
   List,
+  RotateCcw,
 } from 'lucide-react';
 import useFetchObjects from '@/api/useFetchObjects';
 import useAdd from '@/api/useAdd';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface Permission {
   id: string;
@@ -83,6 +95,19 @@ export const UserPermissions: React.FC = () => {
     showErrorToast: true,
   });
 
+  const {
+    handleAdd: setupDefaultPermissions,
+    loading: settingUpPermissions,
+    isSuccess: setupPermissionsSuccess,
+  } = useAdd({
+    queryKey: 'user-permissions',
+    endpoint: 'permissions/setup-defaults/',
+    customSuccessMessage: t('user.setupPermissionsSuccessGeneric'),
+    customErrorMessage: t('user.setupPermissionsFailed'),
+    showSuccessToast: true,
+    showErrorToast: true,
+  });
+
   useEffect(() => {
     if (permissionsData) {
       setPermissions(permissionsData);
@@ -94,6 +119,12 @@ export const UserPermissions: React.FC = () => {
       refetch();
     }
   }, [isSuccess, refetch]);
+
+  useEffect(() => {
+    if (setupPermissionsSuccess) {
+      refetch();
+    }
+  }, [setupPermissionsSuccess, refetch]);
 
   const getModuleLabel = (module: string) =>
     t(`user.permissionModules.${module}`, module);
@@ -228,10 +259,34 @@ export const UserPermissions: React.FC = () => {
                 )}
               </div>
             </div>
-            <Button onClick={handleSave} disabled={saving}>
-              <Save size={16} className="mr-2" />
-              {saving ? t('user.saving') : t('user.saveChanges')}
-            </Button>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" disabled={settingUpPermissions}>
+                    <RotateCcw size={16} className="mr-2" />
+                    {settingUpPermissions ? t('user.settingUpPermissions') : t('user.setupDefaultPermissions')}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t('user.setupDefaultPermissionsTitle')}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t('user.setupDefaultPermissionsDescription')}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t('user.cancel')}</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => setupDefaultPermissions({})}>
+                      {t('user.setupDefaultPermissionsConfirm')}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Button onClick={handleSave} disabled={saving}>
+                <Save size={16} className="mr-2" />
+                {saving ? t('user.saving') : t('user.saveChanges')}
+              </Button>
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
@@ -461,7 +516,29 @@ export const UserPermissions: React.FC = () => {
               <Shield size={28} className="text-muted-foreground" />
             </div>
             <h3 className="text-base font-semibold mb-2">{t('user.noPermissionsFound')}</h3>
-            <p className="text-sm text-muted-foreground">{t('user.noPermissionsAvailable')}</p>
+            <p className="text-sm text-muted-foreground mb-6">{t('user.noPermissionsAvailable')}</p>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" disabled={settingUpPermissions}>
+                  <RotateCcw size={16} className="mr-2" />
+                  {t('user.setupDefaultPermissions')}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t('user.setupDefaultPermissionsTitle')}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t('user.setupDefaultPermissionsDescription')}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t('user.cancel')}</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => setupDefaultPermissions({})}>
+                    {t('user.setupDefaultPermissionsConfirm')}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       )}

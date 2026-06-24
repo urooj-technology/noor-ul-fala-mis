@@ -187,6 +187,16 @@ export const userFa = {
   permissionsCount: "{count} مجوز",
   activeCount: "{count} فعال",
 
+  setupDefaultPermissions: "راه‌اندازی مجوزها",
+  setupDefaultPermissionsTitle: "مجوزهای پیش‌فرض راه‌اندازی شوند؟",
+  setupDefaultPermissionsDescription:
+    "تمام مجوزهای استاندارد سیستم (داشبورد، شاگردان، منابع بشری، معاشات، مصارف، حسابداری و غیره) ایجاد می‌شود. مجوزهای موجود حذف نمی‌شوند.",
+  setupDefaultPermissionsConfirm: "راه‌اندازی",
+  setupPermissionsSuccessGeneric: "مجوزهای پیش‌فرض با موفقیت راه‌اندازی شد",
+  setupPermissionsFailed: "راه‌اندازی مجوزها ناکام شد",
+  settingUpPermissions: "در حال راه‌اندازی...",
+  cancel: "لغو",
+
   permissionModules: {
     dashboard: "داشبورد",
     users: "کاربران",

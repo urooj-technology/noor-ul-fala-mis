@@ -20,7 +20,7 @@ const AddEquipmentCategory = () => {
 
   const { data } = useFetchObject({ queryKey: ['equipment-category', id], endpoint: `equipment-categories/${id}/`, enabled: isEdit });
   const { handleAdd, isSuccess: addSuccess, loading: adding } = useAdd({ queryKey: ['equipment-categories'], endpoint: 'equipment-categories/' });
-  const { handleUpdate, isSuccess: updateSuccess, loading: updating } = useUpdate({ queryKey: ['equipment-categories'], endpoint: 'equipment-categories' });
+  const { handleUpdate, isSuccess: updateSuccess, loading: updating } = useUpdate({ queryKey: ['equipment-categories'] });
 
   useEffect(() => { if (data) setFormData({ name: data.name || '', description: data.description || '', is_active: data.is_active ?? true }); }, [data]);
   useEffect(() => { if (addSuccess || updateSuccess) navigate('/equipment-categories'); }, [addSuccess, updateSuccess, navigate]);
@@ -28,7 +28,7 @@ const AddEquipmentCategory = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
-    if (isEdit && id) handleUpdate({ id, data: formData });
+    if (isEdit && id) handleUpdate(id, formData);
     else handleAdd(formData);
   };
 

@@ -191,6 +191,17 @@ export const userEn = {
   permissionsCount: "{count} permissions",
   activeCount: "{count} active",
 
+  setupDefaultPermissions: "Initialize Permissions",
+  setupDefaultPermissionsTitle: "Initialize default permissions?",
+  setupDefaultPermissionsDescription:
+    "This creates all standard system permissions (dashboard, students, HR, payroll, expenses, accounting, etc.). Existing permissions are not removed.",
+  setupDefaultPermissionsConfirm: "Initialize",
+  setupDefaultPermissionsSuccess: "Permissions ready — {created} new, {total} total",
+  setupPermissionsSuccessGeneric: "Default permissions initialized successfully",
+  setupPermissionsFailed: "Failed to initialize permissions",
+  settingUpPermissions: "Initializing...",
+  cancel: "Cancel",
+
   permissionModules: {
     dashboard: "Dashboard",
     users: "Users",

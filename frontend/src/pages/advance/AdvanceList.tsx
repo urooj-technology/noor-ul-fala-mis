@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, Eye, DollarSign, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, DollarSign, Calendar, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import DataTable, { TableColumn, TableAction, FilterOption } from '@/components/ui/data-table';
@@ -9,6 +9,7 @@ import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
 import { formatDateByCalendarType } from '@/utils/calendar';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
+import AdvanceReportPrint from './AdvanceReportPrint';
 
 export const AdvanceList = () => {
   const { t } = useLanguage();
@@ -19,6 +20,7 @@ export const AdvanceList = () => {
   const [yearFilter, setYearFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const [showPrint, setShowPrint] = useState(false);
 
   const { data: advancesData, isLoading } = useFetchObjects<{
     results: any[];
@@ -241,10 +243,16 @@ export const AdvanceList = () => {
         subtitle={t('advance.manageEmployeeAdvances')}
         icon={<DollarSign className="h-5 w-5" />}
         headerActions={
-          <Button onClick={() => navigate('/advance/add')}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('advance.addAdvance')}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setShowPrint(true)} disabled={advances.length === 0}>
+              <Printer className="mr-2 h-4 w-4" />
+              {t('advance.printReport', 'Print')}
+            </Button>
+            <Button onClick={() => navigate('/advance/add')}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t('advance.addAdvance')}
+            </Button>
+          </div>
         }
         searchable
         searchPlaceholder={t('advance.searchAdvances')}
@@ -279,6 +287,10 @@ export const AdvanceList = () => {
       </CalendarProvider>
 
       <ConfirmDialog />
+
+      {showPrint && (
+        <AdvanceReportPrint advances={advances} onClose={() => setShowPrint(false)} />
+      )}
     </div>
   );
 };

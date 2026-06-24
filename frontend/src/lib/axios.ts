@@ -90,8 +90,7 @@ api.interceptors.response.use(
     // Check if the error is due to authentication issues
     if (
       !isAuthEndpoint && (
-        error.response?.status === 401 || 
-        error.response?.status === 403 ||
+        error.response?.status === 401 ||
         error.response?.data?.detail === "Invalid token." ||
         error.response?.data?.detail === "Authentication credentials were not provided." ||
         error.response?.data?.detail === "Token has expired" ||

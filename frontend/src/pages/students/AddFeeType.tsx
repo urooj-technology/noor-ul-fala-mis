@@ -27,8 +27,9 @@ const AddFeeType = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { data, isLoading: fetching } = useFetchObject({
-    queryKey: ['fee-type', id],
+    queryKey: ['fee-type', id || ''],
     endpoint: `fee-types/${id}/`,
+    enabled: isEdit,
   });
 
   const { handleAdd, loading: adding, isSuccess: addSuccess } = useAdd({
@@ -38,7 +39,6 @@ const AddFeeType = () => {
 
   const { handleUpdate, loading: updating, isSuccess: updateSuccess } = useUpdate({
     queryKey: ['fee-types'],
-    endpoint: 'fee-types',
   });
 
   useEffect(() => {
@@ -71,7 +71,7 @@ const AddFeeType = () => {
     if (!validateForm()) return;
 
     if (isEdit && id) {
-      handleUpdate({ id, data: formData });
+      handleUpdate(id, formData);
     } else {
       handleAdd(formData);
     }

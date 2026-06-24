@@ -16,9 +16,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { resolveQueryKeyBase, toQueryKeyArray } from "@/lib/queryKey";
 
 interface UseDeleteProps {
-  queryKey: string[];
+  queryKey: string | string[];
   endpoint?: string;
   invalidateQueryKeys?: string[][];
 }
@@ -49,7 +50,7 @@ const useDelete = ({ queryKey, endpoint, invalidateQueryKeys = [] }: UseDeletePr
           throw new Error('User not authenticated');
         }
         
-        const apiEndpoint = endpoint || `${queryKey[0]}`;
+        const apiEndpoint = endpoint || resolveQueryKeyBase(queryKey);
         await api.delete(`/${apiEndpoint}/${id}/`);
       } catch (error) {
         // Handle authentication errors
@@ -75,7 +76,7 @@ const useDelete = ({ queryKey, endpoint, invalidateQueryKeys = [] }: UseDeletePr
           label: t("common.dismiss") || "Dismiss",
         },
       });
-      queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: toQueryKeyArray(queryKey) });
       invalidateQueryKeys.forEach((key) => {
         queryClient.invalidateQueries({ queryKey: key, exact: false });
       });

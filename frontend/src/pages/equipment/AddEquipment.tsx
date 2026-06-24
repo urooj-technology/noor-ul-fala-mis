@@ -40,32 +40,47 @@ const AddEquipment = () => {
   });
 
   const { data, isLoading: fetching } = useFetchObject({
-    queryKey: ['equipment', id],
+    queryKey: ['equipment', id || ''],
     endpoint: `equipment/${id}/`,
     enabled: isEdit,
   });
 
   const { handleAdd, loading: adding, isSuccess: addSuccess } = useAdd({
-    queryKey: 'equipment',
+    queryKey: ['equipment'],
     endpoint: 'equipment/',
   });
 
   const { handleUpdate, loading: updating, isSuccess: updateSuccess } = useUpdate({
-    queryKey: 'equipment',
-    endpoint: 'equipment',
+    queryKey: ['equipment'],
   });
 
   useEffect(() => {
     if (data) {
+      const record = data as {
+        name?: string;
+        barcode?: string;
+        category?: number | { id: number };
+        category_details?: { id: number };
+        unit_price?: string | number;
+        brand?: string;
+        model?: string;
+        description?: string;
+        is_active?: boolean;
+      };
+      const categoryId =
+        typeof record.category === 'object' && record.category?.id != null
+          ? record.category.id
+          : record.category_details?.id ?? record.category;
+
       setFormData({
-        name: data.name || '',
-        barcode: data.barcode || '',
-        category: String(data.category || ''),
-        unit_price: String(data.unit_price || ''),
-        brand: data.brand || '',
-        model: data.model || '',
-        description: data.description || '',
-        is_active: data.is_active ?? true,
+        name: record.name || '',
+        barcode: record.barcode || '',
+        category: categoryId != null ? String(categoryId) : '',
+        unit_price: String(record.unit_price || ''),
+        brand: record.brand || '',
+        model: record.model || '',
+        description: record.description || '',
+        is_active: record.is_active ?? true,
         initial_quantity: '0',
         initial_stock_category: '1',
       });
@@ -107,7 +122,7 @@ const AddEquipment = () => {
       payload.initial_stock_category = parseInt(formData.initial_stock_category, 10) || 1;
       handleAdd(payload);
     } else if (id) {
-      handleUpdate({ id, data: payload });
+      handleUpdate(id, payload);
     }
   };
 

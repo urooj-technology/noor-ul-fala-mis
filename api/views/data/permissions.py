@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404
 from api.models.data.permissions import Permission, UserPermission
 from api.serializers.data.permissions import PermissionSerializer, UserPermissionSerializer, UserPermissionUpdateSerializer
 from api.permissions import IsAdmin
+from api.services.permissions_service import setup_default_permissions
 from account.models import User
 
 
@@ -19,6 +20,16 @@ class PermissionViewSet(viewsets.ReadOnlyModelViewSet):
         if module:
             queryset = queryset.filter(module=module)
         return queryset.order_by('module', 'name')
+
+    @action(detail=False, methods=['post'], url_path='setup-defaults')
+    def setup_defaults(self, request):
+        """Create missing default permissions (same as setup_permissions management command)."""
+        result = setup_default_permissions()
+        return Response({
+            'message': 'Default permissions initialized',
+            'created_count': result['created_count'],
+            'total_count': result['total_count'],
+        }, status=status.HTTP_200_OK)
 
 
 class UserPermissionViewSet(viewsets.ModelViewSet):

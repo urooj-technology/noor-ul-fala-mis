@@ -19,8 +19,52 @@ from api.models.data.shop_rental import Shop, Tenant, ShopRental
 from api.models.data.shop_rental_payment import ShopRentalPayment
 from api.models.data.accounting import Account, Transaction, JournalEntry, FiscalYear
 from api.models.data.other_income import IncomeCategory, OtherIncome
+from api.models.data.equipment import EquipmentCategory, Equipment, EquipmentStockMovement
 
 fake = Faker()
+
+# Realistic Afghan school / business data
+AFGHAN_EMPLOYEE_NAMES = [
+    ('Mohammad Ehsan', 'Principal', 45000),
+    ('Freshta Nazari', 'Vice Principal', 38000),
+    ('Abdul Qadir Hamidi', 'Accountant', 32000),
+    ('Zarghona Amiri', 'Teacher', 28000),
+    ('Sayed Jamaluddin', 'Teacher', 26000),
+    ('Parwana Karimi', 'Teacher', 27000),
+    ('Rahimullah Safi', 'Security Guard', 15000),
+    ('Najia Mohammadi', 'Cleaner', 12000),
+    ('Hamidullah Stanikzai', 'IT Support', 22000),
+    ('Mariam Popal', 'Librarian', 18000),
+    ('Bashir Ahmadzai', 'Driver', 16000),
+    ('Shabana Wardak', 'Nurse', 20000),
+]
+
+EXPENSE_CATEGORY_DATA = [
+    ('Office Supplies', 'Stationery, paper, pens'),
+    ('Utilities', 'Electricity and water bills'),
+    ('Maintenance', 'Building and equipment repairs'),
+    ('Transportation', 'School bus fuel and maintenance'),
+    ('Training', 'Staff professional development'),
+    ('Insurance', 'Property and liability insurance'),
+]
+
+EQUIPMENT_CATEGORY_DATA = [
+    ('Furniture', 'Desks, chairs, cabinets'),
+    ('Computers', 'Laptops, desktops, printers'),
+    ('Sports Equipment', 'Balls, nets, gym items'),
+    ('Lab Equipment', 'Science lab tools'),
+]
+
+EQUIPMENT_ITEM_DATA = [
+    ('Student Desk', 'Furniture', 'DESK-001', 3500, 'Local', 'Standard'),
+    ('Teacher Chair', 'Furniture', 'CHAIR-001', 1200, 'Local', 'Ergonomic'),
+    ('HP Laptop', 'Computers', 'LAP-001', 45000, 'HP', 'ProBook 450'),
+    ('Dell Desktop', 'Computers', 'PC-001', 38000, 'Dell', 'OptiPlex'),
+    ('Canon Printer', 'Computers', 'PRT-001', 15000, 'Canon', 'LBP6030'),
+    ('Football', 'Sports Equipment', 'BALL-001', 800, 'Nike', 'Size 5'),
+    ('Volleyball Net', 'Sports Equipment', 'NET-001', 2500, 'Local', 'Standard'),
+    ('Microscope', 'Lab Equipment', 'MIC-001', 12000, 'Olympus', 'CX23'),
+]
 
 
 class Command(BaseCommand):
@@ -67,10 +111,13 @@ class Command(BaseCommand):
         rentals = self.create_rentals(shops, tenants)
         rental_payments = self.create_rental_payments(rentals)
         
-        # Accounting - Get existing from init_chart_of_accounts
+        # Equipment / Inventory
+        equipment_categories = self.create_equipment_categories()
+        equipment_items = self.create_equipment(equipment_categories, users)
+
+        # Accounting - accounts created by init_chart_of_accounts; journals via signals
         accounts = Account.objects.all()
         fiscal_years = FiscalYear.objects.all()
-        transactions = self.create_transactions(accounts)
         
         # Other Income
         income_categories = self.create_income_categories()
@@ -78,6 +125,9 @@ class Command(BaseCommand):
         
         # Activity Logs
         activity_logs = self.create_activity_logs(30, users)
+
+        # Opening cash balance so books reflect realistic starting capital
+        self.create_opening_balances()
         
         self.stdout.write(self.style.SUCCESS(f'''
 Data insertion completed!
@@ -100,7 +150,8 @@ Data insertion completed!
 - Rental Payments: {len(rental_payments)}
 - Accounts: {len(accounts)}
 - Fiscal Years: {len(fiscal_years)}
-- Transactions: {len(transactions)}
+- Equipment Categories: {len(equipment_categories)}
+- Equipment Items: {len(equipment_items)}
 - Income Categories: {len(income_categories)}
 - Other Incomes: {len(other_incomes)}
 - Activity Logs: {len(activity_logs)}
@@ -167,20 +218,38 @@ Data insertion completed!
         self.stdout.write(f"Prepared {len(users)} users (login: admin@example.com / password123)")
         return users
 
+    def _sample_date(self, current_month_weight=0.4):
+        """Return a date weighted toward the current month for report testing."""
+        today = timezone.localdate()
+        month_start = today.replace(day=1)
+        roll = random.random()
+        if roll < current_month_weight:
+            days_in_month = (today - month_start).days
+            offset = random.randint(0, max(0, days_in_month))
+            return month_start + timedelta(days=offset)
+        if roll < current_month_weight + 0.3:
+            last_month_end = month_start - timedelta(days=1)
+            last_month_start = last_month_end.replace(day=1)
+            span = (last_month_end - last_month_start).days
+            return last_month_start + timedelta(days=random.randint(0, span))
+        return fake.date_between(start_date='-1y', end_date=month_start - timedelta(days=1))
+
     def create_employees(self, count):
         employees = []
-        positions = ['Manager', 'Supervisor', 'Engineer', 'Analyst', 'Developer', 'Designer', 'Teacher', 'Accountant', 'Security', 'Cleaner']
-        currencies = ['USD', 'AFN']
-        
-        for i in range(count):
+        names = AFGHAN_EMPLOYEE_NAMES[:count]
+        if len(names) < count:
+            for i in range(count - len(names)):
+                names.append((fake.name(), random.choice(['Teacher', 'Staff']), random.randint(12000, 35000)))
+
+        for full_name, position, salary in names:
             employee = Employee.objects.create(
-                full_name=fake.name(),
-                phone=fake.phone_number(),
-                address=fake.address(),
-                position=random.choice(positions),
-                salary=Decimal(str(random.randint(500, 5000))),
-                currency=random.choice(currencies),
-                is_active=random.choice([True, True, True, False])
+                full_name=full_name,
+                phone=f"070{random.randint(1000000, 9999999)}",
+                address=f"Kabul, District {random.randint(1, 15)}",
+                position=position,
+                salary=Decimal(str(salary)),
+                currency='AFN',
+                is_active=True,
             )
             employees.append(employee)
         
@@ -189,12 +258,13 @@ Data insertion completed!
 
     def create_expense_categories(self, count):
         categories = []
-        base_names = ['Office Supplies', 'Travel', 'Marketing', 'Utilities', 'Rent', 'Insurance', 'Maintenance', 'Training', 'Equipment', 'Software']
-        
-        for i in range(count):
+        for name, description in EXPENSE_CATEGORY_DATA[:count]:
+            category = ExpenseCategory.objects.create(name=name, description=description)
+            categories.append(category)
+        while len(categories) < count:
             category = ExpenseCategory.objects.create(
-                name=f"{random.choice(base_names)} {i+1}",
-                description=fake.text(max_nb_chars=100)
+                name=f"Miscellaneous {len(categories) + 1}",
+                description=fake.text(max_nb_chars=80),
             )
             categories.append(category)
         
@@ -203,15 +273,15 @@ Data insertion completed!
 
     def create_expenses(self, count, categories, users):
         expenses = []
-        currencies = ['USD', 'AFN']
+        expense_amounts = [500, 1200, 3500, 800, 2200, 1500, 4500, 900, 600, 1800]
         
         for i in range(count):
             expense = Expense.objects.create(
                 category=random.choice(categories),
-                amount=Decimal(str(random.randint(50, 10000))),
-                currency=random.choice(currencies),
-                expense_date=fake.date_time_between(start_date='-2y', end_date='now', tzinfo=timezone.get_current_timezone()),
-                description=fake.text(max_nb_chars=200),
+                amount=Decimal(str(expense_amounts[i % len(expense_amounts)])),
+                currency='AFN',
+                expense_date=self._sample_date(),
+                description=f"Payment for {categories[i % len(categories)].name}",
                 user=random.choice(users) if users else None
             )
             expenses.append(expense)
@@ -221,18 +291,20 @@ Data insertion completed!
 
     def create_advances(self, count, employees):
         advances = []
-        currencies = ['USD', 'AFN']
+        today = timezone.localdate()
+        shamsi_year = 1404
         
         for i in range(count):
-            employee = random.choice(employees)
+            employee = employees[i % len(employees)]
+            pay_date = self._sample_date()
             advance = Advance.objects.create(
                 employee=employee,
-                amount=Decimal(str(random.randint(100, 2000))),
-                currency=random.choice(currencies),
-                reason=fake.text(max_nb_chars=100),
-                year=random.choice([1403, 1404, 1405]),
-                month=random.randint(1, 12),
-                payment_date=fake.date_between(start_date='-1y', end_date='today'),
+                amount=Decimal(str(random.choice([2000, 3000, 5000, 6000, 8000]))),
+                currency='AFN',
+                reason=f"Salary advance for {employee.full_name}",
+                year=shamsi_year,
+                month=pay_date.month,
+                payment_date=pay_date,
             )
             advances.append(advance)
         
@@ -241,17 +313,18 @@ Data insertion completed!
 
     def create_payrolls(self, count, employees):
         payrolls = []
-        currencies = ['USD', 'AFN']
+        shamsi_year = 1404
         
         for i in range(count):
-            employee = random.choice(employees)
+            employee = employees[i % len(employees)]
+            pay_date = self._sample_date()
             payroll = Payroll.objects.create(
                 employee=employee,
-                month=random.randint(1, 12),
-                year=random.choice([1403, 1404, 1405]),
-                salary=Decimal(str(random.randint(500, 5000))),
-                currency=random.choice(currencies),
-                payment_date=fake.date_between(start_date='-1y', end_date='today'),
+                month=pay_date.month,
+                year=shamsi_year,
+                salary=employee.salary,
+                currency='AFN',
+                payment_date=pay_date,
             )
             payrolls.append(payroll)
         
@@ -511,16 +584,29 @@ Data insertion completed!
 
     def create_shops(self, count):
         shops = []
-        statuses = ['available', 'rented', 'maintenance', 'reserved']
+        shop_data = [
+            ('SHOP-001', 'Ground Floor Unit A', 'Main Building, Ground Floor', 45, 'rented'),
+            ('SHOP-002', 'Ground Floor Unit B', 'Main Building, Ground Floor', 38, 'rented'),
+            ('SHOP-003', 'First Floor Unit A', 'Main Building, First Floor', 32, 'rented'),
+            ('SHOP-004', 'First Floor Unit B', 'Main Building, First Floor', 28, 'available'),
+            ('SHOP-005', 'Annex Shop 1', 'Annex Building', 55, 'rented'),
+            ('SHOP-006', 'Annex Shop 2', 'Annex Building', 40, 'maintenance'),
+        ]
         
         for i in range(count):
+            if i < len(shop_data):
+                num, name, loc, area, status = shop_data[i]
+            else:
+                num, name, loc, area, status = (
+                    f"SHOP-{i+1:03d}", f"Shop {i+1}", 'Kabul City', random.randint(25, 60), 'available'
+                )
             shop = Shop.objects.create(
-                shop_number=f"SHOP-{i+1:03d}",
-                name=f"Shop {i+1}",
-                location=fake.address(),
-                area=Decimal(str(random.randint(20, 200))),
-                status=random.choice(statuses),
-                description=fake.text(max_nb_chars=100)
+                shop_number=num,
+                name=name,
+                location=loc,
+                area=Decimal(str(area)),
+                status=status,
+                description=f"Commercial unit {name}",
             )
             shops.append(shop)
         
@@ -529,15 +615,26 @@ Data insertion completed!
 
     def create_tenants(self, count):
         tenants = []
+        tenant_data = [
+            ('Ahmad Shah Bookstore', '0701234567', 'books@example.com'),
+            ('Fatima Tailoring', '0702345678', 'tailor@example.com'),
+            ('Noor Stationery', '0703456789', 'stationery@example.com'),
+            ('Kabul Electronics', '0704567890', 'electronics@example.com'),
+            ('Green Grocery', '0705678901', 'grocery@example.com'),
+        ]
         
         for i in range(count):
+            if i < len(tenant_data):
+                name, phone, email = tenant_data[i]
+            else:
+                name, phone, email = fake.name(), f"070{random.randint(1000000, 9999999)}", fake.email()
             tenant = Tenant.objects.create(
-                full_name=fake.name(),
-                phone=fake.phone_number(),
-                email=fake.email(),
-                address=fake.address(),
+                full_name=name,
+                phone=phone,
+                email=email,
+                address='Kabul, Afghanistan',
                 tazkira_number=f"TTZK-{random.randint(100000, 999999)}",
-                description=fake.text(max_nb_chars=50)
+                description=f"Tenant: {name}",
             )
             tenants.append(tenant)
         
@@ -546,18 +643,18 @@ Data insertion completed!
 
     def create_rentals(self, shops, tenants):
         rentals = []
-        statuses = ['active', 'active', 'active', 'expired', 'cancelled']
+        rent_amounts = [8200, 7500, 6800, 5500, 9200]
         
         for i, shop in enumerate(shops[:5]):
             rental = ShopRental.objects.create(
                 shop=shop,
                 tenant=tenants[i % len(tenants)],
-                start_date=fake.date_between(start_date='-1y', end_date='-1m'),
-                end_date=fake.date_between(start_date='today', end_date='+1y'),
-                monthly_rent=Decimal(str(random.randint(500, 5000))),
+                start_date=date.today() - timedelta(days=180),
+                end_date=date.today() + timedelta(days=365),
+                monthly_rent=Decimal(str(rent_amounts[i % len(rent_amounts)])),
                 currency='AFN',
-                rental_status=random.choice(statuses),
-                description=fake.text(max_nb_chars=50)
+                rental_status='active',
+                description=f"Rental agreement for {shop.name}",
             )
             rentals.append(rental)
         
@@ -566,46 +663,42 @@ Data insertion completed!
 
     def create_rental_payments(self, rentals):
         payments = []
-        statuses = ['pending', 'completed', 'completed', 'completed', 'cancelled']
-        calendar_types = ['shamsi', 'qamari']
+        today = timezone.localdate()
+        month_start = today.replace(day=1)
         
         for rental in rentals:
-            num_payments = random.randint(1, 5)
-            for _ in range(num_payments):
-                months = random.sample(['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'], k=random.randint(1, 3))
-                
-                payment = ShopRentalPayment.objects.create(
-                    rental=rental,
-                    amount=rental.monthly_rent,
-                    currency=rental.currency,
-                    payment_date=fake.date_between(start_date='-6m', end_date='today'),
-                    payment_status=random.choice(statuses),
-                    period_months=months,
-                    period_year=str(random.choice([1402, 1403, 1404])),
-                    calendar_type=random.choice(calendar_types),
-                    description=f'Rental payment for {len(months)} month(s)'
-                )
-                payments.append(payment)
+            # Current month payment (completed)
+            payments.append(ShopRentalPayment.objects.create(
+                rental=rental,
+                amount=rental.monthly_rent,
+                currency='AFN',
+                payment_date=month_start + timedelta(days=min(5, (today - month_start).days)),
+                payment_status='completed',
+                period_months=[f'{today.month:02d}'],
+                period_year='1404',
+                calendar_type='shamsi',
+                description=f'Rent for {rental.shop.name} — current month',
+            ))
+            # One prior month payment
+            prior = month_start - timedelta(days=15)
+            payments.append(ShopRentalPayment.objects.create(
+                rental=rental,
+                amount=rental.monthly_rent,
+                currency='AFN',
+                payment_date=prior,
+                payment_status='completed',
+                period_months=[f'{(today.month - 1) or 12:02d}'],
+                period_year='1404',
+                calendar_type='shamsi',
+                description=f'Rent for {rental.shop.name} — prior month',
+            ))
         
         self.stdout.write(f"Created {len(payments)} rental payments")
         return payments
 
     def create_transactions(self, accounts):
-        transactions = []
-        txn_types = ['student_payment', 'expense', 'payroll', 'rental_income', 'journal']
-        
-        for i in range(50):
-            txn = Transaction.objects.create(
-                date=fake.date_between(start_date='-1y', end_date='today'),
-                description=fake.text(max_nb_chars=100),
-                transaction_type=random.choice(txn_types),
-                reference=f'REF-{i+1:04d}',
-                is_posted=True
-            )
-            transactions.append(txn)
-        
-        self.stdout.write(f"Created {len(transactions)} transactions")
-        return transactions
+        """Deprecated — journal entries are created via signals when source documents are saved."""
+        return []
 
     def create_income_categories(self):
         categories = []
@@ -629,20 +722,108 @@ Data insertion completed!
 
     def create_other_incomes(self, categories):
         incomes = []
+        income_sources = [
+            ('Consulting fee — curriculum design', 12000),
+            ('Donation from alumni', 25000),
+            ('Interest on bank deposit', 3500),
+            ('Sale of old furniture', 4500),
+            ('Event sponsorship', 18000),
+        ]
         
-        for i in range(30):
+        for i, (desc, amount) in enumerate(income_sources):
             income = OtherIncome.objects.create(
                 income_category=random.choice(categories),
-                amount=Decimal(str(random.randint(100, 5000))),
+                amount=Decimal(str(amount)),
                 currency='AFN',
-                income_date=fake.date_between(start_date='-1y', end_date='today'),
+                income_date=self._sample_date(),
+                source=desc.split('—')[0].strip() if '—' in desc else desc,
+                description=desc,
+            )
+            incomes.append(income)
+        
+        # Additional random incomes
+        for i in range(10):
+            income = OtherIncome.objects.create(
+                income_category=random.choice(categories),
+                amount=Decimal(str(random.choice([2000, 5000, 8000, 15000]))),
+                currency='AFN',
+                income_date=self._sample_date(0.3),
                 source=fake.company(),
-                description=fake.text(max_nb_chars=50)
+                description=f'Miscellaneous income #{i + 1}',
             )
             incomes.append(income)
         
         self.stdout.write(f"Created {len(incomes)} other incomes")
         return incomes
+
+    def create_equipment_categories(self):
+        categories = []
+        for name, description in EQUIPMENT_CATEGORY_DATA:
+            cat = EquipmentCategory.objects.create(name=name, description=description, is_active=True)
+            categories.append(cat)
+        self.stdout.write(f"Created {len(categories)} equipment categories")
+        return categories
+
+    def create_equipment(self, categories, users):
+        items = []
+        cat_by_name = {c.name: c for c in categories}
+        admin = users[0] if users else None
+
+        for name, cat_name, barcode, price, brand, model in EQUIPMENT_ITEM_DATA:
+            category = cat_by_name.get(cat_name)
+            if not category:
+                continue
+            item = Equipment.objects.create(
+                category=category,
+                name=name,
+                barcode=barcode,
+                unit_price=Decimal(str(price)),
+                brand=brand,
+                model=model,
+                description=f'{brand} {model} — {name}',
+                stock_category_1=random.randint(5, 20),
+                stock_category_2=random.randint(0, 5),
+                stock_category_3=random.randint(0, 3),
+                stock_category_4=random.randint(0, 2),
+                stock_category_5=random.randint(0, 5),
+                is_active=True,
+            )
+            items.append(item)
+            if item.stock_category_1 > 0 and admin:
+                EquipmentStockMovement.objects.create(
+                    equipment=item,
+                    from_category=None,
+                    to_category=1,
+                    quantity=item.stock_category_1,
+                    notes='Initial stock on setup',
+                    moved_by=admin,
+                )
+        self.stdout.write(f"Created {len(items)} equipment items")
+        return items
+
+    def create_opening_balances(self):
+        """Post opening cash from owner's capital — realistic starting balance for demo."""
+        from api.services.accounting_service import AccountingService
+
+        opening_date = date.today().replace(month=1, day=1)
+        opening_amount = Decimal('500000')
+
+        for currency in ('AFN',):
+            cash = Account.objects.filter(code=f'1000_{currency}', is_active=True).first()
+            equity = Account.objects.filter(code=f'3000_{currency}', is_active=True).first()
+            if not cash or not equity:
+                continue
+            AccountingService.create_journal_entry(
+                date=opening_date,
+                description=f'Opening balance — {currency}',
+                transaction_type='journal',
+                reference=f'OPENING-{currency}-{opening_date.year}',
+                lines=[
+                    {'account_id': cash.id, 'debit': opening_amount, 'credit': Decimal('0')},
+                    {'account_id': equity.id, 'debit': Decimal('0'), 'credit': opening_amount},
+                ],
+            )
+        self.stdout.write('Created opening cash balance (500,000 AFN)')
 
     def create_activity_logs(self, count, users):
         logs = []
@@ -671,6 +852,10 @@ Data insertion completed!
         ActivityLog.objects.all().delete()
         UserPermission.objects.all().delete()
         Permission.objects.all().delete()
+
+        EquipmentStockMovement.objects.all().delete()
+        Equipment.objects.all().delete()
+        EquipmentCategory.objects.all().delete()
         
         FinanceLedger.objects.all().delete()
         StudentPayment.objects.all().delete()
