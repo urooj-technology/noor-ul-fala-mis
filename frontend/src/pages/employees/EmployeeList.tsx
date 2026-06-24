@@ -11,9 +11,6 @@ import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 import { getCurrentYear, getYearsArray, SHAMSI_MONTHS_DARI, SHAMSI_MONTHS_PASHTO, gregorianToShamsi } from '@/utils/calendar';
 import {
-  EmployeeFinanceSummaryCards,
-  aggregateFinanceSummaries,
-  EmployeeFinancialSummary,
   formatFinanceAmount,
 } from '@/components/ui/employee-finance-summary';
 import { Employee } from '@/types/employee';
@@ -66,12 +63,6 @@ export const EmployeeList = () => {
 
   const employees = employeesData?.results || [];
   const totalItems = employeesData?.count || 0;
-
-  const financeSummaries = employees
-    .map((emp) => emp.financial_summary)
-    .filter((s): s is EmployeeFinancialSummary => !!s);
-
-  const totals = aggregateFinanceSummaries(financeSummaries);
 
   const selectedMonthName = months[selectedMonth - 1] || selectedMonth.toString();
   const periodLabel = `${selectedMonthName} ${selectedYear}`;
@@ -269,16 +260,6 @@ export const EmployeeList = () => {
           {t('employees.financeForPeriod').replace('{month}', selectedMonthName).replace('{year}', selectedYear.toString())}
         </p>
       </div>
-
-      <EmployeeFinanceSummaryCards
-        summary={{
-          total_salary: totals.total_salary,
-          payroll_paid: totals.payroll_paid,
-          advance_paid: totals.advance_paid,
-          overall_paid: totals.overall_paid,
-          remaining_amount: totals.remaining_amount,
-        }}
-      />
 
       <DataTable
         data={employees}

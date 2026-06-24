@@ -113,4 +113,16 @@ export const advancePs = {
     paymentDate: 'د تادیې نیټه',
     reason: 'دلیل',
   },
+
+  monthlySalary: 'میاشتنی معاش',
+  paidAmount: 'تادیه شوی مقدار',
+  payrollPaid: 'تادیه شوی معاش',
+  advancePaid: 'مخکې تادیه',
+  totalPaid: 'ټول تادیه شوی',
+  remaining: 'پاتې',
+  lifetimePayrollPaid: 'ټول معاش (ټول عمر)',
+  lifetimeAdvancePaid: 'ټول مخکې تادیه (ټول عمر)',
+  listSummary: 'د لیست لنډیز',
+  recordsOnPage: 'په دې پاڼه کې ریکارډونه',
+  pageTotalPaid: 'د دې پاڼې ټول تادیه',
 };

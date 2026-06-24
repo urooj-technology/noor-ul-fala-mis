@@ -119,4 +119,16 @@ export const payrollEn = {
     amount: 'Amount',
     description: 'Description',
   },
+
+  monthlySalary: 'Monthly Salary',
+  paidAmount: 'Paid Amount',
+  payrollPaid: 'Payroll Paid',
+  advancePaid: 'Advance Paid',
+  totalPaid: 'Total Paid',
+  remaining: 'Remaining',
+  lifetimePayrollPaid: 'Lifetime Payroll Paid',
+  lifetimeAdvancePaid: 'Lifetime Advance Paid',
+  listSummary: 'List Summary',
+  recordsOnPage: 'Records on this page',
+  pageTotalPaid: 'Page Total Paid',
 };

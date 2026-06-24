@@ -113,4 +113,16 @@ export const advanceFa = {
     paymentDate: 'تاریخ پرداخت',
     reason: 'دلیل',
   },
+
+  monthlySalary: 'معاش ماهانه',
+  paidAmount: 'مبلغ پرداخت‌شده',
+  payrollPaid: 'حقوق پرداخت‌شده',
+  advancePaid: 'پیش‌پرداخت',
+  totalPaid: 'مجموع پرداخت‌شده',
+  remaining: 'باقی‌مانده',
+  lifetimePayrollPaid: 'مجموع حقوق (کل)',
+  lifetimeAdvancePaid: 'مجموع پیش‌پرداخت (کل)',
+  listSummary: 'خلاصه لیست',
+  recordsOnPage: 'رکورد در این صفحه',
+  pageTotalPaid: 'مجموع پرداخت این صفحه',
 };

@@ -8,14 +8,19 @@ import DataTable, { TableColumn, TableAction, FilterOption } from '@/components/
 import { PermissionButton } from '@/components/ui/permission-button';
 import { useCrudPermissions } from '@/hooks/useCrudPermissions';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
-import { formatDateByCalendarType } from '@/utils/calendar';
+import { useCalendar } from '@/contexts/CalendarContext';
+import { getCurrentYear } from '@/utils/calendar';
+import {
+  buildShamsiMonthOptions,
+  formatMoney,
+  getShamsiMonthLabel,
+} from '@/lib/hr-list-utils';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 import PayrollReportPrint from './PayrollReportPrint';
 
 export const PayrollList = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { calendarType } = useCalendar();
   const { canEdit, canDelete, canExport } = useCrudPermissions('payroll');
   const navigate = useNavigate();
@@ -26,6 +31,11 @@ export const PayrollList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [showPrint, setShowPrint] = useState(false);
+
+  const lang = (language === 'ps' ? 'ps' : 'fa') as 'fa' | 'ps';
+  const months = buildShamsiMonthOptions(lang);
+  const currentYear = getCurrentYear(calendarType);
+  const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
 
   const { data: payrollsData, isLoading } = useFetchObjects<{
     results: any[];
@@ -41,57 +51,33 @@ export const PayrollList = () => {
       search: searchTerm,
       ...(employeeFilter && { employee: employeeFilter }),
       ...(monthFilter !== 'all' && { month: monthFilter }),
-      ...(yearFilter !== 'all' && { year: yearFilter })
-    }
+      ...(yearFilter !== 'all' && { year: yearFilter }),
+    },
   });
 
   const { data: employeesData } = useFetchObjects({
     queryKey: ['employees-all'],
-    endpoint: 'employees/'
+    endpoint: 'employees/',
   });
 
   const { handleDelete, ConfirmDialog } = useDelete({
     queryKey: ['payrolls'],
-    endpoint: 'payrolls'
+    endpoint: 'payrolls',
   });
 
   const totalItems = payrollsData?.count || 0;
   const payrolls = payrollsData?.results || [];
   const employees = Array.isArray(employeesData) ? employeesData : employeesData?.results || [];
 
-  // Get year labels based on calendar type
-  const currentYear = calendarType === 'shamsi' ? 1403 : new Date().getFullYear();
-  const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
-
-  const months = [
-    { value: 'january', label: t('advance.months.january') },
-    { value: 'february', label: t('advance.months.february') },
-    { value: 'march', label: t('advance.months.march') },
-    { value: 'april', label: t('advance.months.april') },
-    { value: 'may', label: t('advance.months.may') },
-    { value: 'june', label: t('advance.months.june') },
-    { value: 'july', label: t('advance.months.july') },
-    { value: 'august', label: t('advance.months.august') },
-    { value: 'september', label: t('advance.months.september') },
-    { value: 'october', label: t('advance.months.october') },
-    { value: 'november', label: t('advance.months.november') },
-    { value: 'december', label: t('advance.months.december') },
-  ];
-
   const calendarLabels = {
     shamsi: { year: t('payroll.yearShamsi', 'سال'), month: t('payroll.monthShamsi', 'ماه') },
     qamari: { year: t('payroll.yearQamari', 'سال'), month: t('payroll.monthQamari', 'ماه') },
+    gregorian: { year: t('payroll.year', 'Year'), month: t('payroll.month', 'Month') },
   };
 
-  const handleEdit = (payroll: any) => {
-    navigate(`/payroll/${payroll.id}/edit`);
-  };
+  const handleEdit = (payroll: any) => navigate(`/payroll/${payroll.id}/edit`);
+  const handleDetails = (payroll: any) => navigate(`/payroll/${payroll.id}`);
 
-  const handleDetails = (payroll: any) => {
-    navigate(`/payroll/${payroll.id}`);
-  };
-
-  // Format payment date based on selected calendar type
   const formatPaymentDate = (record: any) => {
     if (calendarType === 'shamsi' && record.payment_date_shamsi) {
       return record.payment_date_shamsi.formatted;
@@ -102,53 +88,90 @@ export const PayrollList = () => {
     return record.payment_date || '-';
   };
 
+  const renderMoney = (value: number | string | undefined, currency?: string, className = '') => (
+    <span className={`font-semibold text-xs tabular-nums ${className}`}>
+      {formatMoney(value, currency)}
+    </span>
+  );
+
   const columns: TableColumn[] = [
     {
       key: 'employee_details',
       title: t('payroll.employee'),
       render: (value) => (
-        <div className="flex items-center gap-2">
-          <User className="h-4 w-4 text-gray-400" />
+        <div className="flex items-center gap-2 min-w-[140px]">
+          <User className="h-4 w-4 text-gray-400 shrink-0" />
           <div>
             <div className="font-medium text-xs">{value?.full_name || 'N/A'}</div>
-            {value?.position && <div className="text-xs text-gray-500">{value.position}</div>}
+            {value?.position && <div className="text-[11px] text-muted-foreground">{value.position}</div>}
+            {value?.phone && <div className="text-[11px] text-muted-foreground">{value.phone}</div>}
           </div>
         </div>
-      )
+      ),
     },
     {
       key: 'month',
       title: t('payroll.period'),
-      render: (value, record) => {
-        const monthLabel = months.find(m => m.value === value)?.label || value;
-        return (
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-gray-400" />
-            <Badge variant="outline">{monthLabel} {record.year}</Badge>
-          </div>
-        );
-      }
+      render: (_value, record) => (
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-gray-400" />
+          <Badge variant="outline">
+            {getShamsiMonthLabel(record.month, lang)} {record.year}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      key: 'period_summary',
+      title: t('payroll.monthlySalary'),
+      render: (_value, record) => renderMoney(
+        record.period_summary?.total_salary ?? record.employee_details?.salary,
+        record.currency_details?.code,
+        'text-blue-600',
+      ),
     },
     {
       key: 'salary',
-      title: t('payroll.salary'),
-      render: (value, record) => (
-        <span className="font-bold text-xs text-emerald-600">
-          {Number(value || 0).toFixed(2)} {record.currency_details?.code || ''}
-        </span>
-      )
+      title: t('payroll.paidAmount'),
+      render: (value, record) => renderMoney(value, record.currency_details?.code, 'text-emerald-600'),
+    },
+    {
+      key: 'payroll_paid',
+      title: t('payroll.payrollPaid'),
+      render: (_value, record) => renderMoney(
+        record.period_summary?.payroll_paid,
+        record.currency_details?.code,
+        'text-green-600',
+      ),
+    },
+    {
+      key: 'overall_paid',
+      title: t('payroll.totalPaid'),
+      render: (_value, record) => renderMoney(
+        record.period_summary?.overall_paid,
+        record.currency_details?.code,
+        'text-red-600',
+      ),
+    },
+    {
+      key: 'remaining_amount',
+      title: t('payroll.remaining'),
+      render: (_value, record) => {
+        const remaining = Number(record.period_summary?.remaining_amount ?? 0);
+        return renderMoney(
+          remaining,
+          record.currency_details?.code,
+          remaining > 0 ? 'text-purple-600' : 'text-muted-foreground',
+        );
+      },
     },
     {
       key: 'payment_date',
       title: t('payroll.paymentDate'),
-      render: (value, record) => {
-        return (
-          <div className="text-sm">
-            {formatPaymentDate(record)}
-          </div>
-        );
-      }
-    }
+      render: (_value, record) => (
+        <div className="text-xs whitespace-nowrap">{formatPaymentDate(record)}</div>
+      ),
+    },
   ];
 
   const rowActions: TableAction[] = [
@@ -157,96 +180,44 @@ export const PayrollList = () => {
       label: t('payroll.viewDetails'),
       icon: <Eye className="h-4 w-4" />,
       onClick: handleDetails,
-      tooltip: t('payroll.viewDetails')
+      tooltip: t('payroll.viewDetails'),
     },
     ...(canEdit ? [{
       key: 'edit',
       label: t('payroll.edit'),
       icon: <Edit className="h-4 w-4" />,
       onClick: handleEdit,
-      tooltip: t('payroll.editPayroll')
+      tooltip: t('payroll.editPayroll'),
     }] : []),
     ...(canDelete ? [{
       key: 'delete',
       label: t('payroll.delete'),
       icon: <Trash2 className="h-4 w-4" />,
-      onClick: (record: { id: number; employee_details?: { full_name?: string }; month: string; year: number }) => {
+      onClick: (record: { id: number; employee_details?: { full_name?: string }; month: number; year: number }) => {
         const employeeName = record.employee_details?.full_name || 'Payroll';
-        handleDelete(record.id, `${employeeName} - ${record.month} ${record.year}`);
+        handleDelete(record.id, `${employeeName} - ${getShamsiMonthLabel(record.month, lang)} ${record.year}`);
       },
       variant: 'ghost' as const,
       className: 'text-red-600 hover:text-red-700',
-      tooltip: t('payroll.deletePayroll')
+      tooltip: t('payroll.deletePayroll'),
     }] : []),
   ];
 
   const filters: FilterOption[] = [
     {
       key: 'year',
-      label: calendarLabels[calendarType].year,
+      label: calendarLabels[calendarType]?.year || t('payroll.year'),
       placeholder: t('payroll.filterByYear'),
       width: 'sm:w-32',
-      options: years.map(y => ({ value: y.toString(), label: y.toString() }))
+      options: years.map((y) => ({ value: y.toString(), label: y.toString() })),
     },
     {
       key: 'month',
-      label: calendarLabels[calendarType].month,
+      label: calendarLabels[calendarType]?.month || t('payroll.month'),
       placeholder: t('payroll.filterByMonth'),
       width: 'sm:w-40',
-      options: months
-    }
-  ];
-
-  const filterValues = {
-    year: yearFilter,
-    month: monthFilter
-  };
-
-  const handleFilterChange = (key: string, value: string) => {
-    if (key === 'year') {
-      setYearFilter(value);
-      setCurrentPage(1);
-    } else if (key === 'month') {
-      setMonthFilter(value);
-      setCurrentPage(1);
-    }
-  };
-
-  const handleClearFilters = () => {
-    setEmployeeFilter('');
-    setYearFilter('all');
-    setMonthFilter('all');
-    setSearchTerm('');
-    setCurrentPage(1);
-  };
-
-  const handleSearch = (value: string) => {
-    setSearchTerm(value);
-    setCurrentPage(1);
-  };
-
-  const customFilters = [
-    {
-      key: 'employee',
-      label: t('payroll.employee'),
-      component: (
-        <Autocomplete
-          options={employees.map(e => ({
-            id: e.id.toString(),
-            value: e.id.toString(),
-            label: `${e.full_name || 'N/A'}${e.position ? ` (${e.position})` : ''}`
-          }))}
-          getOptionLabel={(opt) => opt.label}
-          getOptionValue={(opt) => opt.value}
-          value={employeeFilter}
-          onChange={(value) => {
-            setEmployeeFilter(value);
-            setCurrentPage(1);
-          }}
-          placeholder={t('payroll.filterByEmployee')}
-        />
-      )
-    }
+      options: months,
+    },
   ];
 
   return (
@@ -275,15 +246,41 @@ export const PayrollList = () => {
         searchable
         searchPlaceholder={t('payroll.searchPayrolls')}
         searchValue={searchTerm}
-        onSearch={handleSearch}
-        customFilters={customFilters}
+        onSearch={(v) => { setSearchTerm(v); setCurrentPage(1); }}
+        customFilters={[{
+          key: 'employee',
+          label: t('payroll.employee'),
+          component: (
+            <Autocomplete
+              options={employees.map((e: { id: number; full_name?: string; position?: string }) => ({
+                id: e.id.toString(),
+                value: e.id.toString(),
+                label: `${e.full_name || 'N/A'}${e.position ? ` (${e.position})` : ''}`,
+              }))}
+              getOptionLabel={(opt) => opt.label}
+              getOptionValue={(opt) => opt.value}
+              value={employeeFilter}
+              onChange={(value) => { setEmployeeFilter(value); setCurrentPage(1); }}
+              placeholder={t('payroll.filterByEmployee')}
+            />
+          ),
+        }]}
         filters={filters}
-        filterValues={filterValues}
+        filterValues={{ year: yearFilter, month: monthFilter }}
         customFilterValues={{ employee: employeeFilter }}
-        onFilterChange={handleFilterChange}
-        showClearFilters={true}
+        onFilterChange={(key, value) => {
+          if (key === 'year') { setYearFilter(value); setCurrentPage(1); }
+          if (key === 'month') { setMonthFilter(value); setCurrentPage(1); }
+        }}
+        showClearFilters
         clearFiltersLabel={t('payroll.clearFilters')}
-        onClearFilters={handleClearFilters}
+        onClearFilters={() => {
+          setEmployeeFilter('');
+          setYearFilter('all');
+          setMonthFilter('all');
+          setSearchTerm('');
+          setCurrentPage(1);
+        }}
         rowActions={rowActions}
         pagination={{
           current: currentPage,
@@ -292,17 +289,14 @@ export const PayrollList = () => {
           onPageChange: setCurrentPage,
           showSizeChanger: true,
           pageSizeOptions: [10, 25, 50, 100],
-          onPageSizeChange: (size) => {
-            setPageSize(size);
-            setCurrentPage(1);
-          }
+          onPageSizeChange: (size) => { setPageSize(size); setCurrentPage(1); },
         }}
         emptyIcon={<DollarSign className="h-8 w-8 text-muted-foreground" />}
         emptyTitle={t('payroll.noPayrollsFound')}
         emptyDescription={searchTerm ? t('payroll.tryAdjustingSearch') : t('payroll.addFirstPayroll')}
         loadingText={t('payroll.loadingPayrolls')}
         maxHeight="75vh"
-        stickyHeader={true}
+        stickyHeader
       />
 
       <ConfirmDialog />
