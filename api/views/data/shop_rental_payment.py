@@ -10,6 +10,7 @@ from api.models.data.shop_rental import ShopRental
 from api.serializers.data.shop_rental_payment import ShopRentalPaymentSerializer
 from api.views.data.base import DataRootViewSet
 from api.services.shop_rental_payment_service import ShopRentalPaymentService
+from api.utils.registration_dates import get_registration_date_range
 from decimal import Decimal
 
 
@@ -45,6 +46,21 @@ class ShopRentalPaymentViewSet(DataRootViewSet):
             queryset = queryset.filter(payment_date__gte=start_date)
         if end_date:
             queryset = queryset.filter(payment_date__lte=end_date)
+
+        date_period = self.request.query_params.get('date_period')
+        if date_period:
+            period_from = self.request.query_params.get('date_from')
+            period_to = self.request.query_params.get('date_to')
+            range_start, range_end = get_registration_date_range(
+                date_period, period_from, period_to
+            )
+            if range_start and range_end:
+                queryset = queryset.filter(
+                    payment_date__gte=range_start,
+                    payment_date__lte=range_end,
+                )
+            elif date_period == 'custom':
+                queryset = queryset.none()
         
         # Filter by calendar type
         calendar_type = self.request.query_params.get('calendar_type')
@@ -57,6 +73,17 @@ class ShopRentalPaymentViewSet(DataRootViewSet):
             queryset = queryset.filter(period_year=period_year)
 
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        """Return all matching payments without pagination when filtering by date period."""
+        if request.query_params.get('date_period'):
+            queryset = self.filter_queryset(self.get_queryset())
+            serializer = self.get_serializer(queryset, many=True)
+            return Response({
+                'count': queryset.count(),
+                'results': serializer.data,
+            })
+        return super().list(request, *args, **kwargs)
     
     def create(self, request, *args, **kwargs):
         """Create payment with multi-month support"""

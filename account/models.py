@@ -38,8 +38,27 @@ class UserManager(BaseUserManager):
             raise ValueError("Superusers must have an email.")
         if not password:
             raise ValueError("Superusers must have a password.")
-        user = self.create_user(username=username, email=email, password=password)
+
+        username = username.lower()
+        email = self.normalize_email(email)
+
+        user = (
+            self.filter(username=username).first()
+            or self.filter(email=email).first()
+        )
+        if user:
+            user.email = email
+            user.username = username
+            user.set_password(password)
+        else:
+            user = self.model(
+                username=username,
+                email=email,
+            )
+            user.set_password(password)
+
         user.is_admin = user.is_staff = user.is_superuser = True
+        user.is_active = True
         user.save(using=self._db)
         return user
 

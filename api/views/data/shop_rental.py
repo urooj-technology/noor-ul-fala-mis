@@ -2,12 +2,16 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
+from django.http import HttpResponse
 from api.models.data.shop_rental import Shop, Tenant, ShopRental
 from api.models.data.shop_rental_payment import ShopRentalPayment
 from api.serializers.data.shop_rental import ShopSerializer, TenantSerializer, ShopRentalSerializer
 from api.serializers.data.shop_rental_payment import ShopRentalPaymentSerializer
 from api.views.data.base import DataRootViewSet
+from api.utils.registration_dates import get_registration_date_range
+from api.services.shop_rental_report import build_rental_report_row, build_payment_report_row, get_shamsi_year
 from decimal import Decimal
+import openpyxl
 
 
 class ShopViewSet(DataRootViewSet):
@@ -71,8 +75,183 @@ class ShopRentalViewSet(DataRootViewSet):
         status = self.request.query_params.get('rental_status')
         if status:
             queryset = queryset.filter(rental_status=status)
-        
+
+        start_date_period = self.request.query_params.get('start_date_period')
+        if start_date_period:
+            date_from = self.request.query_params.get('start_date_from')
+            date_to = self.request.query_params.get('start_date_to')
+            range_start, range_end = get_registration_date_range(
+                start_date_period, date_from, date_to
+            )
+            if range_start and range_end:
+                queryset = queryset.filter(
+                    start_date__gte=range_start,
+                    start_date__lte=range_end,
+                )
+            elif start_date_period == 'custom':
+                queryset = queryset.none()
+
+        # Report: only rentals that received a payment in the chosen period
+        if self.request.query_params.get('for_report'):
+            date_period = self.request.query_params.get('date_period')
+            if date_period:
+                date_from = self.request.query_params.get('date_from')
+                date_to = self.request.query_params.get('date_to')
+                range_start, range_end = get_registration_date_range(
+                    date_period, date_from, date_to
+                )
+                if range_start and range_end:
+                    rental_ids = ShopRentalPayment.objects.filter(
+                        is_deleted=False,
+                        payment_date__gte=range_start,
+                        payment_date__lte=range_end,
+                    ).values_list('rental_id', flat=True).distinct()
+                    queryset = queryset.filter(id__in=rental_ids)
+                elif date_period == 'custom':
+                    queryset = queryset.none()
+
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        """Return all matching rentals without pagination for report or start-date period filters."""
+        if request.query_params.get('start_date_period') or request.query_params.get('for_report'):
+            queryset = self.filter_queryset(self.get_queryset())
+            serializer = self.get_serializer(queryset, many=True)
+            return Response({
+                'count': queryset.count(),
+                'results': serializer.data,
+            })
+        return super().list(request, *args, **kwargs)
+
+    def _parse_rental_ids(self, request):
+        raw = request.query_params.get('rentals') or request.query_params.get('ids') or ''
+        return [int(i) for i in raw.split(',') if i.strip().isdigit()]
+
+    def _collect_bulk_rental_data(self, rental_ids, year=None):
+        rentals = ShopRental.objects.filter(
+            id__in=rental_ids,
+            is_deleted=False,
+        ).select_related('shop', 'tenant').order_by('shop__shop_number')
+        return [build_rental_report_row(rental, year=year) for rental in rentals]
+
+    @action(detail=False, methods=['get'])
+    def bulk_rental_info(self, request):
+        """Rental report data for multiple rentals (bulk print)."""
+        rental_ids = self._parse_rental_ids(request)
+        if not rental_ids:
+            return Response({'error': 'rentals parameter is required'}, status=400)
+
+        year = request.query_params.get('year')
+        rentals_data = self._collect_bulk_rental_data(rental_ids, year=year)
+        return Response({
+            'rentals': rentals_data,
+            'year': int(year) if year and year.isdigit() else rentals_data[0]['payment_summary']['year'] if rentals_data else None,
+            'count': len(rentals_data),
+        })
+
+    @action(detail=False, methods=['get'])
+    def bulk_rental_export(self, request):
+        """Export multi-rental report to Excel."""
+        rental_ids = self._parse_rental_ids(request)
+        if not rental_ids:
+            return Response({'error': 'rentals parameter is required'}, status=400)
+
+        year = request.query_params.get('year')
+        rentals_data = self._collect_bulk_rental_data(rental_ids, year=year)
+        month_headers = [str(i).zfill(2) for i in range(1, 13)]
+        headers = [
+            '#', 'Shop No.', 'Shop Name', 'Tenant', 'Phone',
+            'Start Date', 'End Date', 'Monthly Rent', 'Status',
+            *month_headers,
+            'Paid (Year)', 'Remaining (Year)', 'Months Paid',
+        ]
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'Shop Rentals'
+        ws.append(headers)
+
+        for index, rental in enumerate(rentals_data, start=1):
+            summary = rental['payment_summary']
+            months = summary.get('months_status', {})
+            row = [
+                index,
+                rental['shop_number'],
+                rental['shop_name'],
+                rental['tenant_name'],
+                rental['tenant_phone'],
+                rental['start_date'],
+                rental['end_date'],
+                rental['monthly_rent'],
+                rental['rental_status'],
+            ]
+            for month in month_headers:
+                row.append(months.get(month, {}).get('paid', 0))
+            row.extend([
+                summary.get('total_paid_year', 0),
+                summary.get('total_remaining_year', 0),
+                summary.get('months_paid_count', 0),
+            ])
+            ws.append(row)
+
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = 'attachment; filename=shop-rental-report.xlsx'
+        wb.save(response)
+        return response
+
+    @action(detail=False, methods=['get'])
+    def period_report(self, request):
+        """Combined rental + payment report for a date period."""
+        date_period = request.query_params.get('date_period')
+        if not date_period:
+            return Response({'error': 'date_period is required'}, status=400)
+
+        date_from = request.query_params.get('date_from')
+        date_to = request.query_params.get('date_to')
+        range_start, range_end = get_registration_date_range(date_period, date_from, date_to)
+        if not range_start or not range_end:
+            return Response({'error': 'Invalid or incomplete date period'}, status=400)
+
+        year = request.query_params.get('year')
+        payment_status = request.query_params.get('payment_status')
+
+        rentals_qs = self.get_queryset().filter(
+            start_date__lte=range_end,
+            end_date__gte=range_start,
+        ).select_related('shop', 'tenant').order_by('shop__shop_number')
+
+        rentals_data = [build_rental_report_row(rental, year=year) for rental in rentals_qs]
+
+        payments_qs = ShopRentalPayment.objects.filter(
+            is_deleted=False,
+            payment_date__gte=range_start,
+            payment_date__lte=range_end,
+        ).select_related('rental__shop', 'rental__tenant').order_by('-payment_date')
+
+        if payment_status:
+            payments_qs = payments_qs.filter(payment_status=payment_status)
+
+        payments_data = [build_payment_report_row(payment) for payment in payments_qs]
+
+        report_year = int(year) if year and str(year).isdigit() else int(get_shamsi_year())
+        total_payment_amount = sum(p['amount'] for p in payments_data)
+
+        return Response({
+            'period': {
+                'from': range_start.isoformat(),
+                'to': range_end.isoformat(),
+            },
+            'year': report_year,
+            'rentals': rentals_data,
+            'payments': payments_data,
+            'summary': {
+                'rental_count': len(rentals_data),
+                'payment_count': len(payments_data),
+                'total_payment_amount': total_payment_amount,
+            },
+        })
     
     @action(detail=False, methods=['get'])
     def active_rentals(self, request):

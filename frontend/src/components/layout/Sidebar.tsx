@@ -44,6 +44,7 @@ type NavSubItem = {
   icon: React.ComponentType<{ size?: number; className?: string }>;
   path: string;
   permissionModule?: string;
+  permissionModules?: string[];
   permission?: string;
   adminOnly?: boolean;
 };
@@ -85,7 +86,8 @@ const navigationItems: NavItem[] = [
     permissionModule: 'expenses',
     subItems: [
       { key: 'expensesList', icon: Receipt, path: '/expenses', permissionModule: 'expenses' },
-      { key: 'expenseCategories', icon: Tag, path: '/expense-categories', permissionModule: 'expenses' }
+      { key: 'expenseCategories', icon: Tag, path: '/expense-categories', permissionModule: 'expenses' },
+      { key: 'expenseReports', icon: FileBarChart, path: '/expense-reports', permissionModule: 'expenses' }
     ]
   },
   { 
@@ -142,7 +144,8 @@ const navigationItems: NavItem[] = [
       { key: 'shopsList', icon: Store, path: '/shops', permissionModule: 'shop_rentals' },
       { key: 'tenantsList', icon: Users, path: '/tenants', permissionModule: 'shop_rentals' },
       { key: 'shopRentalList', icon: Receipt, path: '/shop-rentals', permissionModule: 'shop_rentals' },
-      { key: 'shopRentalPayments', icon: CreditCard, path: '/shop-rental-payments', permissionModule: 'shop_rentals' }
+      { key: 'shopRentalPayments', icon: CreditCard, path: '/shop-rental-payments', permissionModule: 'shop_rentals' },
+      { key: 'shopRentalReports', icon: FileBarChart, path: '/shop-rental-reports', permissionModule: 'shop_rentals' }
     ]
   },
   { 
@@ -218,6 +221,9 @@ export const Sidebar: React.FC = () => {
   const canSeeNavItem = (item: NavSubItem | NavItem): boolean => {
     if (item.adminOnly && !isAdmin) return false;
     if (item.permission && !hasPermission(item.permission)) return false;
+    if ('permissionModules' in item && item.permissionModules?.length) {
+      return item.permissionModules.some((m) => canView(m));
+    }
     if (item.permissionModule && !canView(item.permissionModule)) return false;
     return true;
   };
@@ -284,7 +290,7 @@ export const Sidebar: React.FC = () => {
   };
 
   const isExpensesRoute = (path: string) => {
-    const expenseRoutes = ['/expenses', '/expense-categories'];
+    const expenseRoutes = ['/expenses', '/expense-categories', '/expense-reports'];
     return expenseRoutes.some(route => path.startsWith(route));
   };
 
@@ -304,7 +310,7 @@ export const Sidebar: React.FC = () => {
   };
 
   const isShopRentalRoute = (path: string) => {
-    const shopRentalRoutes = ['/shops', '/tenants', '/shop-rentals', '/shop-rental-payments'];
+    const shopRentalRoutes = ['/shops', '/tenants', '/shop-rentals', '/shop-rental-payments', '/shop-rental-reports'];
     return shopRentalRoutes.some(route => path.startsWith(route));
   };
 

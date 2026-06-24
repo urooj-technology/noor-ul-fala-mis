@@ -13,6 +13,7 @@ import ShopRentalPaymentList from '@/pages/shop-rental/ShopRentalPaymentList';
 import AddShopRentalPayment from '@/pages/shop-rental/AddShopRentalPayment';
 import EditShopRentalPayment from '@/pages/shop-rental/EditShopRentalPayment';
 import ShopRentalPaymentDetails from '@/pages/shop-rental/ShopRentalPaymentDetails';
+import ShopRentalReportPage from '@/pages/shop-rental/ShopRentalReportPage';
 import { guardRoute } from '@/lib/route-guards';
 
 const rental = { module: 'shop_rentals' as const };
@@ -36,5 +37,7 @@ export const shopRentalRoutes = (
     <Route path="shop-rental-payments/add" element={guardRoute(<AddShopRentalPayment />, { ...rental, action: 'create' })} />
     <Route path="shop-rental-payments/:id" element={guardRoute(<ShopRentalPaymentDetails />, rental)} />
     <Route path="shop-rental-payments/:id/edit" element={guardRoute(<EditShopRentalPayment />, { ...rental, action: 'edit' })} />
+
+    <Route path="shop-rental-reports" element={guardRoute(<ShopRentalReportPage />, rental)} />
   </>
 );

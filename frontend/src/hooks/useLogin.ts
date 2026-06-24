@@ -40,11 +40,21 @@ export function useLogin() {
         }
 
         if (response.status >= 400) {
+          const data = response.data as {
+            detail?: string;
+            message?: string;
+            non_field_errors?: string[];
+            errors?: Record<string, string[] | string>;
+          };
           const detail =
-            (response.data as { detail?: string; non_field_errors?: string[] })?.detail ||
-            (response.data as { non_field_errors?: string[] })?.non_field_errors?.[0] ||
+            data?.detail ||
+            data?.message ||
+            data?.non_field_errors?.[0] ||
+            (typeof data?.errors === 'object'
+              ? Object.values(data.errors).flat().find(Boolean)
+              : undefined) ||
             'Login failed. Please check your credentials.';
-          throw new Error(detail);
+          throw new Error(String(detail));
         }
 
         const loginResponse = parseLoginResponse(response.data);

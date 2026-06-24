@@ -51,7 +51,7 @@ interface RentalDetails {
 
 const ShopRentalDetails = () => {
   const { t } = useLanguage();
-  const { calendarType } = useCalendar();
+  const { calendarType, dateFormat } = useCalendar();
   const navigate = useNavigate();
   const { id } = useParams();
   const lang = t('language.code') as 'fa' | 'ps';
@@ -180,11 +180,11 @@ const ShopRentalDetails = () => {
               <div className="p-3 bg-purple-50 dark:bg-purple-950 rounded-lg">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  <span className="text-sm">{formatDateByCalendarType(rental.start_date, calendarType, lang)}</span>
+                  <span className="text-sm" dir="rtl">{formatDateByCalendarType(rental.start_date, calendarType, lang, dateFormat)}</span>
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-xs">→</span>
-                  <span className="text-sm">{formatDateByCalendarType(rental.end_date, calendarType, lang)}</span>
+                  <span className="text-sm" dir="rtl">{formatDateByCalendarType(rental.end_date, calendarType, lang, dateFormat)}</span>
                 </div>
               </div>
             </div>

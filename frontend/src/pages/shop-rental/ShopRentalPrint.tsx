@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCalendar } from '@/contexts/CalendarContext';
+import { useFormattedDate } from '@/hooks/useFormattedDate';
 import { getMonthNames } from '@/utils/calendar';
 import axios from '@/lib/axios';
 import { formatNumber } from '@/lib/formatNumber';
@@ -54,19 +55,10 @@ const formatCurrency = (amount: number | string, currency: string = 'AFN'): stri
   }).format(val);
 };
 
-const formatDate = (dateString: string | undefined): string => {
-  if (!dateString) return '-';
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  } catch {
-    return dateString;
-  }
-};
-
 export const ShopRentalPrint = ({ rentalId, year, onClose }: ShopRentalPrintProps) => {
   const { t, language } = useLanguage();
   const { calendarType } = useCalendar();
+  const { formatDate } = useFormattedDate();
   const isRTL = language === 'fa' || language === 'ps';
   const tableDirection = isRTL ? 'rtl' : 'ltr';
   const lang = language as 'fa' | 'ps' | 'en';
@@ -189,7 +181,6 @@ export const ShopRentalPrint = ({ rentalId, year, onClose }: ShopRentalPrintProp
               <tbody>
                 <tr><td style={{ padding: '2px 0', color: '#666', width: '40%' }}>{t('shop-rental.shopNumber')}:</td><td style={{ padding: '2px 0', fontWeight: '600' }}>{rental.shop?.shop_number || '-'}</td></tr>
                 <tr><td style={{ padding: '2px 0', color: '#666' }}>{t('shop-rental.name')}:</td><td style={{ padding: '2px 0', fontWeight: '600' }}>{rental.shop?.name || '-'}</td></tr>
-                <tr><td style={{ padding: '2px 0', color: '#666' }}>{t('shop-rental.location')}:</td><td style={{ padding: '2px 0' }}>{rental.shop?.location || '-'}</td></tr>
                 <tr><td style={{ padding: '2px 0', color: '#666' }}>{t('shop-rental.monthlyRent')}:</td><td style={{ padding: '2px 0', fontWeight: '600', color: '#1e40af' }}>{formatNumber(rental.monthly_rent)} {rental.currency}</td></tr>
               </tbody>
             </table>

@@ -10,14 +10,24 @@ import { useCalendar, CalendarProvider } from '@/contexts/CalendarContext';
 import { getMonthNames } from '@/utils/calendar';
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
+import { useFormattedDate } from '@/hooks/useFormattedDate';
 import { formatNumber } from '@/lib/formatNumber';
+
+const getCurrentShamsiYear = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const day = now.getDate();
+  return month < 3 || (month === 3 && day < 21) ? year - 622 : year - 621;
+};
 
 export const ShopRentalListPage = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { calendarType } = useCalendar();
+  const { formatDate } = useFormattedDate();
   const lang = t('language.code') as 'fa' | 'ps';
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [shopFilter, setShopFilter] = useState('');
@@ -34,14 +44,15 @@ export const ShopRentalListPage = () => {
       page: currentPage,
       page_size: pageSize,
       search: searchTerm,
+      year: getCurrentShamsiYear().toString(),
       ...(statusFilter && { rental_status: statusFilter }),
-      ...(shopFilter && { shop: shopFilter })
-    }
+      ...(shopFilter && { shop: shopFilter }),
+    },
   });
 
   const { handleDelete, ConfirmDialog } = useDelete({
-    queryKey: ['shop-rentals'],
-    endpoint: 'shop-rentals'
+    queryKey: 'shop-rentals',
+    endpoint: 'shop-rentals',
   });
 
   const rentals = rentalsData?.results || [];
@@ -65,35 +76,24 @@ export const ShopRentalListPage = () => {
     );
   };
 
-  // Get month names for display
   const monthNames = getMonthNames(calendarType, lang);
 
-  // Render months status badges
   const renderMonthBadges = (paymentSummary: any) => {
     if (!paymentSummary?.months_status) return null;
-    
     const monthsStatus = paymentSummary.months_status;
-    
     return (
       <div className="flex flex-wrap gap-0.5 max-w-[220px]">
         {['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map((month) => {
           const status = monthsStatus[month];
           const isPaid = status?.is_paid || false;
-          const monthIndex = parseInt(month) - 1;
+          const monthIndex = parseInt(month, 10) - 1;
           const monthLabel = monthNames[monthIndex]?.substring(0, 3) || month;
-          
           return (
             <span
               key={month}
-              className={`text-[9px] px-1 py-0.5 rounded cursor-default ${
-                isPaid
-                  ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-                  : 'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400'
+              className={`text-[9px] px-1 py-0.5 rounded ${
+                isPaid ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400'
               }`}
-              title={isPaid 
-                ? `${monthNames[monthIndex]} - Paid: ${formatNumber(status?.paid || 0)} ${paymentSummary.currency}`
-                : `${monthNames[monthIndex]} - Remaining: ${formatNumber(status?.remaining || 0)} ${paymentSummary.currency}`
-              }
             >
               {monthLabel}
             </span>
@@ -107,12 +107,22 @@ export const ShopRentalListPage = () => {
     {
       key: 'shop_details',
       title: t('shop-rental.shop'),
-      render: (value) => <span className="text-xs font-medium">{value?.shop_number || 'N/A'} - {value?.name || ''}</span>
+      render: (value) => <span className="text-xs font-medium">{value?.shop_number || 'N/A'} - {value?.name || ''}</span>,
     },
     {
       key: 'tenant_details',
       title: t('shop-rental.tenant'),
-      render: (value) => <span className="text-xs">{value?.full_name || 'N/A'}</span>
+      render: (value) => <span className="text-xs">{value?.full_name || 'N/A'}</span>,
+    },
+    {
+      key: 'start_date',
+      title: t('shop-rental.startDate'),
+      render: (value) => <span className="text-xs" dir="rtl">{formatDate(value)}</span>,
+    },
+    {
+      key: 'end_date',
+      title: t('shop-rental.endDate'),
+      render: (value) => <span className="text-xs" dir="rtl">{formatDate(value)}</span>,
     },
     {
       key: 'monthly_rent',
@@ -121,19 +131,16 @@ export const ShopRentalListPage = () => {
         <span className="text-xs font-bold text-blue-600">
           {formatNumber(value)} {record.currency_details?.code || record.currency || ''}
         </span>
-      )
+      ),
     },
     {
       key: 'payment_summary',
       title: t('shop-rental.paidThisYear', 'Paid (Year)'),
-      render: (value, record) => {
-        const totalPaid = value?.total_paid_year || 0;
-        return (
-          <span className="text-xs font-bold text-green-600">
-            {formatNumber(totalPaid)} {value?.currency || record.currency || ''}
-          </span>
-        );
-      }
+      render: (value, record) => (
+        <span className="text-xs font-bold text-green-600">
+          {formatNumber(value?.total_paid_year || 0)} {value?.currency || record.currency || ''}
+        </span>
+      ),
     },
     {
       key: 'payment_summary',
@@ -145,56 +152,32 @@ export const ShopRentalListPage = () => {
             {formatNumber(remaining)} {value?.currency || record.currency || ''}
           </span>
         );
-      }
+      },
     },
     {
       key: 'payment_summary',
       title: t('shop-rental.monthlyStatus', 'Monthly Status'),
-      render: (value, record) => {
-        const paidCount = value?.months_paid_count || 0;
-        const pendingCount = value?.months_pending_count || 12;
-        
-        return (
-          <div className="space-y-1">
-            <div className="flex items-center gap-1 text-[10px]">
-              <span className="text-green-600 font-medium">{paidCount}</span>
-              <span className="text-muted-foreground">/ 12</span>
-              <span className="text-muted-foreground text-[9px] ml-1">months</span>
-            </div>
-            {renderMonthBadges(value)}
+      render: (value) => (
+        <div className="space-y-1">
+          <div className="flex items-center gap-1 text-[10px]">
+            <span className="text-green-600 font-medium">{value?.months_paid_count || 0}</span>
+            <span className="text-muted-foreground">/ 12</span>
           </div>
-        );
-      }
+          {renderMonthBadges(value)}
+        </div>
+      ),
     },
     {
       key: 'rental_status',
       title: t('shop-rental.rentalStatus'),
-      render: (value) => getStatusBadge(value || 'active')
-    }
+      render: (value) => getStatusBadge(value || 'active'),
+    },
   ];
 
   const rowActions: TableAction[] = [
-    {
-      key: 'add_payment',
-      label: t('shop-rental.addPayment'),
-      icon: <DollarSign className="h-4 w-4" />,
-      onClick: handleAddPayment,
-      tooltip: t('shop-rental.addPayment')
-    },
-    {
-      key: 'view',
-      label: t('shop-rental.viewDetails'),
-      icon: <Eye className="h-4 w-4" />,
-      onClick: handleDetails,
-      tooltip: t('shop-rental.viewDetails')
-    },
-    {
-      key: 'edit',
-      label: t('shop-rental.edit'),
-      icon: <Edit className="h-4 w-4" />,
-      onClick: handleEdit,
-      tooltip: t('shop-rental.editRental')
-    },
+    { key: 'add_payment', label: t('shop-rental.addPayment'), icon: <DollarSign className="h-4 w-4" />, onClick: handleAddPayment },
+    { key: 'view', label: t('shop-rental.viewDetails'), icon: <Eye className="h-4 w-4" />, onClick: handleDetails },
+    { key: 'edit', label: t('shop-rental.edit'), icon: <Edit className="h-4 w-4" />, onClick: handleEdit },
     {
       key: 'delete',
       label: t('shop-rental.delete'),
@@ -202,8 +185,7 @@ export const ShopRentalListPage = () => {
       onClick: (record) => handleDelete(record.id, `Rental ${record.shop_details?.name || ''}`),
       variant: 'ghost',
       className: 'text-red-600 hover:text-red-700',
-      tooltip: t('shop-rental.deleteRental')
-    }
+    },
   ];
 
   const rentalStatusOptions = [
@@ -212,46 +194,6 @@ export const ShopRentalListPage = () => {
     { value: 'cancelled', label: t('shop-rental.rentalStatusOptions.cancelled') },
     { value: 'renewed', label: t('shop-rental.rentalStatusOptions.renewed') },
   ];
-
-  const customFilters = [
-    {
-      key: 'shop',
-      label: t('shop-rental.shop'),
-      component: (
-        <Autocomplete
-          endpoint="shops/"
-          value={shopFilter}
-          onChange={(value) => { setShopFilter(value); setCurrentPage(1); }}
-          placeholder={t('shop-rental.selectShop')}
-          getOptionLabel={(s) => s.name}
-          getOptionValue={(s) => s.id.toString()}
-        />
-      )
-    },
-    {
-      key: 'status',
-      label: t('shop-rental.rentalStatus'),
-      component: (
-        <Autocomplete
-          options={rentalStatusOptions}
-          value={statusFilter}
-          onChange={(value) => { setStatusFilter(value as string); setCurrentPage(1); }}
-          placeholder={t('shop-rental.selectRentalStatus')}
-          getOptionLabel={(s) => s.label}
-          getOptionValue={(s) => s.value}
-        />
-      )
-    }
-  ];
-
-  const handleClearFilters = () => {
-    setStatusFilter('');
-    setShopFilter('');
-    setSearchTerm('');
-    setCurrentPage(1);
-  };
-
-  const hasActiveFilters = statusFilter || shopFilter || searchTerm;
 
   return (
     <div className="space-y-6 p-6">
@@ -273,10 +215,39 @@ export const ShopRentalListPage = () => {
           searchPlaceholder={t('shop-rental.searchRentals')}
           searchValue={searchTerm}
           onSearch={(value) => { setSearchTerm(value); setCurrentPage(1); }}
-          customFilters={customFilters}
-          showClearFilters={hasActiveFilters}
+          customFilters={[
+            {
+              key: 'shop',
+              label: t('shop-rental.shop'),
+              component: (
+                <Autocomplete
+                  endpoint="shops/"
+                  value={shopFilter}
+                  onChange={(v) => { setShopFilter(v); setCurrentPage(1); }}
+                  placeholder={t('shop-rental.selectShop')}
+                  getOptionLabel={(s) => s.name}
+                  getOptionValue={(s) => s.id.toString()}
+                />
+              ),
+            },
+            {
+              key: 'status',
+              label: t('shop-rental.rentalStatus'),
+              component: (
+                <Autocomplete
+                  options={rentalStatusOptions}
+                  value={statusFilter}
+                  onChange={(v) => { setStatusFilter(v as string); setCurrentPage(1); }}
+                  placeholder={t('shop-rental.selectRentalStatus')}
+                  getOptionLabel={(s) => s.label}
+                  getOptionValue={(s) => s.value}
+                />
+              ),
+            },
+          ]}
+          showClearFilters={!!statusFilter || !!shopFilter || !!searchTerm}
           clearFiltersLabel={t('shop-rental.clearFilters')}
-          onClearFilters={handleClearFilters}
+          onClearFilters={() => { setStatusFilter(''); setShopFilter(''); setSearchTerm(''); setCurrentPage(1); }}
           rowActions={rowActions}
           pagination={{
             current: currentPage,
@@ -285,14 +256,14 @@ export const ShopRentalListPage = () => {
             onPageChange: setCurrentPage,
             showSizeChanger: true,
             pageSizeOptions: [10, 25, 50, 100],
-            onPageSizeChange: (size) => { setPageSize(size); setCurrentPage(1); }
+            onPageSizeChange: (size) => { setPageSize(size); setCurrentPage(1); },
           }}
           emptyIcon={<Receipt className="h-8 w-8 text-muted-foreground" />}
           emptyTitle={t('shop-rental.noRentalsFound')}
           emptyDescription={searchTerm ? t('shop-rental.tryAdjustingSearch') : t('shop-rental.addFirstRental')}
           loadingText={t('shop-rental.loadingRentals')}
           maxHeight="75vh"
-          stickyHeader={true}
+          stickyHeader
         />
         <ConfirmDialog />
       </CalendarProvider>
