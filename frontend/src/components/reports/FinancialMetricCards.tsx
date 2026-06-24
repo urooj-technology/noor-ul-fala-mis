@@ -2,13 +2,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatNumber } from '@/lib/formatNumber';
 import { CurrencyAmounts } from '@/types/financial-report';
-import { TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { TrendingDown, TrendingUp, Banknote, CircleDollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FinancialMetricCardsProps {
   income: CurrencyAmounts;
   expenses: CurrencyAmounts;
-  netCash: CurrencyAmounts;
+  profit: CurrencyAmounts;
+  cashBalance: CurrencyAmounts;
 }
 
 function MetricValue({ afn, usd, color }: { afn: number; usd: number; color: string }) {
@@ -20,7 +21,7 @@ function MetricValue({ afn, usd, color }: { afn: number; usd: number; color: str
   );
 }
 
-export function FinancialMetricCards({ income, expenses, netCash }: FinancialMetricCardsProps) {
+export function FinancialMetricCards({ income, expenses, profit, cashBalance }: FinancialMetricCardsProps) {
   const { t } = useLanguage();
 
   const items = [
@@ -43,20 +44,31 @@ export function FinancialMetricCards({ income, expenses, netCash }: FinancialMet
       iconBg: 'bg-red-100 text-red-600 dark:bg-red-900/40',
     },
     {
-      label: t('reports.netCashPosition'),
-      icon: Wallet,
-      afn: netCash.AFN,
-      usd: netCash.USD,
-      color: netCash.AFN >= 0 ? 'text-purple-600' : 'text-red-600',
-      card: netCash.AFN >= 0
+      label: t('reports.netProfit'),
+      icon: CircleDollarSign,
+      afn: profit.AFN,
+      usd: profit.USD,
+      color: profit.AFN >= 0 ? 'text-purple-600' : 'text-red-600',
+      card: profit.AFN >= 0
         ? 'border-purple-200/80 bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/20 dark:to-card'
         : 'border-red-200/80 bg-gradient-to-br from-red-50 to-white dark:from-red-950/20 dark:to-card',
-      iconBg: netCash.AFN >= 0 ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/40' : 'bg-red-100 text-red-600 dark:bg-red-900/40',
+      iconBg: profit.AFN >= 0 ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/40' : 'bg-red-100 text-red-600 dark:bg-red-900/40',
+    },
+    {
+      label: t('reports.cashBalance'),
+      icon: Banknote,
+      afn: cashBalance.AFN,
+      usd: cashBalance.USD,
+      color: cashBalance.AFN >= 0 ? 'text-blue-600' : 'text-red-600',
+      card: cashBalance.AFN >= 0
+        ? 'border-blue-200/80 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-card'
+        : 'border-red-200/80 bg-gradient-to-br from-red-50 to-white dark:from-red-950/20 dark:to-card',
+      iconBg: cashBalance.AFN >= 0 ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40' : 'bg-red-100 text-red-600 dark:bg-red-900/40',
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5">
       {items.map((item) => (
         <Card key={item.label} className={cn('rounded-2xl shadow-sm border', item.card)}>
           <CardContent className="p-5 md:p-6">

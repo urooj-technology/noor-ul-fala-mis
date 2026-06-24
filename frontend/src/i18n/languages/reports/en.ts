@@ -28,6 +28,8 @@ export const reportsEn = {
   
   // Expense types
   generalExpenses: "General Expenses",
+  netProfitHint: "Income minus all expenses (payroll includes salaries and advances)",
+  payrollSalaries: "Salaries & Wages",
   payrollExpenses: "Payroll Expenses",
   advanceExpenses: "Advance Expenses",
   
@@ -113,7 +115,10 @@ export const reportsEn = {
   payroll: "Payroll",
   outflowsSummary: "Money Out",
   totalOutflows: "Total Outflows",
-  netCashPosition: "Net Cash Position",
+  netCashPosition: "Money Left After Payments",
+  netCashPositionHint: "Income minus all payments in this period",
+  cashBalance: "Cash on Hand",
+  cashBalanceHint: "Actual cash in your account right now",
   allTime: "All time",
   selectCustomDateRange: "Please select both start and end dates for a custom period.",
   

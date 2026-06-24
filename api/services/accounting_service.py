@@ -8,6 +8,7 @@ class AccountingService:
     """Service layer for accounting operations - ensures double-entry integrity"""
     
     CURRENCIES = ['AFN', 'USD']
+    ADVANCE_ACCOUNT_CODE = '1210'
     
     @staticmethod
     @transaction.atomic
@@ -867,112 +868,10 @@ class AccountingService:
         }
     
     @staticmethod
-    def _student_fees_collected(currency, start_date, end_date):
-        """Sum completed student payments for a currency in a date range."""
-        from django.db.models import Sum
-        from api.models.data.student_finance import StudentPayment
-        from api.utils.currency import normalize_currency
-
-        currency = normalize_currency(currency)
-        payments = StudentPayment.completed().filter(currency=currency)
-        if start_date:
-            payments = payments.filter(payment_date__gte=start_date)
-        if end_date:
-            payments = payments.filter(payment_date__lte=end_date)
-        total = payments.aggregate(total=Sum('amount'))['total']
-        return Decimal(str(total or 0))
-
-    @staticmethod
     def get_income_statement(start_date, end_date):
-        """Generate income statement (Profit & Loss) with multi-currency support"""
-        result = {
-            'start_date': start_date,
-            'end_date': end_date,
-            'by_currency': {},
-            'grand_total_income': Decimal('0'),
-            'grand_total_expenses': Decimal('0'),
-            'grand_net_income': Decimal('0')
-        }
-        
-        for currency in AccountingService.CURRENCIES:
-            income_accounts = Account.objects.filter(
-                account_type='income',
-                is_active=True,
-                code__endswith=f'_{currency}'
-            )
-            expense_accounts = Account.objects.filter(
-                account_type='expense',
-                is_active=True,
-                code__endswith=f'_{currency}'
-            )
-            
-            total_income = Decimal('0')
-            income_items = []
-            for account in income_accounts:
-                # Use date range filter for income statement
-                balance = AccountingService._get_account_balance(
-                    account, start_date=start_date, end_date=end_date
-                )
-                if balance != 0:
-                    income_items.append({
-                        'code': account.code,
-                        'name': account.name.replace(f' - {currency}', ''),
-                        'type': account.get_account_type_display(),
-                        'currency': currency,
-                        'amount': float(balance)
-                    })
-                    total_income += balance
-
-            has_student_revenue = any(item['code'].startswith('4000_') for item in income_items)
-            if not has_student_revenue:
-                student_collected = AccountingService._student_fees_collected(
-                    currency, start_date, end_date
-                )
-                if student_collected > 0:
-                    income_items.append({
-                        'code': f'4000_{currency}',
-                        'name': 'Student Fees (Collected)',
-                        'type': 'Income',
-                        'currency': currency,
-                        'amount': float(student_collected),
-                    })
-                    total_income += student_collected
-            
-            total_expenses = Decimal('0')
-            expense_items = []
-            for account in expense_accounts:
-                # Use date range filter for income statement
-                balance = AccountingService._get_account_balance(
-                    account, start_date=start_date, end_date=end_date
-                )
-                if balance != 0:
-                    expense_items.append({
-                        'code': account.code,
-                        'name': account.name.replace(f' - {currency}', ''),
-                        'type': account.get_account_type_display(),
-                        'currency': currency,
-                        'amount': float(balance)
-                    })
-                    total_expenses += balance
-            
-            net_income = total_income - total_expenses
-            
-            result['by_currency'][currency] = {
-                'income': income_items,
-                'total_income': float(total_income),
-                'expenses': expense_items,
-                'total_expenses': float(total_expenses),
-                'net_income': float(net_income),
-                'is_profit': net_income > 0,
-            }
-            
-            result['grand_total_income'] += total_income
-            result['grand_total_expenses'] += total_expenses
-        
-        result['grand_net_income'] = result['grand_total_income'] - result['grand_total_expenses']
-        result['grand_totals_note'] = 'Grand totals sum AFN and USD without exchange conversion. Use per-currency totals.'
-        
-        return result
+        """Generate income statement aligned with dashboard/report totals."""
+        from api.services.financial_report_service import build_income_statement
+        return build_income_statement(start_date, end_date)
     
     @staticmethod
     def get_balance_sheet(as_of_date=None):

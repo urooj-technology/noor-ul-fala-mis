@@ -11,9 +11,10 @@ import { FinancialMetricCards } from '@/components/reports/FinancialMetricCards'
 import { FinancialBreakdownTables } from '@/components/reports/FinancialBreakdownTables';
 import { ReportPeriodFilter } from '@/components/reports/ReportPeriodFilter';
 import { ReportDateRangeBadge } from '@/components/reports/ReportDateRangeBadge';
-import { ReportPageHeader, ReportEmptyState } from '@/components/reports/ReportPageLayout';
+import { ReportPageHeader, ReportEmptyState, FinancialSummaryBar } from '@/components/reports/ReportPageLayout';
 import { FinancialReport, ReportPeriod, ReportTab } from '@/types/financial-report';
 import { formatNumber } from '@/lib/formatNumber';
+import { getPayrollTotal } from '@/lib/financialReport';
 import { cn } from '@/lib/utils';
 
 const emptyAmounts = { AFN: 0, USD: 0 };
@@ -91,9 +92,17 @@ const ComprehensiveReports = () => {
 
   const renderOverview = (overview: FinancialReport) => {
     const { income, expenses } = overviewRows(overview);
+    const profit = overview?.profit || emptyAmounts;
+    const cashBalance = overview?.cash_balance || emptyAmounts;
+    const payrollTotal = getPayrollTotal(overview);
     return (
       <div className="space-y-6">
-        <FinancialMetricCards income={income} expenses={expenses} netCash={overview?.net_cash_position || emptyAmounts} />
+        <FinancialMetricCards
+          income={income}
+          expenses={expenses}
+          profit={profit}
+          cashBalance={cashBalance}
+        />
         <FinancialBreakdownTables
           incomeRows={[
             { label: t('reports.studentPaymentsIncome'), values: overview?.income?.student || emptyAmounts, color: 'text-green-600' },
@@ -102,9 +111,10 @@ const ComprehensiveReports = () => {
             { label: t('reports.totalIncome'), values: income, color: 'text-green-700', isTotal: true },
           ]}
           outflowRows={[
-            { label: t('reports.payrollExpenses'), values: overview?.expenses?.payroll || emptyAmounts, color: 'text-red-600' },
+            { label: t('reports.payrollExpenses'), values: payrollTotal, color: 'text-red-600' },
+            { label: t('reports.payrollSalaries'), values: overview?.expenses?.payroll || emptyAmounts, color: 'text-red-500', isSubRow: true },
+            { label: t('reports.advances'), values: overview?.expenses?.advances || emptyAmounts, color: 'text-orange-500', isSubRow: true },
             { label: t('reports.generalExpenses'), values: overview?.expenses?.general || emptyAmounts, color: 'text-red-600' },
-            { label: t('reports.advances'), values: overview?.expenses?.advances || emptyAmounts, color: 'text-orange-600' },
             {
               label: t('reports.totalOutflows'),
               values: expenses,
@@ -112,6 +122,14 @@ const ComprehensiveReports = () => {
               isTotal: true,
             },
           ]}
+        />
+        <FinancialSummaryBar
+          profitLabel={t('reports.netProfit')}
+          profitAfn={profit.AFN}
+          profitUsd={profit.USD}
+          cashBalanceLabel={t('reports.cashBalance')}
+          cashBalanceAfn={cashBalance.AFN}
+          cashBalanceUsd={cashBalance.USD}
         />
       </div>
     );
@@ -274,11 +292,23 @@ const ComprehensiveReports = () => {
                 <div>
                   <h4 className="text-base md:text-lg font-semibold mb-3">{t('reports.expenses')}</h4>
                   {(currData.expenses || []).map((item: any) => (
-                    <div key={item.code} className="flex justify-between text-sm md:text-base py-2 border-b border-border/50 last:border-0">
-                      <span>{item.name}</span>
-                      <span className="font-medium tabular-nums">{formatNumber(item.amount)}</span>
+                    <div
+                      key={item.code}
+                      className={cn(
+                        'flex justify-between gap-4 text-sm md:text-base py-2 border-b border-border/50 last:border-0',
+                        item.is_subtotal && 'pl-4 text-muted-foreground',
+                      )}
+                    >
+                      <span className="min-w-0">{item.name}</span>
+                      <span className="font-medium tabular-nums shrink-0">{formatNumber(item.amount)}</span>
                     </div>
                   ))}
+                  {(currData.expenses || []).length > 0 && (
+                    <div className="flex justify-between gap-4 text-sm md:text-base py-3 mt-2 font-bold border-t">
+                      <span>{t('reports.totalExpenses')}</span>
+                      <span className="tabular-nums shrink-0 text-red-600">{formatNumber(currData.total_expenses || 0)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </SectionCard>

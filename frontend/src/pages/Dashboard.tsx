@@ -8,6 +8,7 @@ import { ReportPeriodFilter } from '@/components/reports/ReportPeriodFilter';
 import { ReportDateRangeBadge } from '@/components/reports/ReportDateRangeBadge';
 import { ReportPageHeader, ReportEmptyState, FinancialSummaryBar } from '@/components/reports/ReportPageLayout';
 import { FinancialReport, ReportPeriod } from '@/types/financial-report';
+import { getPayrollTotal } from '@/lib/financialReport';
 
 import { useCalendar } from '@/contexts/CalendarContext';
 
@@ -46,7 +47,8 @@ export const Dashboard = () => {
   const income = report?.income?.total || emptyAmounts;
   const expenses = report?.expenses?.total || emptyAmounts;
   const profit = report?.profit || emptyAmounts;
-  const netCash = report?.net_cash_position || emptyAmounts;
+  const cashBalance = report?.cash_balance || emptyAmounts;
+  const payrollTotal = getPayrollTotal(report);
 
   const incomeRows = [
     { label: t('reports.studentPaymentsIncome'), values: report?.income?.student || emptyAmounts, color: 'text-green-600' },
@@ -56,9 +58,10 @@ export const Dashboard = () => {
   ];
 
   const outflowRows = [
-    { label: t('reports.payrollExpenses'), values: report?.expenses?.payroll || emptyAmounts, color: 'text-red-600' },
+    { label: t('reports.payrollExpenses'), values: payrollTotal, color: 'text-red-600' },
+    { label: t('reports.payrollSalaries'), values: report?.expenses?.payroll || emptyAmounts, color: 'text-red-500', isSubRow: true },
+    { label: t('reports.advances'), values: report?.expenses?.advances || emptyAmounts, color: 'text-orange-500', isSubRow: true },
     { label: t('reports.generalExpenses'), values: report?.expenses?.general || emptyAmounts, color: 'text-red-600' },
-    { label: t('reports.advances'), values: report?.expenses?.advances || emptyAmounts, color: 'text-orange-600' },
     {
       label: t('reports.totalOutflows'),
       values: expenses,
@@ -102,7 +105,8 @@ export const Dashboard = () => {
           <FinancialMetricCards
             income={income}
             expenses={expenses}
-            netCash={netCash}
+            profit={profit}
+            cashBalance={cashBalance}
           />
 
           <FinancialBreakdownTables incomeRows={incomeRows} outflowRows={outflowRows} />
@@ -111,9 +115,9 @@ export const Dashboard = () => {
             profitLabel={t('reports.netProfit')}
             profitAfn={profit.AFN}
             profitUsd={profit.USD}
-            netCashLabel={t('reports.netCashPosition')}
-            netCashAfn={netCash.AFN}
-            netCashUsd={netCash.USD}
+            cashBalanceLabel={t('reports.cashBalance')}
+            cashBalanceAfn={cashBalance.AFN}
+            cashBalanceUsd={cashBalance.USD}
           />
         </div>
       )}

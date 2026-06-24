@@ -28,7 +28,9 @@ export const reportsFa = {
   
   // Expense types
   generalExpenses: "مصارف های عمومی",
-  payrollExpenses: "هزینه های حقوق",
+  netProfitHint: "درآمد منهای همه هزینه‌ها (حقوق شامل معاش و پیش‌پرداخت‌ها)",
+  payrollSalaries: "معاش و دستمزد",
+  payrollExpenses: "هزینه‌های حقوق",
   advanceExpenses: "هزینه های پیش پرداخت",
   
   // Loading states
@@ -113,7 +115,10 @@ export const reportsFa = {
   payroll: "حقوق",
   outflowsSummary: "خروجی ها",
   totalOutflows: "مجموع خروجی",
-  netCashPosition: "موقعیت نقدی خالص",
+  netCashPosition: "باقی‌مانده پس از پرداخت‌ها",
+  netCashPositionHint: "درآمد منهای همه پرداخت‌های این دوره",
+  cashBalance: "موجودی نقد",
+  cashBalanceHint: "پول نقد واقعی در حساب در حال حاضر",
   allTime: "تمام دوره",
   selectCustomDateRange: "لطفاً برای دوره سفارشی هر دو تاریخ شروع و پایان را انتخاب کنید.",
   

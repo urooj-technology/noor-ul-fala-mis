@@ -158,12 +158,11 @@ class ComprehensiveReportView(APIView):
                 ['Other Income', data['income']['other']['AFN'], data['income']['other']['USD']],
                 ['Total Income', data['income']['total']['AFN'], data['income']['total']['USD']],
                 ['', '', ''],
-                ['Payroll', data['expenses']['payroll']['AFN'], data['expenses']['payroll']['USD']],
+                ['Payroll Expenses', data['expenses']['payroll_total']['AFN'], data['expenses']['payroll_total']['USD']],
                 ['General Expenses', data['expenses']['general']['AFN'], data['expenses']['general']['USD']],
-                ['Employee Advances', data['expenses']['advances']['AFN'], data['expenses']['advances']['USD']],
                 ['Total Outflows', data['expenses']['total']['AFN'], data['expenses']['total']['USD']],
                 ['Net Profit', data['profit']['AFN'], data['profit']['USD']],
-                ['Net Cash Position', data['net_cash_position']['AFN'], data['net_cash_position']['USD']],
+                ['Cash on Hand', data['cash_balance']['AFN'], data['cash_balance']['USD']],
             ]
             return headers, rows
         return ['Field', 'Value'], [['Report', report_type]]

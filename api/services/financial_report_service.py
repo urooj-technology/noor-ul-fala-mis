@@ -27,6 +27,8 @@ ADVANCE_ACCOUNTS = {
     'advances': '1210',
 }
 
+CASH_ACCOUNT_CODE = '1000'
+
 
 def currency_totals():
     return {currency: Decimal('0') for currency in CURRENCIES}
@@ -106,6 +108,18 @@ def _cash_outflow_amount(account_code, currency, start_date, end_date):
     debits = _sum_for_account_code(account_code, currency, start_date, end_date, 'debit')
     credits = _sum_for_account_code(account_code, currency, start_date, end_date, 'credit')
     return debits - credits
+
+
+def _cash_balance(currency, as_of_date=None):
+    """Actual cash on hand from the cash ledger account (1000)."""
+    account = Account.objects.filter(
+        code=f'{CASH_ACCOUNT_CODE}_{currency}',
+        is_active=True,
+    ).first()
+    if not account:
+        return Decimal('0')
+    as_of = as_of_date or timezone.now().date()
+    return AccountingService._get_account_balance(account, as_of_date=as_of)
 
 
 def _student_payment_cash_collected(currency, start_date, end_date):
@@ -201,21 +215,24 @@ def build_financial_summary(period='monthly', start_date=None, end_date=None):
 
     total_income = currency_totals()
     total_expenses = currency_totals()
-    operating_expenses = currency_totals()
+    payroll_total = currency_totals()
 
     for currency in CURRENCIES:
         total_income[currency] = sum(Decimal(str(income[key][currency])) for key in income)
         total_expenses[currency] = sum(Decimal(str(expenses[key][currency])) for key in expenses)
-        operating_expenses[currency] = (
-            Decimal(str(expenses['payroll'][currency])) + Decimal(str(expenses['general'][currency]))
+        payroll_total[currency] = (
+            Decimal(str(expenses['payroll'][currency])) + Decimal(str(expenses['advances'][currency]))
         )
 
+    # Net profit = income minus all expenses. Advances are part of payroll, not excluded.
     profit = {
-        currency: float(total_income[currency] - operating_expenses[currency])
+        currency: float(total_income[currency] - total_expenses[currency])
         for currency in CURRENCIES
     }
-    net_cash_position = {
-        currency: float(total_income[currency] - total_expenses[currency])
+    net_cash_position = profit
+    cash_as_of = end or timezone.now().date().isoformat()
+    cash_balance = {
+        currency: float(_cash_balance(currency, as_of_date=cash_as_of))
         for currency in CURRENCIES
     }
 
@@ -234,6 +251,7 @@ def build_financial_summary(period='monthly', start_date=None, end_date=None):
         },
         'expenses': {
             'payroll': {c: float(expenses['payroll'][c]) for c in CURRENCIES},
+            'payroll_total': {c: float(payroll_total[c]) for c in CURRENCIES},
             'general': {c: float(expenses['general'][c]) for c in CURRENCIES},
             'general_expenses': {c: float(expenses['general'][c]) for c in CURRENCIES},
             'advances': {c: float(expenses['advances'][c]) for c in CURRENCIES},
@@ -250,6 +268,7 @@ def build_financial_summary(period='monthly', start_date=None, end_date=None):
         },
         'profit': profit,
         'net_cash_position': net_cash_position,
+        'cash_balance': cash_balance,
         'income_breakdown': income_breakdown,
         'expense_breakdown': expense_breakdown,
         'cash_outflow_breakdown': [
@@ -326,6 +345,119 @@ def build_payroll_report(period='monthly', start_date=None, end_date=None):
     }
 
 
+INCOME_LINE_LABELS = {
+    'student': 'Student Payments',
+    'rental': 'Rental Income',
+    'other': 'Other Income',
+}
+
+EXPENSE_LINE_LABELS = {
+    'payroll': 'Payroll Expenses',
+    'payroll_salary': 'Salaries & Wages',
+    'payroll_advances': 'Advances',
+    'general': 'General Expenses',
+}
+
+
+def build_income_statement(start_date=None, end_date=None):
+    """Income statement using the same ledger logic as the dashboard and reports."""
+    result = {
+        'start_date': start_date,
+        'end_date': end_date,
+        'by_currency': {},
+        'grand_total_income': Decimal('0'),
+        'grand_total_expenses': Decimal('0'),
+        'grand_net_income': Decimal('0'),
+    }
+
+    for currency in CURRENCIES:
+        income_items = []
+        total_income = Decimal('0')
+
+        for key, code in INCOME_ACCOUNTS.items():
+            if key == 'student':
+                amount = _student_income_amount(currency, start_date, end_date)
+            else:
+                amount = _income_amount(code, currency, start_date, end_date)
+            if amount != 0:
+                income_items.append({
+                    'code': f'{code}_{currency}',
+                    'name': INCOME_LINE_LABELS[key],
+                    'type': 'Income',
+                    'currency': currency,
+                    'amount': float(amount),
+                })
+                total_income += amount
+
+        expense_items = []
+        total_expenses = Decimal('0')
+
+        payroll_salary = _expense_amount(EXPENSE_ACCOUNTS['payroll'], currency, start_date, end_date)
+        payroll_advances = _cash_outflow_amount(ADVANCE_ACCOUNTS['advances'], currency, start_date, end_date)
+        payroll_combined = payroll_salary + payroll_advances
+
+        if payroll_combined != 0:
+            expense_items.append({
+                'code': f'{EXPENSE_ACCOUNTS["payroll"]}_{currency}',
+                'name': EXPENSE_LINE_LABELS['payroll'],
+                'type': 'Expense',
+                'currency': currency,
+                'amount': float(payroll_combined),
+            })
+            total_expenses += payroll_combined
+            if payroll_salary != 0:
+                expense_items.append({
+                    'code': f'{EXPENSE_ACCOUNTS["payroll"]}_{currency}-detail',
+                    'name': EXPENSE_LINE_LABELS['payroll_salary'],
+                    'type': 'Expense',
+                    'currency': currency,
+                    'amount': float(payroll_salary),
+                    'is_subtotal': True,
+                })
+            if payroll_advances != 0:
+                expense_items.append({
+                    'code': f'{ADVANCE_ACCOUNTS["advances"]}_{currency}-detail',
+                    'name': EXPENSE_LINE_LABELS['payroll_advances'],
+                    'type': 'Expense',
+                    'currency': currency,
+                    'amount': float(payroll_advances),
+                    'is_subtotal': True,
+                })
+
+        general_amount = _expense_amount(EXPENSE_ACCOUNTS['general'], currency, start_date, end_date)
+        if general_amount != 0:
+            expense_items.append({
+                'code': f'{EXPENSE_ACCOUNTS["general"]}_{currency}',
+                'name': EXPENSE_LINE_LABELS['general'],
+                'type': 'Expense',
+                'currency': currency,
+                'amount': float(general_amount),
+            })
+            total_expenses += general_amount
+
+        net_income = total_income - total_expenses
+        result['by_currency'][currency] = {
+            'income': income_items,
+            'total_income': float(total_income),
+            'expenses': expense_items,
+            'total_expenses': float(total_expenses),
+            'net_income': float(net_income),
+            'is_profit': net_income > 0,
+        }
+        result['grand_total_income'] += total_income
+        result['grand_total_expenses'] += total_expenses
+
+    result['grand_net_income'] = float(
+        result['grand_total_income'] - result['grand_total_expenses']
+    )
+    result['grand_total_income'] = float(result['grand_total_income'])
+    result['grand_total_expenses'] = float(result['grand_total_expenses'])
+    result['grand_totals_note'] = (
+        'Grand totals sum AFN and USD without exchange conversion. Use per-currency totals.'
+    )
+    return result
+
+
 def build_accounting_report(report_type, period='monthly', start_date=None, end_date=None):
     today = timezone.now().date()
     date_range = get_date_range(period, start_date, end_date)
@@ -335,7 +467,7 @@ def build_accounting_report(report_type, period='monthly', start_date=None, end_
     if report_type == 'trial_balance':
         return AccountingService.get_trial_balance(as_of_date=end)
     if report_type == 'income_statement':
-        return AccountingService.get_income_statement(start, end)
+        return build_income_statement(start, end)
     if report_type == 'balance_sheet':
         return AccountingService.get_balance_sheet(as_of_date=end)
     return None

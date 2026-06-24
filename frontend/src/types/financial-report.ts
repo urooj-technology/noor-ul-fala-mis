@@ -18,6 +18,7 @@ export interface FinancialReport {
   };
   expenses: {
     payroll: CurrencyAmounts;
+    payroll_total?: CurrencyAmounts;
     general: CurrencyAmounts;
     general_expenses: CurrencyAmounts;
     advances: CurrencyAmounts;
@@ -34,6 +35,7 @@ export interface FinancialReport {
   };
   profit: CurrencyAmounts;
   net_cash_position: CurrencyAmounts;
+  cash_balance: CurrencyAmounts;
   income_breakdown?: Array<{ category: string; name: string; currency: string; amount: number }>;
   expense_breakdown?: Array<{ category: string; name: string; currency: string; amount: number }>;
   cash_outflow_breakdown?: Array<{ category: string; name: string; currency: string; amount: number }>;

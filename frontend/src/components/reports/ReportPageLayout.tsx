@@ -61,18 +61,18 @@ interface FinancialSummaryBarProps {
   profitLabel: string;
   profitAfn: number;
   profitUsd: number;
-  netCashLabel: string;
-  netCashAfn: number;
-  netCashUsd: number;
+  cashBalanceLabel: string;
+  cashBalanceAfn: number;
+  cashBalanceUsd: number;
 }
 
 export function FinancialSummaryBar({
   profitLabel,
   profitAfn,
   profitUsd,
-  netCashLabel,
-  netCashAfn,
-  netCashUsd,
+  cashBalanceLabel,
+  cashBalanceAfn,
+  cashBalanceUsd,
 }: FinancialSummaryBarProps) {
   return (
     <div className="rounded-2xl border bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900/50 dark:to-slate-800/50 shadow-sm p-5 md:p-6">
@@ -87,11 +87,11 @@ export function FinancialSummaryBar({
           </p>
         </div>
         <div className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">{netCashLabel}</p>
-          <p className={cn('text-xl md:text-2xl font-bold', netCashAfn >= 0 ? 'text-purple-600' : 'text-red-600')}>
-            {formatNumber(netCashAfn)} AFN
+          <p className="text-sm font-medium text-muted-foreground">{cashBalanceLabel}</p>
+          <p className={cn('text-xl md:text-2xl font-bold', cashBalanceAfn >= 0 ? 'text-blue-600' : 'text-red-600')}>
+            {formatNumber(cashBalanceAfn)} AFN
             <span className="text-base font-semibold text-muted-foreground ml-2">
-              / {formatNumber(netCashUsd)} USD
+              / {formatNumber(cashBalanceUsd)} USD
             </span>
           </p>
         </div>

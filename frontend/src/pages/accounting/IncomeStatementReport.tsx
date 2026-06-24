@@ -7,6 +7,7 @@ import { useCalendar } from '@/contexts/CalendarContext';
 import { RefreshCw } from 'lucide-react';
 import useFetchObject from '@/api/useFetchObject';
 import { formatNumber } from '@/lib/formatNumber';
+import { cn } from '@/lib/utils';
 import { formatDateByCalendarType } from '@/utils/calendar';
 import { DatePicker } from '@/components/ui/date-picker-calendar';
 
@@ -41,6 +42,11 @@ const IncomeStatementReport = () => {
 
   const incomeStatement = data as any;
   const byCurrency = incomeStatement?.by_currency || {};
+  const reportStartDate = incomeStatement?.start_date || startDate;
+  const reportEndDate = incomeStatement?.end_date || endDate;
+
+  const formatReportDate = (value: string) =>
+    formatDateByCalendarType(value, calendarType, language as 'fa' | 'ps' | 'en', dateFormat);
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -81,9 +87,9 @@ const IncomeStatementReport = () => {
               <div className="bg-muted px-6 py-3 border-b font-semibold text-lg flex items-center justify-between">
                 <span>{currency}</span>
                 <span className="text-sm text-muted-foreground" dir="rtl">
-                  {formatDateByCalendarType(startDate, calendarType, language as 'fa' | 'ps' | 'en', dateFormat)}
+                  {formatReportDate(reportStartDate)}
                   {' - '}
-                  {formatDateByCalendarType(endDate, calendarType, language as 'fa' | 'ps' | 'en', dateFormat)}
+                  {formatReportDate(reportEndDate)}
                 </span>
               </div>
               
@@ -98,9 +104,9 @@ const IncomeStatementReport = () => {
                       {data.income && data.income.length > 0 ? (
                         <>
                           {data.income.map((item: any) => (
-                            <div key={item.code} className="flex justify-between py-2 border-b border-dashed last:border-b-0">
-                              <span className="text-gray-700 dark:text-gray-300">{item.name}</span>
-                              <span className="font-mono">{formatNumber(item.amount)}</span>
+                            <div key={item.code} className="flex justify-between gap-4 py-2 border-b border-dashed last:border-b-0">
+                              <span className="text-gray-700 dark:text-gray-300 min-w-0">{item.name}</span>
+                              <span className="font-mono tabular-nums shrink-0">{formatNumber(item.amount)}</span>
                             </div>
                           ))}
                           <div className="flex justify-between py-3 mt-3 border-t-2 border-green-500 font-bold bg-green-50 dark:bg-green-900/20 -mx-4 px-4">
@@ -123,9 +129,20 @@ const IncomeStatementReport = () => {
                       {data.expenses && data.expenses.length > 0 ? (
                         <>
                           {data.expenses.map((item: any) => (
-                            <div key={item.code} className="flex justify-between py-2 border-b border-dashed last:border-b-0">
-                              <span className="text-gray-700 dark:text-gray-300">{item.name}</span>
-                              <span className="font-mono">{formatNumber(item.amount)}</span>
+                            <div
+                              key={item.code}
+                              className={cn(
+                                'flex justify-between gap-4 py-2 border-b border-dashed last:border-b-0',
+                                item.is_subtotal && 'pl-4 text-muted-foreground text-sm',
+                              )}
+                            >
+                              <span className="text-gray-700 dark:text-gray-300 min-w-0">{item.name}</span>
+                              <span className={cn(
+                                'font-mono tabular-nums shrink-0',
+                                item.is_subtotal ? 'text-muted-foreground' : 'text-red-600',
+                              )}>
+                                {formatNumber(item.amount)}
+                              </span>
                             </div>
                           ))}
                           <div className="flex justify-between py-3 mt-3 border-t-2 border-red-500 font-bold bg-red-50 dark:bg-red-900/20 -mx-4 px-4">

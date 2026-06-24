@@ -28,6 +28,8 @@ export const reportsPs = {
   
   // Expense types
   generalExpenses: "ټولې مصارف",
+  netProfitHint: "په دې موده کې درېدنه منهای ټولې مصارف (معاش کې معاش او مخکې تادیات شامل دي)",
+  payrollSalaries: "معاش او اجوره",
   payrollExpenses: "د کارمندانو پیسې",
   advanceExpenses: "د مخکې تادیاتو مصارف",
   
@@ -113,7 +115,10 @@ export const reportsPs = {
   payroll: "معاش",
   outflowsSummary: "وتلې پیسې",
   totalOutflows: "ټولې وتلې پیسې",
-  netCashPosition: "خالص نغدي موقف",
+  netCashPosition: "وروسته له تادیاتو پاتې پیسې",
+  netCashPositionHint: "په دې موده کې درېدنه منهای ټولې تادیات",
+  cashBalance: "نغدي موجودي",
+  cashBalanceHint: "اوس مهال په حساب کې ریښتینې نغدي پیسې",
   allTime: "ټوله موده",
   selectCustomDateRange: "د دودیزې مودې لپاره د پیل او پای نیټې دواړه وټاکئ.",
   

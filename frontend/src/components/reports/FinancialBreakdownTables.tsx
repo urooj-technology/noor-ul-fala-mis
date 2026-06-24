@@ -10,6 +10,7 @@ interface Row {
   values: CurrencyAmounts;
   color?: string;
   isTotal?: boolean;
+  isSubRow?: boolean;
 }
 
 interface FinancialBreakdownTablesProps {
@@ -40,7 +41,9 @@ function BreakdownTable({ title, rows }: { title: string; rows: Row[] }) {
                 key={row.label}
                 className={cn(row.isTotal && 'bg-muted/40 font-semibold')}
               >
-                <TableCell className="text-sm md:text-base py-3">{row.label}</TableCell>
+                <TableCell className={cn('text-sm md:text-base py-3', row.isSubRow && 'pl-8 text-muted-foreground')}>
+                  {row.label}
+                </TableCell>
                 <TableCell className={cn('text-right text-sm md:text-base font-medium tabular-nums py-3', row.color)}>
                   {formatNumber(row.values.AFN)}
                 </TableCell>
