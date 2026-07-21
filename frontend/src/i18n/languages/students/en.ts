@@ -392,7 +392,6 @@ export const studentsEn = {
   fullName: "Full Name",
   registrationNumber: "Registration Number",
   classLevelLabel: "Class Level",
-  currency: "Currency",
   paymentPlanLabel: "Payment Plan (months)",
   totalFeesLabel: "Total Fees",
   feeTypesCount: "fee type(s) selected",

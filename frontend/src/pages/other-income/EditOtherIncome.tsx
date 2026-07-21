@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -117,7 +118,7 @@ const EditOtherIncome = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="amount" className="font-semibold flex items-center gap-2"><DollarSign className="h-4 w-4" />{t("other-income.amount")} <span className="text-destructive">*</span></Label>
-              <Input id="amount" type="number" step="0.01" value={formData.amount} onChange={(e) => { setFormData((prev) => ({ ...prev, amount: e.target.value })); if (errors.amount) setErrors((prev) => ({ ...prev, amount: "" })); }} placeholder={t("other-income.enterAmount")} className="h-10" />
+              <NumericInput maxDecimals={2} id="amount" value={formData.amount} onChange={(e) => { setFormData((prev) => ({ ...prev, amount: e.target.value })); if (errors.amount) setErrors((prev) => ({ ...prev, amount: "" })); }} placeholder={t("other-income.enterAmount")} className="h-10" />
               {errors.amount && <p className="text-xs text-destructive">{errors.amount}</p>}
             </div>
           </div>

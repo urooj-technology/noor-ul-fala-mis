@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -184,7 +185,7 @@ const AddEquipment = () => {
               </div>
               <div className="space-y-2">
                 <Label>{t('equipment.referencePrice')}</Label>
-                <Input type="number" min="0" value={formData.unit_price} onChange={(e) => setFormData((p) => ({ ...p, unit_price: e.target.value }))} />
+                <NumericInput maxDecimals={2} value={formData.unit_price} onChange={(e) => setFormData((p) => ({ ...p, unit_price: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>{t('equipment.brand')}</Label>
@@ -198,7 +199,7 @@ const AddEquipment = () => {
                 <>
                   <div className="space-y-2">
                     <Label>{t('equipment.initialQuantity')}</Label>
-                    <Input type="number" min="0" value={formData.initial_quantity} onChange={(e) => setFormData((p) => ({ ...p, initial_quantity: e.target.value }))} />
+                    <NumericInput allowDecimal={false} value={formData.initial_quantity} onChange={(e) => setFormData((p) => ({ ...p, initial_quantity: e.target.value }))} />
                   </div>
                   <div className="space-y-2">
                     <Label>{t('equipment.depreciationCategory')}</Label>

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, DollarSign, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -282,10 +283,8 @@ const EditShopRentalPayment = () => {
               <div>
                 <Label htmlFor="amount">{t('shop-rental.amount')} *</Label>
                 <div className="relative">
-                  <Input
+                  <NumericInput maxDecimals={2}
                     id="amount"
-                    type="number"
-                    step="0.01"
                     value={formData.amount}
                     onChange={(e) => {
                       setFormData(prev => ({ ...prev, amount: e.target.value }));

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Autocomplete } from '@/components/ui/autocomplete';
@@ -18,12 +19,13 @@ import { Employee } from '@/types/advance';
 import { Currency } from '@/types/common';
 import { getCurrentYear, getYearsArray, SHAMSI_MONTHS_DARI, SHAMSI_MONTHS_PASHTO } from '@/utils/calendar';
 import { getEmployeePositionLabel } from '@/lib/employee-positions';
+import { toNumberOr } from '@/lib/digits';
 
 interface PayrollFormData {
   employee: string;
   month: number;
   year: number;
-  salary: number;
+  salary: number | string;
   currency: string;
   payment_date: string;
 }
@@ -131,7 +133,7 @@ const EditPayroll = () => {
     if (!formData.employee) newErrors.employee = t('payroll.validation.employee');
     if (!formData.month) newErrors.month = t('payroll.validation.month');
     if (!formData.year) newErrors.year = t('payroll.validation.year');
-    if (!formData.salary || formData.salary <= 0) newErrors.salary = 'Salary must be greater than 0';
+    if (toNumberOr(formData.salary) <= 0) newErrors.salary = 'Salary must be greater than 0';
     if (!formData.currency) newErrors.currency = t('payroll.validation.currency');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -145,7 +147,7 @@ const EditPayroll = () => {
       employee: formData.employee,
       month: formData.month,
       year: formData.year,
-      salary: formData.salary || 0,
+      salary: toNumberOr(formData.salary),
       currency: formData.currency,
       payment_date: formData.payment_date,
       calendar_type: calendarType,
@@ -269,12 +271,10 @@ const EditPayroll = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>{t('payroll.salary')} *</Label>
-                <Input 
-                  type="number"
-                  step="0.01"
+                <NumericInput maxDecimals={2}
                   value={formData.salary || ''} 
-                  onChange={e => {
-                    setFormData(prev => ({ ...prev, salary: e.target.value === '' ? 0 : parseFloat(e.target.value) }));
+                  onValueChange={(v) => {
+                    setFormData(prev => ({ ...prev, salary: v }));
                     if (errors.salary) setErrors(prev => ({ ...prev, salary: '' }));
                   }}
                   placeholder={`Max: ${(financialSummary?.remaining_amount || 0).toFixed(2)}`}

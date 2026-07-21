@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -621,9 +622,7 @@ const AddStudentPayment = () => {
 
                         {/* Payment Amount Input */}
                         <td className="p-2.5">
-                          <Input
-                            type="number"
-                            step="0.01"
+                          <NumericInput maxDecimals={2}
                             value={entry.payment_amount}
                             onChange={(e) => updatePaymentAmount(index, e.target.value)}
                             placeholder="0.00"

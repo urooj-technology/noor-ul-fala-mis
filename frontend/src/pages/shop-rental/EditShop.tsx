@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -124,7 +125,7 @@ const EditShop = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="area" className="font-semibold">{t("shop-rental.area")}</Label>
-              <Input id="area" type="number" step="0.01" value={formData.area} onChange={(e) => setFormData((prev) => ({ ...prev, area: e.target.value }))} placeholder={t("shop-rental.area")} className="h-10" />
+              <NumericInput maxDecimals={2} id="area" value={formData.area} onChange={(e) => setFormData((prev) => ({ ...prev, area: e.target.value }))} placeholder={t("shop-rental.area")} className="h-10" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="status" className="font-semibold">{t("shop-rental.status")} <span className="text-destructive">*</span></Label>

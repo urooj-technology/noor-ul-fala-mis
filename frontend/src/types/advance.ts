@@ -43,7 +43,7 @@ export interface Advance extends BaseEntity {
 
 export interface AdvanceFormData {
   employee: string;
-  amount: number;
+  amount: number | string;
   currency: string;
   reason?: string;
   year: number;

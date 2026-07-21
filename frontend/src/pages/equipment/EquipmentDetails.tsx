@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -283,9 +284,7 @@ const EquipmentDetails = () => {
               </div>
               <div className="space-y-2">
                 <Label>{t('equipment.quantity')}</Label>
-                <Input
-                  type="number"
-                  min="1"
+                <NumericInput allowDecimal={false}
                   value={movementForm.quantity}
                   onChange={(e) => setMovementForm((p) => ({ ...p, quantity: e.target.value }))}
                 />

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Autocomplete } from '@/components/ui/autocomplete';
@@ -10,6 +11,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { RotateCw, ArrowLeft, FileText, Plus, X } from 'lucide-react';
 import useAdd from '@/api/useAdd';
 import { formatNumber } from '@/lib/formatNumber';
+import { toNumberOr } from '@/lib/digits';
 
 const AddJournalEntry = () => {
   const { t } = useLanguage();
@@ -18,8 +20,8 @@ const AddJournalEntry = () => {
   const [description, setDescription] = useState('');
   const [reference, setReference] = useState('');
   const [entries, setEntries] = useState([
-    { account: '', debit: 0, credit: 0 },
-    { account: '', debit: 0, credit: 0 },
+    { account: '', debit: '' as string | number, credit: '' as string | number },
+    { account: '', debit: '' as string | number, credit: '' as string | number },
   ]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -28,8 +30,8 @@ const AddJournalEntry = () => {
     endpoint: 'transactions/',
   });
 
-  const calculateTotalDebit = () => entries.reduce((sum, e) => sum + (e.debit || 0), 0);
-  const calculateTotalCredit = () => entries.reduce((sum, e) => sum + (e.credit || 0), 0);
+  const calculateTotalDebit = () => entries.reduce((sum, e) => sum + toNumberOr(e.debit), 0);
+  const calculateTotalCredit = () => entries.reduce((sum, e) => sum + toNumberOr(e.credit), 0);
   const isBalanced = calculateTotalDebit() === calculateTotalCredit();
 
   const validateForm = (): boolean => {
@@ -50,9 +52,9 @@ const AddJournalEntry = () => {
       reference,
       transaction_type: 'journal',
       entries: entries.map(e => ({
-        account: parseInt(e.account),
-        debit: Number(e.debit) || 0,
-        credit: Number(e.credit) || 0,
+        account: parseInt(String(e.account), 10),
+        debit: toNumberOr(e.debit),
+        credit: toNumberOr(e.credit),
       })),
     };
     
@@ -66,7 +68,7 @@ const AddJournalEntry = () => {
   };
 
   const addEntry = () => {
-    setEntries([...entries, { account: '', debit: 0, credit: 0 }]);
+    setEntries([...entries, { account: '', debit: '', credit: '' }]);
   };
 
   const removeEntry = (index: number) => {
@@ -132,11 +134,11 @@ const AddJournalEntry = () => {
                   </div>
                   <div className="col-span-3 space-y-2">
                     <Label htmlFor={`entry-debit-${index}`} className="text-xs">{t("accounting.debit")}</Label>
-                    <Input id={`entry-debit-${index}`} type="number" min="0" step="0.01" value={entry.debit} onChange={(e) => handleEntryChange(index, 'debit', parseFloat(e.target.value) || 0)} className="h-10" />
+                    <NumericInput maxDecimals={2} id={`entry-debit-${index}`} value={entry.debit} onValueChange={(v) => handleEntryChange(index, 'debit', v)} className="h-10" />
                   </div>
                   <div className="col-span-3 space-y-2">
                     <Label htmlFor={`entry-credit-${index}`} className="text-xs">{t("accounting.credit")}</Label>
-                    <Input id={`entry-credit-${index}`} type="number" min="0" step="0.01" value={entry.credit} onChange={(e) => handleEntryChange(index, 'credit', parseFloat(e.target.value) || 0)} className="h-10" />
+                    <NumericInput maxDecimals={2} id={`entry-credit-${index}`} value={entry.credit} onValueChange={(v) => handleEntryChange(index, 'credit', v)} className="h-10" />
                   </div>
                   {entries.length > 2 && (
                     <div className="col-span-1">

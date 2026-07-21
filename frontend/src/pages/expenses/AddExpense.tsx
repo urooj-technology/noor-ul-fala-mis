@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -109,10 +110,8 @@ const AddExpense = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="amount" className="font-semibold flex items-center gap-2"><DollarSign className="h-4 w-4" />{t('expenses.amount')} <span className="text-destructive">*</span></Label>
-                <Input
+                <NumericInput maxDecimals={2}
                   id="amount"
-                  type="number"
-                  step="0.01"
                   value={formData.amount}
                   onChange={(e) => {
                     setFormData(prev => ({ ...prev, amount: e.target.value }));

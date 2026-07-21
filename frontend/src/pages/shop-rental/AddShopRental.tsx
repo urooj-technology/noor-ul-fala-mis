@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -133,7 +134,7 @@ const AddShopRental = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="monthly_rent" className="font-semibold flex items-center gap-2"><DollarSign className="h-4 w-4" />{t("shop-rental.monthlyRent")} <span className="text-destructive">*</span></Label>
-              <Input id="monthly_rent" type="number" step="0.01" value={formData.monthly_rent} onChange={(e) => { setFormData((prev) => ({ ...prev, monthly_rent: e.target.value })); if (errors.monthly_rent) setErrors((prev) => ({ ...prev, monthly_rent: "" })); }} placeholder={t("shop-rental.monthlyRent")} className="h-10" />
+              <NumericInput maxDecimals={2} id="monthly_rent" value={formData.monthly_rent} onChange={(e) => { setFormData((prev) => ({ ...prev, monthly_rent: e.target.value })); if (errors.monthly_rent) setErrors((prev) => ({ ...prev, monthly_rent: "" })); }} placeholder={t("shop-rental.monthlyRent")} className="h-10" />
               {errors.monthly_rent && <p className="text-xs text-destructive">{errors.monthly_rent}</p>}
             </div>
             <div className="space-y-2">

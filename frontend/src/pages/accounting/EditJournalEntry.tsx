@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Autocomplete } from '@/components/ui/autocomplete';
@@ -11,6 +12,7 @@ import { RotateCw, ArrowLeft, FileText } from 'lucide-react';
 import useFetchObject from '@/api/useFetchObject';
 import useUpdate from '@/api/useUpdate';
 import { formatNumber } from '@/lib/formatNumber';
+import { toNumberOr } from '@/lib/digits';
 
 const EditJournalEntry = () => {
   const { id } = useParams();
@@ -20,7 +22,7 @@ const EditJournalEntry = () => {
   const [date, setDate] = useState('');
   const [description, setDescription] = useState('');
   const [reference, setReference] = useState('');
-  const [entries, setEntries] = useState<{ account: string; debit: number; credit: number }[]>([]);
+  const [entries, setEntries] = useState<{ account: string; debit: number | string; credit: number | string }[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { data: entryData, loading: fetchLoading } = useFetchObject({
@@ -48,8 +50,8 @@ const EditJournalEntry = () => {
     }
   }, [entryData]);
 
-  const calculateTotalDebit = () => entries.reduce((sum, e) => sum + (e.debit || 0), 0);
-  const calculateTotalCredit = () => entries.reduce((sum, e) => sum + (e.credit || 0), 0);
+  const calculateTotalDebit = () => entries.reduce((sum, e) => sum + toNumberOr(e.debit), 0);
+  const calculateTotalCredit = () => entries.reduce((sum, e) => sum + toNumberOr(e.credit), 0);
   const isBalanced = calculateTotalDebit() === calculateTotalCredit();
 
   const validateForm = (): boolean => {
@@ -69,8 +71,8 @@ const EditJournalEntry = () => {
       description,
       reference,
       account: entries[0]?.account,
-      debit: entries[0]?.debit || 0,
-      credit: entries[0]?.credit || 0,
+      debit: toNumberOr(entries[0]?.debit),
+      credit: toNumberOr(entries[0]?.credit),
     });
   };
 
@@ -135,11 +137,11 @@ const EditJournalEntry = () => {
                   </div>
                   <div className="col-span-3 space-y-2">
                     <Label htmlFor={`entry-debit-${index}`} className="text-xs">{t("accounting.debit")}</Label>
-                    <Input id={`entry-debit-${index}`} type="number" min="0" step="0.01" value={entry.debit} onChange={(e) => handleEntryChange(index, 'debit', parseFloat(e.target.value) || 0)} className="h-10" />
+                    <NumericInput maxDecimals={2} id={`entry-debit-${index}`} value={entry.debit} onValueChange={(v) => handleEntryChange(index, 'debit', v)} className="h-10" />
                   </div>
                   <div className="col-span-3 space-y-2">
                     <Label htmlFor={`entry-credit-${index}`} className="text-xs">{t("accounting.credit")}</Label>
-                    <Input id={`entry-credit-${index}`} type="number" min="0" step="0.01" value={entry.credit} onChange={(e) => handleEntryChange(index, 'credit', parseFloat(e.target.value) || 0)} className="h-10" />
+                    <NumericInput maxDecimals={2} id={`entry-credit-${index}`} value={entry.credit} onValueChange={(v) => handleEntryChange(index, 'credit', v)} className="h-10" />
                   </div>
                 </div>
               ))}

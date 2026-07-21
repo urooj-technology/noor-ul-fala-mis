@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useLanguage } from '@/contexts/LanguageContext';
 import DatePicker from '@/components/ui/date-picker-calendar';
+import { toNumberOr } from '@/lib/digits';
 
 interface Expense {
   id: string;
@@ -41,7 +43,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
     expenseNumber: '',
     category: '',
     description: '',
-    amount: 0,
+    amount: '' as string | number,
     expenseDate: '',
     employee: '',
     department: '',
@@ -69,7 +71,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         expenseNumber: `EXP-${Date.now().toString().slice(-6)}`,
         category: '',
         description: '',
-        amount: 0,
+        amount: '',
         expenseDate: new Date().toISOString().split('T')[0],
         employee: '',
         department: '',
@@ -82,7 +84,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    onSave({ ...formData, amount: toNumberOr(formData.amount) });
   };
 
   const handleChange = (field: string, value: any) => {
@@ -155,13 +157,10 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
 
             <div>
               <Label htmlFor="amount">{t('expenses.amount', 'Amount')}</Label>
-              <Input
+              <NumericInput maxDecimals={2}
                 id="amount"
-                type="number"
-                step="0.01"
-                min="0"
                 value={formData.amount}
-                onChange={(e) => handleChange('amount', parseFloat(e.target.value) || 0)}
+                onValueChange={(v) => handleChange('amount', v)}
                 required
               />
             </div>

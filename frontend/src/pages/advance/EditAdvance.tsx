@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,6 +20,7 @@ import { AdvanceFormData, Employee } from '@/types/advance';
 import { Currency } from '@/types/common';
 import { getCurrentYear, getYearsArray, SHAMSI_MONTHS_DARI, SHAMSI_MONTHS_PASHTO } from '@/utils/calendar';
 import { getEmployeePositionLabel } from '@/lib/employee-positions';
+import { toNumberOr } from '@/lib/digits';
 
 interface EmployeeFinancialSummary {
   total_salary: number;
@@ -123,7 +125,7 @@ const EditAdvance = () => {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!formData.employee) newErrors.employee = t('advance.validation.employee');
-    if (!formData.amount || formData.amount <= 0) newErrors.amount = t('advance.validation.amount');
+    if (toNumberOr(formData.amount) <= 0) newErrors.amount = t('advance.validation.amount');
     if (!formData.currency) newErrors.currency = t('advance.validation.currency');
     if (!formData.year) newErrors.year = t('advance.validation.year');
     if (!formData.month) newErrors.month = t('advance.validation.month');
@@ -135,12 +137,11 @@ const EditAdvance = () => {
     e.preventDefault();
     if (!validateForm() || !advance) return;
     
+    
     const payload = {
       ...formData,
-      month: formData.month,
-      calendar_type: calendarType,
+      amount: toNumberOr(formData.amount),
     };
-    
     handleUpdate(advance.id, payload);
   };
 
@@ -269,14 +270,11 @@ const EditAdvance = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="amount">{t('advance.amount')} *</Label>
-                <Input
+                <NumericInput maxDecimals={2}
                   id="amount"
-                  type="number"
-                  step="0.01"
-                  min="0"
                   value={formData.amount}
-                  onChange={(e) => {
-                    setFormData((prev) => ({ ...prev, amount: parseFloat(e.target.value) || 0 }));
+                  onValueChange={(v) => {
+                    setFormData((prev) => ({ ...prev, amount: v }));
                     if (errors.amount) setErrors((prev) => ({ ...prev, amount: '' }));
                   }}
                   placeholder={t('advance.enterAmount')}

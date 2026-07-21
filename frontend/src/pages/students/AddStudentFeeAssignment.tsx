@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +12,7 @@ import { RotateCw, ArrowLeft, DollarSign, Users, CheckCircle, AlertCircle, Edit 
 import { useToast } from '@/components/ui/use-toast';
 import useFetchObjects from '@/api/useFetchObjects';
 import useAdd from '@/api/useAdd';
+import { toNumberOr } from '@/lib/digits';
 
 // Static class level options
 const CLASS_LEVELS = [
@@ -79,7 +81,7 @@ const AddStudentFeeAssignment = () => {
   const [selectedLevel, setSelectedLevel] = useState<string>('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [currency, setCurrency] = useState<string>('AFN');
-  const [paymentPlan, setPaymentPlan] = useState<number>(1);
+  const [paymentPlan, setPaymentPlan] = useState<number | string>(1);
   const [feeEntries, setFeeEntries] = useState<FeeEntry[]>([]);
 
   // Fetch students by level
@@ -209,7 +211,7 @@ const AddStudentFeeAssignment = () => {
       student: selectedStudent.id,
       class_level: selectedLevel,
       currency: currency,
-      payment_plan: paymentPlan,
+      payment_plan: toNumberOr(paymentPlan, 1),
       assignments: enabledEntries.map((e) => ({
         fee_type: e.fee_type_id,
         amount: e.amount,
@@ -361,16 +363,13 @@ const AddStudentFeeAssignment = () => {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">{t('students.paymentPlan', 'Payment Plan (months)')}</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="12"
+                <NumericInput allowDecimal={false}
                   value={paymentPlan}
-                  onChange={(e) => setPaymentPlan(parseInt(e.target.value) || 1)}
+                  onValueChange={(v) => setPaymentPlan(v)}
                   className="h-9"
                 />
                 <p className="text-[10px] text-muted-foreground">
-                  {paymentPlan === 1 ? t('students.monthly') : paymentPlan === 3 ? t('students.quarterly') : paymentPlan === 6 ? t('students.semiAnnually') : paymentPlan === 12 ? t('students.yearly') : t('students.everyMonths', { months: paymentPlan })}
+                  {toNumberOr(paymentPlan, 1) === 1 ? t('students.monthly') : toNumberOr(paymentPlan, 1) === 3 ? t('students.quarterly') : toNumberOr(paymentPlan, 1) === 6 ? t('students.semiAnnually') : toNumberOr(paymentPlan, 1) === 12 ? t('students.yearly') : t('students.everyMonths', { months: toNumberOr(paymentPlan, 1) })}
                 </p>
               </div>
               <div className="space-y-1.5 flex items-end">
@@ -474,9 +473,7 @@ const AddStudentFeeAssignment = () => {
                             </Badge>
                           </td>
                           <td className="p-3 text-center align-middle">
-                            <Input
-                              type="number"
-                              step="0.01"
+                            <NumericInput maxDecimals={2}
                               value={entry.amount}
                               onChange={(e) => updateEntry(entry.fee_type_id, 'amount', e.target.value)}
                               placeholder={entry.existing_assignment?.amount || "0.00"}

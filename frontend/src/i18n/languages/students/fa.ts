@@ -393,7 +393,6 @@ export const studentsFa = {
   fullName: "نام کامل",
   registrationNumber: "شماره ثبت",
   classLevelLabel: "سطح صنف",
-  currency: "ارز",
   paymentPlanLabel: "برنامه پرداخت (ماه)",
   totalFeesLabel: "کل فیسها",
   feeTypesCount: "فیس نوع(ها) انتخاب شده",

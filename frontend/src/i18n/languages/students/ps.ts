@@ -392,7 +392,6 @@ export const studentsPs = {
   fullName: "ټول نوم",
   registrationNumber: "د ثبت شمېره",
   classLevelLabel: "د صنف سطح",
-  currency: "اسعار",
   paymentPlanLabel: "د تادیې برنامه (ماه)",
   totalFeesLabel: "ټول فیسو",
   feeTypesCount: "فیس ډول(ها) غوره شوي",

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,13 +10,14 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { ArrowLeft, Users } from 'lucide-react';
 import useAdd from '@/api/useAdd';
+import { toNumberOr } from '@/lib/digits';
 
 interface EmployeeFormData {
   full_name: string;
   phone: string;
   address: string;
   position: string;
-  salary: number;
+  salary: number | string;
   currency: string;
   is_active: boolean;
 }
@@ -25,7 +27,7 @@ const defaultForm: EmployeeFormData = {
   phone: '',
   address: '',
   position: '',
-  salary: 0,
+  salary: '',
   currency: 'AFN',
   is_active: true,
 };
@@ -50,7 +52,7 @@ const AddEmployee = () => {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!formData.full_name.trim()) newErrors.full_name = t('validation.required');
-    if (formData.salary < 0) newErrors.salary = t('validation.positive');
+    if (toNumberOr(formData.salary) < 0) newErrors.salary = t('validation.positive');
     if (!formData.currency) newErrors.currency = t('validation.required');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -58,7 +60,7 @@ const AddEmployee = () => {
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
-    handleAdd(formData);
+    handleAdd({ ...formData, salary: toNumberOr(formData.salary) });
   };
 
   return (
@@ -135,15 +137,11 @@ const AddEmployee = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="salary">{t("employees.salary")} *</Label>
-                <Input
+                <NumericInput maxDecimals={2}
                   id="salary"
-                  type="number"
-                  min="0"
-                  step="0.01"
                   value={formData.salary}
-                  onChange={(e) => {
-                    const value = parseFloat(e.target.value) || 0;
-                    setFormData((prev) => ({ ...prev, salary: value }));
+                  onValueChange={(v) => {
+                    setFormData((prev) => ({ ...prev, salary: v }));
                     if (errors.salary) setErrors((prev) => ({ ...prev, salary: "" }));
                   }}
                   placeholder={t("employees.salaryPlaceholder")}

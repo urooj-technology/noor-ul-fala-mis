@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumericInput } from '@/components/ui/numeric-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Calculator, DollarSign, Clock, Minus, Plus } from 'lucide-react';
 import DatePicker from '@/components/ui/date-picker-calendar';
+import { toNumberOr } from '@/lib/digits';
 
 interface Employee {
   id: string;
@@ -24,11 +26,11 @@ interface PayrollRecord {
   employeeName: string;
   position: string;
   month: string;
-  year: number;
-  basicSalary: number;
-  bonus: number;
-  overtime: number;
-  deductions: number;
+  year: number | string;
+  basicSalary: number | string;
+  bonus: number | string;
+  overtime: number | string;
+  deductions: number | string;
   netSalary: number;
   paymentDate: string;
   status: 'pending' | 'paid' | 'cancelled';
@@ -96,8 +98,11 @@ export const PayrollForm: React.FC<PayrollFormProps> = ({
   }, [editingPayroll, isOpen]);
 
   const calculateNetSalary = () => {
-    const grossSalary = formData.basicSalary + formData.bonus + formData.overtime;
-    const netSalary = grossSalary - formData.deductions;
+    const grossSalary =
+      toNumberOr(formData.basicSalary) +
+      toNumberOr(formData.bonus) +
+      toNumberOr(formData.overtime);
+    const netSalary = grossSalary - toNumberOr(formData.deductions);
     setFormData(prev => ({ ...prev, netSalary }));
   };
 
@@ -131,7 +136,7 @@ export const PayrollForm: React.FC<PayrollFormProps> = ({
     if (!formData.employeeId) newErrors.employeeId = t('validation.required', 'This field is required');
     if (!formData.month) newErrors.month = t('validation.required', 'This field is required');
     if (!formData.year) newErrors.year = t('validation.required', 'This field is required');
-    if (formData.basicSalary <= 0) newErrors.basicSalary = 'Basic salary must be greater than 0';
+    if (toNumberOr(formData.basicSalary) <= 0) newErrors.basicSalary = 'Basic salary must be greater than 0';
     if (!formData.paymentDate) newErrors.paymentDate = t('validation.required', 'This field is required');
 
     setErrors(newErrors);
@@ -141,11 +146,22 @@ export const PayrollForm: React.FC<PayrollFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      onSave(formData);
+      onSave({
+        ...formData,
+        year: toNumberOr(formData.year, new Date().getFullYear()),
+        basicSalary: toNumberOr(formData.basicSalary),
+        bonus: toNumberOr(formData.bonus),
+        overtime: toNumberOr(formData.overtime),
+        deductions: toNumberOr(formData.deductions),
+        netSalary: toNumberOr(formData.netSalary),
+      });
     }
   };
 
-  const grossSalary = formData.basicSalary + formData.bonus + formData.overtime;
+  const grossSalary =
+    toNumberOr(formData.basicSalary) +
+    toNumberOr(formData.bonus) +
+    toNumberOr(formData.overtime);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -216,11 +232,10 @@ export const PayrollForm: React.FC<PayrollFormProps> = ({
 
             <div className="space-y-2">
               <Label htmlFor="year">{t('payroll.year', 'Year')} *</Label>
-              <Input
+              <NumericInput allowDecimal={false}
                 id="year"
-                type="number"
                 value={formData.year}
-                onChange={(e) => handleChange('year', parseInt(e.target.value))}
+                onValueChange={(v) => handleChange('year', v)}
                 className={errors.year ? 'border-destructive' : ''}
               />
               {errors.year && <p className="text-base text-destructivetext-xs">{errors.year}</p>}
@@ -256,12 +271,10 @@ export const PayrollForm: React.FC<PayrollFormProps> = ({
                 <div className="space-y-3">
                   <div className="space-y-2">
                     <Label htmlFor="basicSalary">{t('payroll.basicSalary', 'Basic Salary')} *</Label>
-                    <Input
+                    <NumericInput maxDecimals={2}
                       id="basicSalary"
-                      type="number"
-                      step="0.01"
                       value={formData.basicSalary}
-                      onChange={(e) => handleChange('basicSalary', parseFloat(e.target.value) || 0)}
+                      onValueChange={(v) => handleChange('basicSalary', v)}
                       className={errors.basicSalary ? 'border-destructive' : ''}
                     />
                     {errors.basicSalary && <p className="text-base text-destructivetext-xs">{errors.basicSalary}</p>}
@@ -269,12 +282,10 @@ export const PayrollForm: React.FC<PayrollFormProps> = ({
 
                   <div className="space-y-2">
                     <Label htmlFor="bonus">{t('payroll.bonus', 'Bonus')}</Label>
-                    <Input
+                    <NumericInput maxDecimals={2}
                       id="bonus"
-                      type="number"
-                      step="0.01"
                       value={formData.bonus}
-                      onChange={(e) => handleChange('bonus', parseFloat(e.target.value) || 0)}
+                      onValueChange={(v) => handleChange('bonus', v)}
                     />
                   </div>
 
@@ -283,12 +294,10 @@ export const PayrollForm: React.FC<PayrollFormProps> = ({
                       <Clock className="h-4 w-4" />
                       {t('payroll.overtime', 'Overtime')}
                     </Label>
-                    <Input
+                    <NumericInput maxDecimals={2}
                       id="overtime"
-                      type="number"
-                      step="0.01"
                       value={formData.overtime}
-                      onChange={(e) => handleChange('overtime', parseFloat(e.target.value) || 0)}
+                      onValueChange={(v) => handleChange('overtime', v)}
                     />
                   </div>
                 </div>
@@ -304,12 +313,10 @@ export const PayrollForm: React.FC<PayrollFormProps> = ({
                 <div className="space-y-3">
                   <div className="space-y-2">
                     <Label htmlFor="deductions">{t('payroll.deductions', 'Deductions')}</Label>
-                    <Input
+                    <NumericInput maxDecimals={2}
                       id="deductions"
-                      type="number"
-                      step="0.01"
                       value={formData.deductions}
-                      onChange={(e) => handleChange('deductions', parseFloat(e.target.value) || 0)}
+                      onValueChange={(v) => handleChange('deductions', v)}
                     />
                   </div>
                 </div>
