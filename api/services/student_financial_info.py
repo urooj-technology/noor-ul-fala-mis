@@ -37,7 +37,7 @@ def build_student_financial_info(student, class_level=None):
         fee_breakdown.append({
             'fee_type_id': assignment.fee_type_id,
             'fee_type': assignment.fee_type.name if assignment.fee_type else 'Unknown',
-            'fee_category': assignment.fee_type.category if assignment.fee_type else 'other',
+            'fee_category': '',  # category removed from FeeType
             'amount': str(assignment.amount or '0'),
             'currency': assignment.currency,
             'is_mandatory': assignment.is_mandatory,

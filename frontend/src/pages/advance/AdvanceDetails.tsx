@@ -7,6 +7,7 @@ import { useCalendar } from '@/contexts/CalendarContext';
 import { formatDateByCalendarType } from '@/utils/calendar';
 import { DollarSign, User, Calendar, FileText, ArrowLeft } from 'lucide-react';
 import { ReloadIcon } from '@radix-ui/react-icons';
+import { getEmployeePositionLabel } from '@/lib/employee-positions';
 
 const AdvanceDetails = () => {
   const { t } = useLanguage();
@@ -103,7 +104,7 @@ const AdvanceDetails = () => {
               <div className="flex items-center gap-3">
                 <div>
                   <p className="text-base text-gray-600 dark:text-gray-400text-xs">Position</p>
-                  <p className="font-mediumtext-xs">{advance.employee_details.position}</p>
+                  <p className="font-mediumtext-xs">{getEmployeePositionLabel(t, advance.employee_details.position)}</p>
                 </div>
               </div>
             )}

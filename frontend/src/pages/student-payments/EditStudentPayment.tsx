@@ -22,6 +22,7 @@ import DatePicker from '@/components/ui/date-picker-calendar';
 
 // Static class level options
 const CLASS_LEVELS = [
+  { id: 'KG', level: '0', name: 'Kindergarten' },
   { id: '1', level: '1', name: 'Class 1' },
   { id: '2', level: '2', name: 'Class 2' },
   { id: '3', level: '3', name: 'Class 3' },
@@ -57,6 +58,7 @@ interface Student {
   id: number;
   full_name: string;
   registration_number: string;
+  fee_type?: string;
   class_level?: string | null;
   class_level_details?: {
     id: string;
@@ -513,8 +515,18 @@ const EditStudentPayment = () => {
                     }
                   }}
                   placeholder={loadingStudents ? 'Loading...' : t('students.selectStudent')}
-                  getOptionLabel={(s) => `${s.full_name} (${s.registration_number})`}
+                  getOptionLabel={(s) => `${s.full_name} (${s.registration_number}) — ${s.fee_type === 'paid' ? t('students.feeTypeOptions.paid', 'Paid') : t('students.feeTypeOptions.free', 'Free')}`}
                   getOptionValue={(s) => s.id.toString()}
+                  renderOption={(s) => (
+                    <div className="flex items-center justify-between gap-2 w-full">
+                      <span className="truncate">{s.full_name} ({s.registration_number})</span>
+                      <Badge variant={s.fee_type === 'paid' ? 'default' : 'secondary'} className="shrink-0 text-[10px]">
+                        {s.fee_type === 'paid'
+                          ? t('students.feeTypeOptions.paid', 'Paid')
+                          : t('students.feeTypeOptions.free', 'Free')}
+                      </Badge>
+                    </div>
+                  )}
                 />
               </div>
             )}
@@ -535,7 +547,7 @@ const EditStudentPayment = () => {
                 <Info className="h-3.5 w-3.5" />
                 {t('student-payments.studentFinancialInfo', 'Student Financial Summary')}
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-sm">
                 <div>
                   <div className="text-[10px] text-muted-foreground uppercase">{t('students.studentName')}</div>
                   <div className="font-medium">{selectedStudent.full_name}</div>
@@ -543,6 +555,16 @@ const EditStudentPayment = () => {
                 <div>
                   <div className="text-[10px] text-muted-foreground uppercase">{t('students.classLevel')}</div>
                   <div className="font-medium">{selectedStudent.class_level_details?.name || '-'}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-muted-foreground uppercase">{t('students.feeType', 'Fee Type')}</div>
+                  <div>
+                    <Badge variant={selectedStudent.fee_type === 'paid' ? 'default' : 'secondary'} className="text-xs">
+                      {selectedStudent.fee_type === 'paid' 
+                        ? t('students.feeTypeOptions.paid', 'Paid') 
+                        : t('students.feeTypeOptions.free', 'Free')}
+                    </Badge>
+                  </div>
                 </div>
                 <div>
                   <div className="text-[10px] text-muted-foreground uppercase">{t('students.totalPaid')}</div>

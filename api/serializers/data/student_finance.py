@@ -21,7 +21,7 @@ class FeeTypeSerializer(DataRootSerializer):
     class Meta:
         model = FeeType
         fields = [
-            'id', 'name', 'code', 'category', 'description',
+            'id', 'name', 'code', 'description',
             'is_active', 'is_mandatory', 'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
@@ -32,7 +32,7 @@ class FeeTypeMinimalSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = FeeType
-        fields = ['id', 'name', 'code', 'category']
+        fields = ['id', 'name', 'code']
 
 
 
@@ -200,7 +200,6 @@ class StudentPaymentSerializer(DataRootSerializer):
                 'id': obj.fee_type.id,
                 'name': obj.fee_type.name,
                 'code': obj.fee_type.code,
-                'category': obj.fee_type.category,
             }
         return None
     

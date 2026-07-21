@@ -10,6 +10,7 @@ import StudentFeeAssignmentList from '@/pages/students/StudentFeeAssignmentList'
 import AddStudentFeeAssignment from '@/pages/students/AddStudentFeeAssignment';
 import EditStudentFeeAssignment from '@/pages/students/EditStudentFeeAssignment';
 import { guardRoute } from '@/lib/route-guards';
+import StudentOutstandingReport from '@/pages/students/StudentOutstandingReport';
 
 export const studentRoutes = (
   <>
@@ -18,6 +19,7 @@ export const studentRoutes = (
     <Route path="students/:id" element={guardRoute(<StudentDetails />, { module: 'students' })} />
     <Route path="students/:id/edit" element={guardRoute(<EditStudent />, { module: 'students', action: 'edit' })} />
     <Route path="students/bulk-change-class" element={guardRoute(<BulkChangeClassLevel />, { module: 'students', action: 'edit' })} />
+    <Route path="students/report" element={guardRoute(<StudentOutstandingReport />, { module: 'students' })} />
 
     <Route path="fee-types" element={guardRoute(<FeeTypeList />, { module: 'students' })} />
     <Route path="fee-types/add" element={guardRoute(<AddFeeType />, { module: 'students', action: 'create' })} />

@@ -5,6 +5,7 @@ import { useFormattedDate } from '@/hooks/useFormattedDate';
 import { SHAMSI_MONTHS_DARI, SHAMSI_MONTHS_PASHTO, formatDateByCalendarType } from '@/utils/calendar';
 import { formatNumber } from '@/lib/formatNumber';
 import type { PaymentReportRow, PaymentReportSummary } from './paymentReportTypes';
+import { getEmployeePositionLabel } from '@/lib/employee-positions';
 
 interface ExpenseReportPrintProps {
   payments: PaymentReportRow[];
@@ -52,6 +53,8 @@ export const ExpenseReportPrint = ({ payments, summary, onClose }: ExpenseReport
 
   const payeeLabel = (row: PaymentReportRow) => {
     if (row.payment_type === 'expense') return row.category_name || 'N/A';
+    const position = getEmployeePositionLabel(t, row.employee_position);
+    if (position) return `${row.employee_name || '-'} (${position})`;
     return row.employee_name || '-';
   };
 

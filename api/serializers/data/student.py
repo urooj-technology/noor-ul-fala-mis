@@ -27,7 +27,7 @@ class StudentSerializer(DataRootSerializer):
             'province', 'district', 'area', 'parent_phone', 'student_phone',
             'alternative_phone', 'email', 'registration_number', 'registration_date',
             'registration_date_shamsi', 'registration_date_qamari',
-            'status', 'transportation', 'photo', 'tazkira_copy',
+            'status', 'fee_type', 'transportation', 'photo', 'tazkira_copy',
             'parent_tazkira_copy', 'previous_result_card', 'payment_receipt',
             'class_level',
             'age', 'class_level_details', 'total_paid', 'remaining_balance', 'total_fee', 'financial_summary', 'phone',

@@ -77,6 +77,21 @@ export const studentsPs = {
   viewDetails: "تفصیلات وګورئ",
   deleteStudent: "زده کونکی حذف کول",
   classLevelShort: "صنف",
+  classLevels: {
+    KG: "کنډرګارټن",
+    '1': "صنف ۱",
+    '2': "صنف ۲",
+    '3': "صنف ۳",
+    '4': "صنف ۴",
+    '5': "صنف ۵",
+    '6': "صنف ۶",
+    '7': "صنف ۷",
+    '8': "صنف ۸",
+    '9': "صنف ۹",
+    '10': "صنف ۱۰",
+    '11': "صنف ۱۱",
+    '12': "صنف ۱۲",
+  },
   paymentCycle: "د تادیې چکل",
   paymentInterval: "د تادیې وخت",
   selectPaymentCycle: "د تادیې چکل وټاکئ",
@@ -114,9 +129,23 @@ export const studentsPs = {
   // Fee Types
   feeTypes: "د فیس ډولونه",
   addFeeType: "د فیس ډول زياتول",
+  editFeeType: "د فیس ډول سمول",
   feeName: "د فیس نوم",
   code: "کوډ",
   selectCategory: "کتګوري وټاکئ",
+  outstandingReport: "د زده کونکو د تادیو راپورونه",
+  outstandingReportDesc: "د زده کونکو د فیس تادیات د بشپړې تادیې، ناتا دیې او نیمې تادیې له مخې وګورئ",
+  totalsByCurrency: "د ارز له مخې ټولګړي",
+  outstandingDetails: "د زده کونکو د تادیو تفصیلات",
+  allClasses: "ټولې کلاسونې",
+  allPaymentStatuses: "ټول د تادیې حالتونه",
+  paymentStatusFilter: "د تادیې حالت",
+  paymentBalanceOptions: {
+    paid: "بشپړه تادیه",
+    unpaid: "تادیه ناشوی",
+    partial: "نیمه تادیه شوی",
+  },
+  currency: "اسعار",
   // Class Fees
   classFees: "د صنف فیسونه",
   classFee: "د صنف فیس",
@@ -227,8 +256,8 @@ export const studentsPs = {
   // Payment Status
   paymentStatus: "د تادیې حالت",
   paid: "تادیه شوی",
-  unpaid: "تادیه نشوی",
-  partiallyPaid: "بشپړه تادیه شوی",
+  unpaid: "تادیه ناشوی",
+  partiallyPaid: "نیمه تادیه شوی",
   overdue: "د تادیې نیټه تېره شوی",
   // Fee Summary
   totalFee: "ټول فیس",
@@ -276,7 +305,7 @@ export const studentsPs = {
   // Invoice Status
   invoiceStatus: {
     pending: "پاتې",
-    partial: "بشپړه تادیه شوی",
+    partial: "نیمه تادیه شوی",
     paid: "تادیه شوی",
     overdue: "د تادیې نیټه تېره شوی",
     cancelled: "لغو شوی"

@@ -14,6 +14,9 @@ class AdvanceViewSet(DataRootViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        position = self.request.query_params.get('position')
+        if position:
+            queryset = queryset.filter(employee__position=position)
         date_period = self.request.query_params.get('date_period')
         if date_period:
             date_from = self.request.query_params.get('date_from')

@@ -82,6 +82,8 @@ export const expensesFa = {
   dateFrom: "از تاریخ",
   dateTo: "تا تاریخ",
   filterByEmployee: "فیلتر بر اساس کارمند",
+  filterByPosition: "فیلتر بر اساس سمت",
+  allPositions: "همه سمت‌ها",
   allPaymentTypes: "همه انواع",
   reportTitle: "گزارش پرداخت‌ها",
   periodOptions: {

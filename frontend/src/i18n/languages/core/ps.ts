@@ -48,6 +48,7 @@ export const corePs = {
     journalEntries: 'د جریدې ثبتونه',
     students: 'زده کونکي',
     studentsList: 'د زده کونکو لیست',
+    studentReport: 'د زده کونکو د تادیو راپورونه',
     feeTypes: 'د فیس ډولونه',
     classFees: 'د صنف فیسونه',
     feeAssignments: 'د فیس ټاکل',

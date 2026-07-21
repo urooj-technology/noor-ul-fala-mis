@@ -41,8 +41,8 @@ class StudentAdmin(admin.ModelAdmin):
 
 @admin.register(FeeType)
 class FeeTypeAdmin(admin.ModelAdmin):
-    list_display = ['name', 'code', 'category', 'is_active', 'is_mandatory']
-    list_filter = ['is_active', 'is_mandatory', 'category']
+    list_display = ['name', 'code', 'is_active', 'is_mandatory']
+    list_filter = ['is_active', 'is_mandatory']
     search_fields = ['name', 'code', 'description']
     readonly_fields = ['created_at', 'updated_at']
 

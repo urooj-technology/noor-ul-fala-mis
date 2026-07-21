@@ -19,11 +19,12 @@ const AddFeeType = () => {
   const [formData, setFormData] = useState({
     name: '',
     code: '',
-    category: 'other',
     description: '',
     is_active: true,
     is_mandatory: true,
   });
+  // Tracks whether the user manually edited the code so we stop auto-generating it
+  const [codeTouched, setCodeTouched] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { data, isLoading: fetching } = useFetchObject({
@@ -46,17 +47,43 @@ const AddFeeType = () => {
       setFormData({
         name: data.name || '',
         code: data.code || '',
-        category: data.category || 'other',
         description: data.description || '',
         is_active: data.is_active ?? true,
         is_mandatory: data.is_mandatory ?? true,
       });
+      // Existing records already have a code; treat it as user-set
+      setCodeTouched(true);
     }
   }, [data]);
 
   useEffect(() => {
     if (addSuccess || updateSuccess) navigate('/fee-types');
   }, [addSuccess, updateSuccess, navigate]);
+
+  const handleNameChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      name: value,
+      // Auto-generate the code from the name until the user edits the code manually
+      code: codeTouched ? prev.code : generateCode(value),
+    }));
+    if (errors.name) setErrors((prev) => ({ ...prev, name: '' }));
+  };
+
+  const handleCodeChange = (value: string) => {
+    setCodeTouched(true);
+    setFormData((prev) => ({ ...prev, code: value }));
+    if (errors.code) setErrors((prev) => ({ ...prev, code: '' }));
+  };
+
+  // Generate a short unique-ish uppercase code from a name (e.g. 'Monthly Tuition' -> 'MONTHLYTUITION')
+  const generateCode = (name: string): string => {
+    const base = name
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '')
+      .slice(0, 20);
+    return base || 'FEE';
+  };
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -76,15 +103,6 @@ const AddFeeType = () => {
       handleAdd(formData);
     }
   };
-
-  const categories = [
-    { value: 'admission', label: t('students.feeCategories.admission', 'Admission Fee') },
-    { value: 'book', label: t('students.feeCategories.book', 'Book Fee') },
-    { value: 'uniform', label: t('students.feeCategories.uniform', 'Uniform Fee') },
-    { value: 'transportation', label: t('students.feeCategories.transportation', 'Transportation Fee') },
-    { value: 'exam', label: t('students.feeCategories.exam', 'Exam Fee') },
-    { value: 'other', label: t('students.feeCategories.other', 'Other Fee') },
-  ];
 
   if (fetching) return <div className="container mx-auto py-6 text-center">{t('common.loading')}</div>;
 
@@ -116,7 +134,7 @@ const AddFeeType = () => {
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => { setFormData(prev => ({ ...prev, name: e.target.value })); if (errors.name) setErrors(prev => ({ ...prev, name: '' })); }}
+                  onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="e.g. Monthly Tuition"
                 />
                 {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
@@ -127,24 +145,10 @@ const AddFeeType = () => {
                 <Input
                   id="code"
                   value={formData.code}
-                  onChange={(e) => { setFormData(prev => ({ ...prev, code: e.target.value })); if (errors.code) setErrors(prev => ({ ...prev, code: '' })); }}
-                  placeholder="e.g. TUITION"
+                  onChange={(e) => handleCodeChange(e.target.value)}
+                  placeholder="Auto-generated from name (editable)"
                 />
                 {errors.code && <p className="text-xs text-destructive">{errors.code}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="category" className="font-semibold">{t('students.category', 'Category')}</Label>
-                <select
-                  id="category"
-                  value={formData.category}
-                  onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                  className="w-full h-10 px-3 border rounded-md bg-background"
-                >
-                  {categories.map((cat) => (
-                    <option key={cat.value} value={cat.value}>{cat.label}</option>
-                  ))}
-                </select>
               </div>
 
               <div className="space-y-2">

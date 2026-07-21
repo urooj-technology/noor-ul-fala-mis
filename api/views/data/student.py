@@ -4,6 +4,7 @@ from django.db.models import Sum, Count
 from django.db import transaction
 from django.utils import timezone
 from api.models.data.student import Student, CLASS_LEVEL_CHOICES
+from api.models.data.student_finance import StudentFeeAssignment, STUDENT_DEFAULT_CURRENCY
 from api.serializers.data.student import StudentSerializer
 from api.views.data.base import DataRootViewSet
 from api.utils.registration_dates import get_registration_date_range
@@ -156,6 +157,124 @@ class StudentViewSet(DataRootViewSet):
             'count': students.count()
         })
     
+    @action(detail=False, methods=['get'])
+    def outstanding_report(self, request):
+        """Aggregated outstanding (remaining) balances for all students.
+
+        Optional query params:
+            status: filter by student status (e.g. active)
+            class_level: filter by class level
+            payment_status: paid | unpaid | partial
+                - paid: remaining == 0 and paid > 0 (fully paid)
+                - unpaid: paid == 0 and remaining > 0 (no payments yet)
+                - partial: paid > 0 and remaining > 0 (some paid, some remaining)
+        Returns per-student rows plus totals grouped by currency and grand totals.
+        """
+        queryset = Student.objects.all()
+
+        status = request.query_params.get('status')
+        if status:
+            queryset = queryset.filter(status=status)
+
+        class_level = request.query_params.get('class_level')
+        if class_level:
+            queryset = queryset.filter(class_level=class_level)
+
+        payment_status = (request.query_params.get('payment_status') or '').strip().lower()
+        valid_payment_statuses = {'paid', 'unpaid', 'partial'}
+        if payment_status and payment_status not in valid_payment_statuses:
+            return Response(
+                {'error': 'payment_status must be one of: paid, unpaid, partial'},
+                status=400,
+            )
+
+        rows = []
+        totals_by_currency = {}
+        grand_expected = Decimal('0')
+        grand_paid = Decimal('0')
+        grand_remaining = Decimal('0')
+
+        def dec(val):
+            return Decimal(str(val)) if not isinstance(val, Decimal) else val
+
+        def classify_payment(paid_amt, remaining_amt):
+            if paid_amt > 0 and remaining_amt <= 0:
+                return 'paid'
+            if paid_amt <= 0 and remaining_amt > 0:
+                return 'unpaid'
+            if paid_amt > 0 and remaining_amt > 0:
+                return 'partial'
+            return 'none'
+
+        for student in queryset.order_by('full_name'):
+            summary = student.get_financial_summary()
+            expected = dec(summary.get('total_invoices', '0'))
+            paid = dec(summary.get('total_payments', '0'))
+            remaining = dec(summary.get('remaining_balance', '0'))
+            balance_status = classify_payment(paid, remaining)
+
+            if payment_status and balance_status != payment_status:
+                continue
+
+            # Student has no direct currency field; derive it from fee assignments
+            assignment_currency = StudentFeeAssignment.objects.filter(
+                student=student, is_active=True
+            ).exclude(currency__isnull=True).exclude(currency='').values_list('currency', flat=True).first()
+            currency = assignment_currency or STUDENT_DEFAULT_CURRENCY
+
+            rows.append({
+                'student_id': student.id,
+                'registration_number': student.registration_number,
+                'student_name': student.full_name,
+                'class_level': summary.get('class_level'),
+                'class_level_id': summary.get('class_level_id'),
+                'status': student.status,
+                'fee_type': student.fee_type,
+                'payment_status': balance_status,
+                'total_expected': str(expected),
+                'total_paid': str(paid),
+                'remaining_balance': str(remaining),
+                'currency': currency,
+            })
+
+            bucket = totals_by_currency.setdefault(currency, {
+                'currency': currency,
+                'total_expected': Decimal('0'),
+                'total_paid': Decimal('0'),
+                'remaining_balance': Decimal('0'),
+                'student_count': 0,
+            })
+            bucket['total_expected'] += expected
+            bucket['total_paid'] += paid
+            bucket['remaining_balance'] += remaining
+            bucket['student_count'] += 1
+
+            grand_expected += expected
+            grand_paid += paid
+            grand_remaining += remaining
+
+        totals_by_currency_list = []
+        for currency, bucket in totals_by_currency.items():
+            totals_by_currency_list.append({
+                'currency': currency,
+                'total_expected': str(bucket['total_expected']),
+                'total_paid': str(bucket['total_paid']),
+                'remaining_balance': str(bucket['remaining_balance']),
+                'student_count': bucket['student_count'],
+            })
+
+        return Response({
+            'count': len(rows),
+            'results': rows,
+            'totals_by_currency': totals_by_currency_list,
+            'grand_totals': {
+                'total_expected': str(grand_expected),
+                'total_paid': str(grand_paid),
+                'remaining_balance': str(grand_remaining),
+                'student_count': len(rows),
+            },
+        })
+
     @action(detail=False, methods=['get'])
     def statistics(self, request):
         """Get student statistics"""

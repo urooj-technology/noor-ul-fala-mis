@@ -21,7 +21,7 @@ class FeeTypeSerializer(DataRootSerializer):
         model = FeeType
         fields = [
             'id', 'name', 'name_fa', 'name_ps', 'display_name',
-            'code', 'category', 'description', 'description_fa', 'description_ps',
+            'code', 'description', 'description_fa', 'description_ps',
             'display_description', 'is_active', 'is_mandatory',
             'created_at', 'updated_at'
         ]
@@ -43,7 +43,7 @@ class FeeTypeMinimalSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = FeeType
-        fields = ['id', 'name', 'name_fa', 'name_ps', 'code', 'category']
+        fields = ['id', 'name', 'name_fa', 'name_ps', 'code']
 
 
 

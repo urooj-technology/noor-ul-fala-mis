@@ -17,6 +17,7 @@ import useFetchObjects from '@/api/useFetchObjects';
 import { Employee } from '@/types/advance';
 import { Currency } from '@/types/common';
 import { getCurrentYear, getYearsArray, SHAMSI_MONTHS_DARI, SHAMSI_MONTHS_PASHTO } from '@/utils/calendar';
+import { getEmployeePositionLabel } from '@/lib/employee-positions';
 
 interface PayrollFormData {
   employee: string;
@@ -180,7 +181,7 @@ const EditPayroll = () => {
               <div>
                 <Label>{t('payroll.employee')} *</Label>
                 <Autocomplete
-                  endpoint="employees" getOptionLabel={(employee) => `${employee.full_name}${employee.position ? ` (${employee.position})` : ''}`} getOptionValue={(employee) => employee.id.toString()}
+                  endpoint="employees" getOptionLabel={(employee) => `${employee.full_name}${employee.position ? ` (${getEmployeePositionLabel(t, employee.position)})` : ''}`} getOptionValue={(employee) => employee.id.toString()}
                   value={formData.employee}
                   onChange={(value) => {
                     setFormData((prev) => ({ ...prev, employee: value?.toString() || '' }));

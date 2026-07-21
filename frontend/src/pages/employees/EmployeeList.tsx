@@ -14,6 +14,7 @@ import {
   formatFinanceAmount,
 } from '@/components/ui/employee-finance-summary';
 import { Employee } from '@/types/employee';
+import { getEmployeePositionLabel, getEmployeePositionOptions } from '@/lib/employee-positions';
 
 const getCurrentShamsiMonth = () => {
   const now = new Date();
@@ -28,6 +29,7 @@ export const EmployeeList = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [positionFilter, setPositionFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
@@ -44,7 +46,7 @@ export const EmployeeList = () => {
     next: string | null;
     previous: string | null;
   }>({
-    queryKey: ['employees', currentPage.toString(), pageSize.toString(), searchTerm, statusFilter, selectedMonth.toString(), selectedYear.toString()],
+    queryKey: ['employees', currentPage.toString(), pageSize.toString(), searchTerm, statusFilter, positionFilter, selectedMonth.toString(), selectedYear.toString()],
     endpoint: 'employees',
     params: {
       page: currentPage,
@@ -52,7 +54,8 @@ export const EmployeeList = () => {
       search: searchTerm,
       month: selectedMonth,
       year: selectedYear,
-      ...(statusFilter !== 'all' && { is_active: statusFilter })
+      ...(statusFilter !== 'all' && { is_active: statusFilter }),
+      ...(positionFilter !== 'all' && { position: positionFilter }),
     }
   });
 
@@ -89,7 +92,7 @@ export const EmployeeList = () => {
     {
       key: 'position',
       title: t('employees.position'),
-      render: (value) => <span className="text-xs">{value || 'N/A'}</span>
+      render: (value) => <span className="text-xs">{getEmployeePositionLabel(t, value) || 'N/A'}</span>
     },
     {
       key: 'financial_summary_salary',
@@ -210,6 +213,13 @@ export const EmployeeList = () => {
       options: years.map((year) => ({ value: year.toString(), label: year.toString() }))
     },
     {
+      key: 'position',
+      label: t('employees.position'),
+      placeholder: t('employees.filterByPosition'),
+      width: 'sm:w-44',
+      options: getEmployeePositionOptions(t),
+    },
+    {
       key: 'status',
       label: t('employees.status'),
       placeholder: t('employees.filterByStatus'),
@@ -224,12 +234,16 @@ export const EmployeeList = () => {
   const filterValues = {
     month: selectedMonth.toString(),
     year: selectedYear.toString(),
+    position: positionFilter,
     status: statusFilter
   };
 
   const handleFilterChange = (key: string, value: string) => {
     if (key === 'status') {
       setStatusFilter(value);
+      setCurrentPage(1);
+    } else if (key === 'position') {
+      setPositionFilter(value);
       setCurrentPage(1);
     } else if (key === 'month') {
       setSelectedMonth(parseInt(value));
@@ -249,6 +263,7 @@ export const EmployeeList = () => {
     setSelectedMonth(getCurrentShamsiMonth());
     setSelectedYear(currentYear);
     setStatusFilter('all');
+    setPositionFilter('all');
     setSearchTerm('');
     setCurrentPage(1);
   };

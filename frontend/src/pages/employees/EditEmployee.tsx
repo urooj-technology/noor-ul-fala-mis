@@ -10,6 +10,7 @@ import { ReloadIcon } from '@radix-ui/react-icons';
 import { ArrowLeft, Users } from 'lucide-react';
 import useUpdate from '@/api/useUpdate';
 import useFetchObjects from '@/api/useFetchObjects';
+import { isEmployeePosition } from '@/lib/employee-positions';
 
 interface EmployeeFormData {
   full_name: string;
@@ -130,12 +131,25 @@ const EditEmployee = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="position">{t("employees.position")}</Label>
-                <Input
-                  id="position"
-                  value={formData.position}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, position: e.target.value }))}
-                  placeholder={t("employees.positionPlaceholder")}
-                />
+                <Select
+                  value={formData.position || undefined}
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, position: value }))}
+                >
+                  <SelectTrigger id="position">
+                    <SelectValue placeholder={t("employees.positionPlaceholder")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {!isEmployeePosition(formData.position) && formData.position && (
+                      <SelectItem value={formData.position}>{formData.position}</SelectItem>
+                    )}
+                    <SelectItem value="teacher">{t("employees.positionOptions.teacher")}</SelectItem>
+                    <SelectItem value="finance">{t("employees.positionOptions.finance")}</SelectItem>
+                    <SelectItem value="office_employee">{t("employees.positionOptions.office_employee")}</SelectItem>
+                    <SelectItem value="cleaner">{t("employees.positionOptions.cleaner")}</SelectItem>
+                    <SelectItem value="security">{t("employees.positionOptions.security")}</SelectItem>
+                    <SelectItem value="other">{t("employees.positionOptions.other")}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="address">{t("employees.address")}</Label>

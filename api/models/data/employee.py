@@ -3,17 +3,32 @@ from api.models.data.base import BaseModel
 from api.models.data.choices import CURRENCY_CHOICES, DEFAULT_CURRENCY
 
 
+EMPLOYEE_POSITION_CHOICES = [
+    ('teacher', 'Teacher'),
+    ('finance', 'Finance'),
+    ('office_employee', 'Office Employee'),
+    ('cleaner', 'Cleaner'),
+    ('security', 'Security'),
+    ('other', 'Other'),
+]
+
+
 class Employee(BaseModel):
     full_name = models.CharField(max_length=200)
     phone = models.CharField(max_length=20, blank=True, null=True)
     address = models.CharField(max_length=255, blank=True, null=True)
-    position = models.CharField(max_length=100, blank=True, null=True)
+    position = models.CharField(
+        max_length=50,
+        choices=EMPLOYEE_POSITION_CHOICES,
+        blank=True,
+        null=True,
+    )
     salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default=DEFAULT_CURRENCY)
     is_active = models.BooleanField(default=True)
     
     def __str__(self):
-        return f"{self.full_name} - {self.position or 'No Position'}"
+        return f"{self.full_name} - {self.get_position_display() if self.position else 'No Position'}"
     
     def get_total_salary_paid(self):
         """Calculate total salary paid to employee"""

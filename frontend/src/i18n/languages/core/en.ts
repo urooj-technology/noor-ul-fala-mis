@@ -51,6 +51,7 @@ export const coreEn = {
     balanceSheet: 'Balance Sheet',
     students: 'Students',
     studentsList: 'Students List',
+    studentReport: 'Student Payment Reports',
     feeTypes: 'Fee Types',
     classFees: 'Class Fees',
     feeAssignments: 'Fee Assignments',

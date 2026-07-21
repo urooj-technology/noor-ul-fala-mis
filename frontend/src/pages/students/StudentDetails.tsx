@@ -110,6 +110,7 @@ interface Student {
     month_name: string;
   } | null;
   status: string;
+  fee_type?: string;
   transportation: string;
   class_level?: {
     id?: number;
@@ -675,6 +676,17 @@ const StudentDetails = () => {
                     <Badge className={`${getStatusColor(student.status)} border text-xs`}>
                       <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${getStatusDot(student.status)}`} />
                       {t(`students.statusOptions.${student.status}`, student.status)}
+                    </Badge>
+                  }
+                  accentDot="bg-rose-400"
+                />
+                <InfoRow
+                  label={t('students.feeType', 'Fee Type')}
+                  value={
+                    <Badge variant={student.fee_type === 'paid' ? 'default' : 'secondary'} className="text-xs">
+                      {student.fee_type === 'paid' 
+                        ? t('students.feeTypeOptions.paid', 'Paid Student') 
+                        : t('students.feeTypeOptions.free', 'Free Student')}
                     </Badge>
                   }
                   accentDot="bg-rose-400"

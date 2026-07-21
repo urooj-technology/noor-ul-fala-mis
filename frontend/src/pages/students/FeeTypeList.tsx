@@ -42,22 +42,6 @@ export const FeeTypeList = () => {
     navigate(`/fee-types/${record.id}/edit`);
   };
 
-  const getCategoryBadge = (category: string) => {
-    const colors: Record<string, string> = {
-      admission: 'bg-blue-100 text-blue-800',
-      book: 'bg-purple-100 text-purple-800',
-      uniform: 'bg-orange-100 text-orange-800',
-      transportation: 'bg-cyan-100 text-cyan-800',
-      exam: 'bg-red-100 text-red-800',
-      other: 'bg-gray-100 text-gray-800',
-    };
-    return (
-      <Badge variant="outline" className={colors[category] || ''}>
-        {t(`students.feeCategories.${category}`, category)}
-      </Badge>
-    );
-  };
-
   const columns: TableColumn[] = [
     {
       key: 'code',
@@ -68,11 +52,6 @@ export const FeeTypeList = () => {
       key: 'name',
       title: t('students.feeName', 'Fee Name'),
       render: (value) => <span className="text-xs font-medium">{value}</span>
-    },
-    {
-      key: 'category',
-      title: t('students.category', 'Category'),
-      render: (value) => getCategoryBadge(value)
     },
     {
       key: 'is_mandatory',

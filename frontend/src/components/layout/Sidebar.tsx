@@ -130,7 +130,8 @@ const navigationItems: NavItem[] = [
       { key: 'studentsList', icon: Users, path: '/students', permissionModule: 'students' },
       { key: 'feeTypes', icon: Tag, path: '/fee-types', permissionModule: 'students' },
       { key: 'feeAssignments', icon: Receipt, path: '/student-fee-assignments', permissionModule: 'students' },
-      { key: 'studentPayments', icon: CreditCard, path: '/student-payments', permissionModule: 'student_payments' }
+      { key: 'studentPayments', icon: CreditCard, path: '/student-payments', permissionModule: 'student_payments' },
+      { key: 'studentReport', icon: FileBarChart, path: '/students/report', permissionModule: 'students' },
     ]
   },
   { 

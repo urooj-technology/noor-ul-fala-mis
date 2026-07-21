@@ -13,6 +13,7 @@ import useFetchObjects from '@/api/useFetchObjects';
 import { formatNumber } from '@/lib/formatNumber';
 import ExpenseReportPrint from './ExpenseReportPrint';
 import type { PaymentReportRow } from './paymentReportTypes';
+import { getEmployeePositionLabel, getEmployeePositionOptions } from '@/lib/employee-positions';
 
 type DatePeriod = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom';
 
@@ -23,6 +24,7 @@ type ReportFilters = {
   categoryFilter: string;
   userFilter: string;
   paymentTypeFilter: string;
+  positionFilter: string;
   searchTerm: string;
 };
 
@@ -33,6 +35,7 @@ const defaultFilters = (): ReportFilters => ({
   categoryFilter: '',
   userFilter: '',
   paymentTypeFilter: '',
+  positionFilter: '',
   searchTerm: '',
 });
 
@@ -69,6 +72,7 @@ const ExpenseReportContent = () => {
       filters.categoryFilter,
       filters.userFilter,
       filters.paymentTypeFilter,
+      filters.positionFilter,
       filters.searchTerm,
     ],
     endpoint: 'expenses/payment-report/',
@@ -82,6 +86,7 @@ const ExpenseReportContent = () => {
       ...(filters.categoryFilter && { category: filters.categoryFilter }),
       ...(filters.userFilter && { user: filters.userFilter }),
       ...(filters.paymentTypeFilter && { payment_type: filters.paymentTypeFilter }),
+      ...(filters.positionFilter && { position: filters.positionFilter }),
       ...(filters.searchTerm && { search: filters.searchTerm }),
     },
   });
@@ -166,7 +171,9 @@ const ExpenseReportContent = () => {
             <>
               <div className="font-medium text-xs">{payeeLabel(record)}</div>
               {record.employee_position && (
-                <div className="text-[10px] text-muted-foreground">{record.employee_position}</div>
+                <div className="text-[10px] text-muted-foreground">
+                  {getEmployeePositionLabel(t, record.employee_position)}
+                </div>
               )}
             </>
           )}
@@ -281,6 +288,23 @@ const ExpenseReportContent = () => {
       ),
     },
     {
+      key: 'position',
+      label: t('employees.position'),
+      component: (
+        <Autocomplete
+          options={[
+            { value: '', label: t('expenses.allPositions') },
+            ...getEmployeePositionOptions(t),
+          ]}
+          value={filters.positionFilter}
+          onChange={(v) => setFilters((prev) => ({ ...prev, positionFilter: v }))}
+          getOptionLabel={(o) => o.label}
+          getOptionValue={(o) => o.value}
+          placeholder={t('expenses.filterByPosition')}
+        />
+      ),
+    },
+    {
       key: 'category',
       label: t('expenses.category'),
       component: (
@@ -320,7 +344,7 @@ const ExpenseReportContent = () => {
   };
 
   const hasActiveFilters =
-    filters.categoryFilter || filters.userFilter || filters.paymentTypeFilter || filters.searchTerm;
+    filters.categoryFilter || filters.userFilter || filters.paymentTypeFilter || filters.positionFilter || filters.searchTerm;
 
   return (
     <div className="space-y-6 p-6">

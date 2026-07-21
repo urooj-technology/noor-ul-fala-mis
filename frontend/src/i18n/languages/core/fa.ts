@@ -51,6 +51,7 @@ export const coreFa = {
     balanceSheet: 'ترازنامه',
     students: 'شاگردان',
     studentsList: 'لیست شاگردان',
+    studentReport: 'گزارش پرداخت شاگردان',
     feeTypes: 'انواع فیس',
     classFees: 'فیسهای صنف',
     feeAssignments: 'تخصیص فیس',

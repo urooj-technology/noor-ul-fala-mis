@@ -18,6 +18,7 @@ import useFetchObjects from '@/api/useFetchObjects';
 import { AdvanceFormData, Employee } from '@/types/advance';
 import { Currency } from '@/types/common';
 import { getCurrentYear, getYearsArray, SHAMSI_MONTHS_DARI, SHAMSI_MONTHS_PASHTO, gregorianToShamsi } from '@/utils/calendar';
+import { getEmployeePositionLabel } from '@/lib/employee-positions';
 
 const getCurrentShamsiMonth = () => {
   const now = new Date();
@@ -154,7 +155,7 @@ const AddAdvance = () => {
               <div>
                 <Label htmlFor="employee">{t('advance.employee')} *</Label>
                 <Autocomplete
-                  endpoint="employees" getOptionLabel={(employee) => `${employee.full_name}${employee.position ? ` (${employee.position})` : ''}`} getOptionValue={(employee) => employee.id.toString()}
+                  endpoint="employees" getOptionLabel={(employee) => `${employee.full_name}${employee.position ? ` (${getEmployeePositionLabel(t, employee.position)})` : ''}`} getOptionValue={(employee) => employee.id.toString()}
                   value={formData.employee}
                   onChange={(value) => {
                     setFormData((prev) => ({ ...prev, employee: value?.toString() || '' }));

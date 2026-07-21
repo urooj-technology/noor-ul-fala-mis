@@ -18,6 +18,7 @@ import {
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 import PayrollReportPrint from './PayrollReportPrint';
+import { getEmployeePositionLabel, getEmployeePositionOptions } from '@/lib/employee-positions';
 
 export const PayrollList = () => {
   const { t, language } = useLanguage();
@@ -26,6 +27,7 @@ export const PayrollList = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [employeeFilter, setEmployeeFilter] = useState('');
+  const [positionFilter, setPositionFilter] = useState('all');
   const [yearFilter, setYearFilter] = useState('all');
   const [monthFilter, setMonthFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -43,13 +45,14 @@ export const PayrollList = () => {
     next: string | null;
     previous: string | null;
   }>({
-    queryKey: ['payrolls', currentPage.toString(), pageSize.toString(), searchTerm, employeeFilter, monthFilter, yearFilter],
+    queryKey: ['payrolls', currentPage.toString(), pageSize.toString(), searchTerm, employeeFilter, positionFilter, monthFilter, yearFilter],
     endpoint: 'payrolls',
     params: {
       page: currentPage,
       page_size: pageSize,
       search: searchTerm,
       ...(employeeFilter && { employee: employeeFilter }),
+      ...(positionFilter !== 'all' && { position: positionFilter }),
       ...(monthFilter !== 'all' && { month: monthFilter }),
       ...(yearFilter !== 'all' && { year: yearFilter }),
     },
@@ -103,7 +106,11 @@ export const PayrollList = () => {
           <User className="h-4 w-4 text-gray-400 shrink-0" />
           <div>
             <div className="font-medium text-xs">{value?.full_name || 'N/A'}</div>
-            {value?.position && <div className="text-[11px] text-muted-foreground">{value.position}</div>}
+            {value?.position && (
+              <div className="text-[11px] text-muted-foreground">
+                {getEmployeePositionLabel(t, value.position)}
+              </div>
+            )}
             {value?.phone && <div className="text-[11px] text-muted-foreground">{value.phone}</div>}
           </div>
         </div>
@@ -205,6 +212,13 @@ export const PayrollList = () => {
 
   const filters: FilterOption[] = [
     {
+      key: 'position',
+      label: t('payroll.position'),
+      placeholder: t('payroll.filterByPosition'),
+      width: 'sm:w-44',
+      options: getEmployeePositionOptions(t),
+    },
+    {
       key: 'year',
       label: calendarLabels[calendarType]?.year || t('payroll.year'),
       placeholder: t('payroll.filterByYear'),
@@ -255,7 +269,7 @@ export const PayrollList = () => {
               options={employees.map((e: { id: number; full_name?: string; position?: string }) => ({
                 id: e.id.toString(),
                 value: e.id.toString(),
-                label: `${e.full_name || 'N/A'}${e.position ? ` (${e.position})` : ''}`,
+                label: `${e.full_name || 'N/A'}${e.position ? ` (${getEmployeePositionLabel(t, e.position)})` : ''}`,
               }))}
               getOptionLabel={(opt) => opt.label}
               getOptionValue={(opt) => opt.value}
@@ -266,9 +280,10 @@ export const PayrollList = () => {
           ),
         }]}
         filters={filters}
-        filterValues={{ year: yearFilter, month: monthFilter }}
+        filterValues={{ position: positionFilter, year: yearFilter, month: monthFilter }}
         customFilterValues={{ employee: employeeFilter }}
         onFilterChange={(key, value) => {
+          if (key === 'position') { setPositionFilter(value); setCurrentPage(1); }
           if (key === 'year') { setYearFilter(value); setCurrentPage(1); }
           if (key === 'month') { setMonthFilter(value); setCurrentPage(1); }
         }}
@@ -276,6 +291,7 @@ export const PayrollList = () => {
         clearFiltersLabel={t('payroll.clearFilters')}
         onClearFilters={() => {
           setEmployeeFilter('');
+          setPositionFilter('all');
           setYearFilter('all');
           setMonthFilter('all');
           setSearchTerm('');

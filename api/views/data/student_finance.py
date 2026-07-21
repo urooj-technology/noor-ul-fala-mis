@@ -36,7 +36,7 @@ class FeeTypeViewSet(DataRootViewSet):
     permission_module = 'students'
     queryset = FeeType.objects.all().order_by('name')
     serializer_class = FeeTypeSerializer
-    filterset_fields = ['is_active', 'is_mandatory', 'category']
+    filterset_fields = ['is_active', 'is_mandatory']
     search_fields = ['name', 'name_fa', 'name_ps', 'code', 'description']
 
 
@@ -92,7 +92,6 @@ class StudentFeeAssignmentViewSet(DataRootViewSet):
                 'id': ft.id,
                 'name': ft.name,
                 'code': ft.code,
-                'category': ft.category,
                 'is_mandatory': ft.is_mandatory,
             })
         
@@ -1074,7 +1073,6 @@ class StudentPaymentViewSet(DataRootViewSet):
                 'id': ft.id,
                 'name': ft.name,
                 'code': ft.code,
-                'category': ft.category,
                 'is_mandatory': ft.is_mandatory,
             })
         

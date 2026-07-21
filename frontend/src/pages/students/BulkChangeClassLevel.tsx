@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 
 // Static class level options
 const CLASS_LEVELS = [
+  { id: 'KG', level: '0', name: 'Kindergarten' },
   { id: '1', level: '1', name: 'Class 1' },
   { id: '2', level: '2', name: 'Class 2' },
   { id: '3', level: '3', name: 'Class 3' },

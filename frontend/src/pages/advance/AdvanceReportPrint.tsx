@@ -4,6 +4,7 @@ import { useCalendar } from '@/contexts/CalendarContext';
 import { useFormattedDate } from '@/hooks/useFormattedDate';
 import { SHAMSI_MONTHS_DARI, SHAMSI_MONTHS_PASHTO, formatDateByCalendarType } from '@/utils/calendar';
 import { formatNumber } from '@/lib/formatNumber';
+import { getEmployeePositionLabel } from '@/lib/employee-positions';
 
 interface AdvanceReportPrintProps {
   advances: any[];
@@ -103,7 +104,7 @@ export const AdvanceReportPrint = ({ advances, onClose }: AdvanceReportPrintProp
               <tr key={advance.id} style={{ backgroundColor: index % 2 === 0 ? '#fff' : '#f8fafc' }}>
                 <td style={tdStyle}>{index + 1}</td>
                 <td style={{ ...tdStyle, fontWeight: '500' }}>{advance.employee_details?.full_name || '-'}</td>
-                <td style={tdStyle}>{advance.employee_details?.position || '-'}</td>
+                <td style={tdStyle}>{getEmployeePositionLabel(t, advance.employee_details?.position) || '-'}</td>
                 <td style={tdStyle}>{getMonthLabel(advance.month)} {advance.year}</td>
                 <td style={{ ...tdStyle, textAlign: isRTL ? 'left' : 'right', fontWeight: '600', color: '#ea580c' }}>
                   {formatNumber(advance.amount)} {advance.currency_details?.code || advance.currency || ''}

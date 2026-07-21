@@ -17,6 +17,7 @@ import {
 import useFetchObjects from '@/api/useFetchObjects';
 import useDelete from '@/api/useDelete';
 import AdvanceReportPrint from './AdvanceReportPrint';
+import { getEmployeePositionLabel, getEmployeePositionOptions } from '@/lib/employee-positions';
 
 export const AdvanceList = () => {
   const { t, language } = useLanguage();
@@ -24,6 +25,7 @@ export const AdvanceList = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [employeeFilter, setEmployeeFilter] = useState('all');
+  const [positionFilter, setPositionFilter] = useState('all');
   const [monthFilter, setMonthFilter] = useState('all');
   const [yearFilter, setYearFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -45,13 +47,14 @@ export const AdvanceList = () => {
     next: string | null;
     previous: string | null;
   }>({
-    queryKey: ['advances', currentPage.toString(), pageSize.toString(), searchTerm, employeeFilter, monthFilter, yearFilter],
+    queryKey: ['advances', currentPage.toString(), pageSize.toString(), searchTerm, employeeFilter, positionFilter, monthFilter, yearFilter],
     endpoint: 'advances',
     params: {
       page: currentPage,
       page_size: pageSize,
       search: searchTerm,
       ...(employeeFilter !== 'all' && { employee: employeeFilter }),
+      ...(positionFilter !== 'all' && { position: positionFilter }),
       ...(monthFilter !== 'all' && { month: monthFilter }),
       ...(yearFilter !== 'all' && { year: yearFilter }),
     },
@@ -85,7 +88,11 @@ export const AdvanceList = () => {
           <User className="h-4 w-4 text-gray-400 shrink-0" />
           <div>
             <div className="font-medium text-xs">{value?.full_name || 'N/A'}</div>
-            {value?.position && <div className="text-[11px] text-muted-foreground">{value.position}</div>}
+            {value?.position && (
+              <div className="text-[11px] text-muted-foreground">
+                {getEmployeePositionLabel(t, value.position)}
+              </div>
+            )}
             {value?.phone && <div className="text-[11px] text-muted-foreground">{value.phone}</div>}
           </div>
         </div>
@@ -211,6 +218,13 @@ export const AdvanceList = () => {
       })),
     },
     {
+      key: 'position',
+      label: t('advance.position'),
+      placeholder: t('advance.filterByPosition'),
+      width: 'sm:w-44',
+      options: getEmployeePositionOptions(t),
+    },
+    {
       key: 'month',
       label: t('advance.month'),
       placeholder: t('advance.filterByMonth'),
@@ -255,9 +269,10 @@ export const AdvanceList = () => {
           searchValue={searchTerm}
           onSearch={(value) => { setSearchTerm(value); setCurrentPage(1); }}
           filters={filters}
-          filterValues={{ employee: employeeFilter, month: monthFilter, year: yearFilter }}
+          filterValues={{ employee: employeeFilter, position: positionFilter, month: monthFilter, year: yearFilter }}
           onFilterChange={(key, value) => {
             if (key === 'employee') { setEmployeeFilter(value); setCurrentPage(1); }
+            if (key === 'position') { setPositionFilter(value); setCurrentPage(1); }
             if (key === 'month') { setMonthFilter(value); setCurrentPage(1); }
             if (key === 'year') { setYearFilter(value); setCurrentPage(1); }
           }}
@@ -265,6 +280,7 @@ export const AdvanceList = () => {
           clearFiltersLabel={t('advance.clearFilters')}
           onClearFilters={() => {
             setEmployeeFilter('all');
+            setPositionFilter('all');
             setMonthFilter('all');
             setYearFilter('all');
             setSearchTerm('');

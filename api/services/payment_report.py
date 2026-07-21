@@ -90,8 +90,8 @@ def _row_matches_search(row, term):
     haystack = ' '.join(
         str(row.get(key) or '')
         for key in (
-            'payment_type', 'category_name', 'employee_name', 'user_name',
-            'description', 'currency',
+            'payment_type', 'category_name', 'employee_name', 'employee_position',
+            'user_name', 'description', 'currency',
         )
     ).lower()
     return term in haystack
@@ -103,6 +103,7 @@ def build_payment_report(
     date_from=None,
     date_to=None,
     employee=None,
+    position=None,
     category=None,
     user=None,
     payment_type=None,
@@ -134,6 +135,8 @@ def build_payment_report(
         ).select_related('employee').order_by('-payment_date')
         if employee:
             payroll_qs = payroll_qs.filter(employee_id=employee)
+        if position:
+            payroll_qs = payroll_qs.filter(employee__position=position)
         rows.extend(build_payroll_row(p) for p in payroll_qs)
 
     if include_advance and payment_type in (None, '', 'advance'):
@@ -144,9 +147,12 @@ def build_payment_report(
         ).select_related('employee').order_by('-payment_date')
         if employee:
             advance_qs = advance_qs.filter(employee_id=employee)
+        if position:
+            advance_qs = advance_qs.filter(employee__position=position)
         rows.extend(build_advance_row(a) for a in advance_qs)
 
-    if include_expense and payment_type in (None, '', 'expense'):
+    # Position applies only to employee payments; skip expenses when filtering by position
+    if include_expense and not position and payment_type in (None, '', 'expense'):
         expense_qs = Expense.objects.filter(
             is_deleted=False,
             expense_date__gte=range_start,

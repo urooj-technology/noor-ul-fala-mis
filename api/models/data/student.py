@@ -8,6 +8,7 @@ from decimal import Decimal
 
 # Static class level choices
 CLASS_LEVEL_CHOICES = [
+    ('KG', 'Kindergarten'),
     ('1', 'Class 1'),
     ('2', 'Class 2'),
     ('3', 'Class 3'),
@@ -37,6 +38,11 @@ class Student(BaseModel):
         ('graduated', 'Graduated'),
         ('suspended', 'Suspended'),
         ('transferred', 'Transferred'),
+    ]
+
+    FEE_TYPE_CHOICES = [
+        ('paid', 'Paid Student'),
+        ('free', 'Free Student'),
     ]
 
     TRANSPORTATION_CHOICES = [
@@ -71,6 +77,7 @@ class Student(BaseModel):
     registration_number = models.CharField(max_length=50, unique=True)
     registration_date = models.DateField(default=timezone.now)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    fee_type = models.CharField(max_length=10, choices=FEE_TYPE_CHOICES, default='paid')
 
     # Class & Fee Information
     class_level = models.CharField(
@@ -198,7 +205,7 @@ class Student(BaseModel):
             
             fee_breakdown.append({
                 'fee_type': assignment.fee_type.name if assignment.fee_type else 'Unknown',
-                'fee_category': assignment.fee_type.category if assignment.fee_type else 'other',
+                'fee_category': '',  # category removed from FeeType
                 'amount': str(amount),
                 'currency': assignment.currency,
                 'paid_amount': str(paid),

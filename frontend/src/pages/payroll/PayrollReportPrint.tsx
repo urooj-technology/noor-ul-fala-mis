@@ -4,6 +4,7 @@ import { useCalendar } from '@/contexts/CalendarContext';
 import { useFormattedDate } from '@/hooks/useFormattedDate';
 import { SHAMSI_MONTHS_DARI, SHAMSI_MONTHS_PASHTO, formatDateByCalendarType } from '@/utils/calendar';
 import { formatNumber } from '@/lib/formatNumber';
+import { getEmployeePositionLabel } from '@/lib/employee-positions';
 
 interface PayrollReportPrintProps {
   payrolls: any[];
@@ -115,7 +116,7 @@ export const PayrollReportPrint = ({ payrolls, onClose }: PayrollReportPrintProp
               <tr key={payroll.id} style={{ backgroundColor: index % 2 === 0 ? '#fff' : '#f8fafc' }}>
                 <td style={tdStyle}>{index + 1}</td>
                 <td style={{ ...tdStyle, fontWeight: '500' }}>{payroll.employee_details?.full_name || '-'}</td>
-                <td style={tdStyle}>{payroll.employee_details?.position || '-'}</td>
+                <td style={tdStyle}>{getEmployeePositionLabel(t, payroll.employee_details?.position) || '-'}</td>
                 <td style={tdStyle}>{getMonthLabel(payroll.month)} {payroll.year}</td>
                 <td style={{ ...tdStyle, textAlign: isRTL ? 'left' : 'right', fontWeight: '600', color: '#16a34a' }}>
                   {formatNumber(payroll.salary)} {payroll.currency_details?.code || payroll.currency || ''}

@@ -104,12 +104,22 @@ const AddEmployee = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="position">{t("employees.position")}</Label>
-                <Input
-                  id="position"
-                  value={formData.position}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, position: e.target.value }))}
-                  placeholder={t("employees.positionPlaceholder")}
-                />
+                <Select
+                  value={formData.position || undefined}
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, position: value }))}
+                >
+                  <SelectTrigger id="position">
+                    <SelectValue placeholder={t("employees.positionPlaceholder")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="teacher">{t("employees.positionOptions.teacher")}</SelectItem>
+                    <SelectItem value="finance">{t("employees.positionOptions.finance")}</SelectItem>
+                    <SelectItem value="office_employee">{t("employees.positionOptions.office_employee")}</SelectItem>
+                    <SelectItem value="cleaner">{t("employees.positionOptions.cleaner")}</SelectItem>
+                    <SelectItem value="security">{t("employees.positionOptions.security")}</SelectItem>
+                    <SelectItem value="other">{t("employees.positionOptions.other")}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="address">{t("employees.address")}</Label>

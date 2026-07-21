@@ -14,6 +14,7 @@ import { ReloadIcon } from '@radix-ui/react-icons';
 import { getCurrentYear, getYearsArray, SHAMSI_MONTHS_DARI, SHAMSI_MONTHS_PASHTO, gregorianToShamsi } from '@/utils/calendar';
 import { EmployeeFinanceSummaryCards, EmployeeFinancialSummary } from '@/components/ui/employee-finance-summary';
 import { Employee } from '@/types/employee';
+import { getEmployeePositionLabel } from '@/lib/employee-positions';
 
 const getCurrentShamsiMonth = () => {
   const now = new Date();
@@ -106,7 +107,9 @@ const EmployeeDetails = () => {
                 <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">
                   {employee.full_name || 'Unknown Employee'}
                 </h2>
-                <p className="text-xs text-gray-600 dark:text-gray-400">{employee.position || 'No Position'}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  {getEmployeePositionLabel(t, employee.position) || '-'}
+                </p>
               </div>
             </div>
             <Badge variant={employee.is_active ? 'default' : 'secondary'} className="px-3 py-1">
@@ -182,7 +185,7 @@ const EmployeeDetails = () => {
                     <Briefcase className="h-4 w-4 text-gray-500" />
                     <div>
                       <p className="text-xs text-gray-600 dark:text-gray-400">{t('employees.position')}</p>
-                      <p className="font-medium text-xs">{employee.position}</p>
+                      <p className="font-medium text-xs">{getEmployeePositionLabel(t, employee.position)}</p>
                     </div>
                   </div>
                 )}

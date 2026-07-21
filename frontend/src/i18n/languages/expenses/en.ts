@@ -82,6 +82,8 @@ export const expensesEn = {
   dateFrom: "From Date",
   dateTo: "To Date",
   filterByEmployee: "Filter by employee",
+  filterByPosition: "Filter by position",
+  allPositions: "All Positions",
   allPaymentTypes: "All Types",
   reportTitle: "Payment Report",
   periodOptions: {

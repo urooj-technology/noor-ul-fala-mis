@@ -31,18 +31,8 @@ class FeeType(BaseModel):
     انواع فیسها - قابل مدیریت توسط ادمین
     """
     
-    FEE_CATEGORIES = [
-        ('admission', 'Admission Fee'),
-        ('book', 'Book Fee'),
-        ('uniform', 'Uniform Fee'),
-        ('transportation', 'Transportation Fee'),
-        ('exam', 'Exam Fee'),
-        ('other', 'Other Fee'),
-    ]
-    
     name = models.CharField(max_length=100)
-    code = models.CharField(max_length=20, unique=True)
-    category = models.CharField(max_length=20, choices=FEE_CATEGORIES, default='other')
+    code = models.CharField(max_length=20, unique=True, blank=True)
     description = models.TextField(blank=True, null=True)
     
     is_active = models.BooleanField(default=True)
@@ -55,6 +45,26 @@ class FeeType(BaseModel):
     
     def __str__(self):
         return self.name
+    
+    @staticmethod
+    def generate_code_from_name(name: str) -> str:
+        """Generate a unique-ish uppercase code from a fee type name.
+        e.g. 'Monthly Tuition' -> 'MONTHLYTUITION'"""
+        # Keep only alphanumerics, uppercase, no spaces
+        base = ''.join(ch for ch in name.upper() if ch.isalnum())
+        return base[:20] if base else 'FEE'
+    
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = self.generate_code_from_name(self.name)
+        # Ensure the code is unique (handle collisions from auto-generation)
+        base_code = self.code
+        counter = 1
+        while FeeType.objects.filter(code=self.code).exclude(pk=self.pk).exists():
+            counter += 1
+            suffix = str(counter)
+            self.code = base_code[: 20 - len(suffix)] + suffix
+        super().save(*args, **kwargs)
     
 
 

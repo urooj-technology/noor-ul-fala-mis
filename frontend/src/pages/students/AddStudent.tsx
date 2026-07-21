@@ -27,6 +27,7 @@ const defaultForm: StudentFormData = {
   registration_number: '',
   registration_date: new Date().toISOString().split('T')[0],
   status: 'active',
+  fee_type: 'paid',
   transportation: 'school_bus',
   class_level: '',
   photo: null,

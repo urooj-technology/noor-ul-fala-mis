@@ -12,7 +12,7 @@ class EmployeeViewSet(DataRootViewSet):
     }
     queryset = Employee.objects.all().order_by("-id")
     serializer_class = EmployeeSerializer
-    filterset_fields = ["is_active"]
+    filterset_fields = ["is_active", "position"]
     search_fields = ["full_name", "phone", "position"]
 
     def _month_to_int(self, month):

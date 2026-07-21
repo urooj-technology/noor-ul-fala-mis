@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, Eye, User, GraduationCap, Printer, DollarSign } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, User, GraduationCap, Printer, DollarSign, FileBarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Autocomplete } from '@/components/ui/autocomplete';
@@ -17,6 +17,7 @@ import StudentBulkPrint from './StudentBulkPrint';
 
 // Static class level options
 const CLASS_LEVELS = [
+  { id: 'KG', level: '0', name: 'Kindergarten' },
   { id: '1', level: '1', name: 'Class 1' },
   { id: '2', level: '2', name: 'Class 2' },
   { id: '3', level: '3', name: 'Class 3' },
@@ -48,6 +49,7 @@ interface StudentItem {
   father_name?: string;
   class_level_details?: { name?: string };
   status?: string;
+  fee_type?: string;
   phone?: string;
   total_fee?: string | number;
   total_paid?: string | number;
@@ -198,6 +200,18 @@ export const StudentList = () => {
           <span className="text-xs font-medium">{value?.name || t('students.notSet')}</span>
         </div>
       )
+    },
+    {
+      key: 'fee_type',
+      title: t('students.feeType', 'Fee Type'),
+      render: (value) => {
+        const isPaid = value === 'paid';
+        return (
+          <Badge variant={isPaid ? 'default' : 'secondary'} className="text-xs">
+            {isPaid ? t('students.feeTypeOptions.paid', 'Paid') : t('students.feeTypeOptions.free', 'Free')}
+          </Badge>
+        );
+      }
     },
     {
       key: 'total_fee',
@@ -435,10 +449,16 @@ export const StudentList = () => {
         subtitle={t('students.manageStudents')}
         icon={<User className="h-5 w-5" />}
         headerActions={
-          <PermissionButton module="students" action="create" onClick={() => navigate('/students/add')}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('students.addStudent')}
-          </PermissionButton>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => navigate('/students/report')}>
+              <FileBarChart className="mr-2 h-4 w-4" />
+              {t('students.outstandingReport', 'Student Payment Reports')}
+            </Button>
+            <PermissionButton module="students" action="create" onClick={() => navigate('/students/add')}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t('students.addStudent')}
+            </PermissionButton>
+          </div>
         }
         selectable
         selectedRows={selectedRows}

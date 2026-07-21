@@ -82,6 +82,8 @@ export const expensesPs = {
   dateFrom: "له نیټې",
   dateTo: "تر نیټې",
   filterByEmployee: "د کارمند له مخې فلټر",
+  filterByPosition: "د موقف له مخې فلټر",
+  allPositions: "ټول موقفونه",
   allPaymentTypes: "ټول ډولونه",
   reportTitle: "د تادیو راپور",
   periodOptions: {

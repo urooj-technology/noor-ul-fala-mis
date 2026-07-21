@@ -33,6 +33,7 @@ const EditStudent = () => {
     registration_number: '',
     registration_date: new Date().toISOString().split('T')[0],
     status: 'active',
+    fee_type: 'paid',
     transportation: 'school_bus',
     class_level: '',
     photo: null,
@@ -81,6 +82,7 @@ const EditStudent = () => {
           ? data.registration_date.slice(0, 10)
           : new Date().toISOString().split('T')[0],
         status: data.status || 'active',
+        fee_type: data.fee_type || 'paid',
         transportation: data.transportation || 'school_bus',
         class_level: data.class_level_details ? String(data.class_level_details.id) : '',
         photo: null,

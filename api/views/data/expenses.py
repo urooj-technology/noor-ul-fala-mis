@@ -73,6 +73,7 @@ class ExpenseViewSet(DataRootViewSet):
             date_from=request.query_params.get('date_from'),
             date_to=request.query_params.get('date_to'),
             employee=request.query_params.get('employee'),
+            position=request.query_params.get('position'),
             category=request.query_params.get('category'),
             user=request.query_params.get('user'),
             payment_type=request.query_params.get('payment_type'),
