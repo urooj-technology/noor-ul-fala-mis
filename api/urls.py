@@ -46,7 +46,7 @@ from api.views.data.accounting import (
 # ====================== REPORTS ======================
 from api.views.reports import FinancialReportView
 from api.views.comprehensive_reports import ComprehensiveReportView, DailyReportView
-from api.views.deleted_items import DeletedItemsView, DeletedItemsRestoreView
+from api.views.deleted_items import DeletedItemsView, DeletedItemsRestoreView, DeletedItemsDeleteView
 
 
 # Create a router and register your viewsets with it
@@ -112,4 +112,5 @@ urlpatterns = [
     path("reports/daily/", DailyReportView.as_view(), name='daily-report'),
     path("deleted-items/", DeletedItemsView.as_view(), name='deleted-items'),
     path("deleted-items/restore/", DeletedItemsRestoreView.as_view(), name='deleted-items-restore'),
+    path("deleted-items/delete/", DeletedItemsDeleteView.as_view(), name='deleted-items-delete'),
 ]

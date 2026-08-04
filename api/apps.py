@@ -22,6 +22,10 @@ class ApiConfig(AppConfig):
 
     def ready(self):
         import api.signals  # noqa: F401
+        
+        # Connect file upload signal handlers
+        from api.signals.file_upload_handler import connect_signal_handlers
+        connect_signal_handlers()
 
         post_migrate.connect(
             _ensure_chart_of_accounts_after_migrate,

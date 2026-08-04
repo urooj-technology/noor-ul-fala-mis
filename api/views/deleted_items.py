@@ -4,7 +4,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.permissions import HasManageSettingsPermission
-from api.services.deleted_items_service import list_deleted_items, restore_deleted_items
+from api.services.deleted_items_service import (
+    list_deleted_items,
+    restore_deleted_items,
+    permanently_delete_items,
+)
 
 
 class DeletedItemsView(APIView):
@@ -42,6 +46,31 @@ class DeletedItemsRestoreView(APIView):
                 'restored_count': len(restored),
                 'error_count': len(errors),
                 'restored': restored,
+                'errors': errors,
+            },
+            status=status_code,
+        )
+
+
+class DeletedItemsDeleteView(APIView):
+    """Permanently delete items from trash"""
+    permission_classes = [IsAuthenticated, HasManageSettingsPermission]
+
+    def post(self, request):
+        items = request.data.get('items', [])
+        if not isinstance(items, list) or not items:
+            return Response(
+                {'detail': 'Provide a non-empty items array with model and id.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        deleted, errors = permanently_delete_items(items)
+        status_code = status.HTTP_200_OK if not errors else status.HTTP_207_MULTI_STATUS
+        return Response(
+            {
+                'deleted_count': len(deleted),
+                'error_count': len(errors),
+                'deleted': deleted,
                 'errors': errors,
             },
             status=status_code,

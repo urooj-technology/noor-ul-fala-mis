@@ -56,7 +56,11 @@ const EditStudent = () => {
   });
 
   useEffect(() => {
-    if (isSuccess) navigate('/students');
+    if (isSuccess) {
+      navigate('/students');
+      // Force refetch in StudentList
+      window.dispatchEvent(new Event('student-updated'));
+    }
   }, [isSuccess, navigate]);
 
   useEffect(() => {

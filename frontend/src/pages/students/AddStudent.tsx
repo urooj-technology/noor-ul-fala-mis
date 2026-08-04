@@ -50,7 +50,11 @@ const AddStudent = () => {
   });
 
   useEffect(() => {
-    if (isSuccess) navigate('/students');
+    if (isSuccess) {
+      navigate('/students');
+      // Force refetch in StudentList
+      window.dispatchEvent(new Event('student-updated'));
+    }
   }, [isSuccess, navigate]);
 
   const onFieldChange = <K extends keyof StudentFormData>(key: K, value: StudentFormData[K]) => {

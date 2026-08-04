@@ -239,3 +239,43 @@ def restore_deleted_items(items):
 
     AccountingService.recalculate_all_account_balances()
     return restored, errors
+
+
+def permanently_delete_item(model_key, item_id):
+    """Permanently delete an item from the database"""
+    cfg = DELETED_ITEM_MODELS.get(model_key)
+    if not cfg:
+        raise ValueError(f'Unknown model type: {model_key}')
+    
+    instance = cfg['model'].objects.filter(pk=item_id, is_deleted=True).first()
+    if not instance:
+        raise ValueError(f'Deleted item not found: {model_key} #{item_id}')
+    
+    # Store info before deletion
+    label = cfg['label_fn'](instance)
+    
+    # Permanently delete
+    instance.delete(hard=True)
+    
+    return {'model': model_key, 'id': item_id, 'label': label}
+
+
+def permanently_delete_items(items):
+    """Permanently delete multiple items"""
+    deleted = []
+    errors = []
+    
+    for item in items:
+        model_key = item.get('model')
+        item_id = item.get('id')
+        try:
+            result = permanently_delete_item(model_key, item_id)
+            deleted.append(result)
+        except Exception as exc:
+            errors.append({
+                'model': model_key,
+                'id': item_id,
+                'error': str(exc),
+            })
+    
+    return deleted, errors

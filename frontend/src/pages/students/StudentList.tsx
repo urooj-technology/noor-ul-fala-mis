@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Eye, User, GraduationCap, Printer, DollarSign, FileBarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -96,7 +96,7 @@ export const StudentList = () => {
   const isRegistrationFilterActive = Boolean(registrationPeriodFilter);
   const isCustomPeriodReady = registrationPeriodFilter !== 'custom' || (Boolean(customDateFrom) && Boolean(customDateTo));
 
-  const { data: studentsData, isLoading } = useFetchObjects<PaginatedResponse>({
+  const { data: studentsData, isLoading, refetch } = useFetchObjects<PaginatedResponse>({
     queryKey: [
       'students',
       currentPage.toString(),
@@ -132,6 +132,19 @@ export const StudentList = () => {
     queryKey: ['students'],
     endpoint: 'students'
   });
+
+  // Refetch students when navigating back from add/edit
+  useEffect(() => {
+    const handleStudentUpdated = () => {
+      refetch();
+    };
+    
+    window.addEventListener('student-updated', handleStudentUpdated);
+    
+    return () => {
+      window.removeEventListener('student-updated', handleStudentUpdated);
+    };
+  }, [refetch]);
 
   const students = studentsData?.results || [];
   const totalItems = studentsData?.count || 0;

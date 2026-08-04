@@ -34,6 +34,15 @@ class BaseModel(models.Model):
         self.deleted_by = None
         self.save()
     
+    def delete(self, *args, hard=False, **kwargs):
+        """Override delete to support hard deletes for permanently deleted items"""
+        if hard:
+            # Force hard delete
+            return super().delete(*args, **kwargs)
+        else:
+            # Default to soft delete
+            return self.soft_delete(*args, **kwargs)
+    
     @classmethod
     def active(cls):
         """Return only active (non-deleted) objects"""

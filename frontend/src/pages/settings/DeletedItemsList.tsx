@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { ArchiveRestore, RefreshCw, Trash2 } from 'lucide-react';
+import { ArchiveRestore, RefreshCw, Trash2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import DataTable, { FilterOption, TableAction, TableColumn } from '@/components/ui/data-table';
@@ -42,6 +42,10 @@ interface RestorePayload {
   items: { model: string; id: number }[];
 }
 
+interface DeletePayload {
+  items: { model: string; id: number }[];
+}
+
 const DEFAULT_MODEL_TYPES = [
   { key: 'employee', label: 'Employee' },
   { key: 'payroll', label: 'Payroll' },
@@ -66,6 +70,8 @@ const DeletedItemsList = () => {
   const [selectedRows, setSelectedRows] = useState<Array<string | number>>([]);
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [pendingRestoreItems, setPendingRestoreItems] = useState<RestorePayload['items']>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDeleteItems, setPendingDeleteItems] = useState<DeletePayload['items']>([]);
 
   const { data, isPending, isFetching, isError, error, refetch } = useFetchObjects<DeletedItemsResponse>({
     queryKey: ['deleted-items', modelFilter, searchTerm, String(currentPage), String(pageSize)],
@@ -81,10 +87,16 @@ const DeletedItemsList = () => {
     },
   });
 
-  const { handleAdd, loading: restoring } = useAdd<RestorePayload>({
+  const { handleAdd: handleRestore, loading: restoring } = useAdd<RestorePayload>({
     queryKey: ['deleted-items'],
     endpoint: 'deleted-items/restore',
     customSuccessMessage: t('settings.deletedItems.restoreSuccess'),
+  });
+
+  const { handleAdd: handleDelete, loading: deleting } = useAdd<DeletePayload>({
+    queryKey: ['deleted-items'],
+    endpoint: 'deleted-items/delete',
+    customSuccessMessage: t('settings.deletedItems.deleteSuccess'),
   });
 
   const items = Array.isArray(data?.results) ? data.results : [];
@@ -105,7 +117,7 @@ const DeletedItemsList = () => {
 
   const runRestore = (restoreItems: RestorePayload['items']) => {
     if (!restoreItems.length) return;
-    handleAdd({ items: restoreItems });
+    handleRestore({ items: restoreItems });
     setRestoreDialogOpen(false);
     setPendingRestoreItems([]);
     setSelectedRows([]);
@@ -115,6 +127,20 @@ const DeletedItemsList = () => {
   const openRestoreDialog = (restoreItems: RestorePayload['items']) => {
     setPendingRestoreItems(restoreItems);
     setRestoreDialogOpen(true);
+  };
+
+  const runDelete = (deleteItems: DeletePayload['items']) => {
+    if (!deleteItems.length) return;
+    handleDelete({ items: deleteItems });
+    setDeleteDialogOpen(false);
+    setPendingDeleteItems([]);
+    setSelectedRows([]);
+    setTimeout(() => refetch(), 400);
+  };
+
+  const openDeleteDialog = (deleteItems: DeletePayload['items']) => {
+    setPendingDeleteItems(deleteItems);
+    setDeleteDialogOpen(true);
   };
 
   const columns: TableColumn<DeletedItem>[] = [
@@ -156,6 +182,14 @@ const DeletedItemsList = () => {
       onClick: (record) => openRestoreDialog([{ model: record.model, id: record.id }]),
       variant: 'outline',
       tooltip: t('settings.deletedItems.restore'),
+    },
+    {
+      key: 'delete',
+      label: t('settings.deletedItems.deletePermanently'),
+      icon: <XCircle className="h-4 w-4" />,
+      onClick: (record) => openDeleteDialog([{ model: record.model, id: record.id }]),
+      variant: 'destructive',
+      tooltip: t('settings.deletedItems.deletePermanently'),
     },
   ];
 
@@ -214,10 +248,16 @@ const DeletedItemsList = () => {
               {t('common.refresh', 'Refresh')}
             </Button>
             {selectedItems.length > 0 && (
-              <Button onClick={() => openRestoreDialog(selectedItems)} disabled={restoring}>
-                <ArchiveRestore className="mr-2 h-4 w-4" />
-                {t('settings.deletedItems.restoreSelected')} ({selectedItems.length})
-              </Button>
+              <>
+                <Button onClick={() => openRestoreDialog(selectedItems)} disabled={restoring}>
+                  <ArchiveRestore className="mr-2 h-4 w-4" />
+                  {t('settings.deletedItems.restoreSelected')} ({selectedItems.length})
+                </Button>
+                <Button variant="destructive" onClick={() => openDeleteDialog(selectedItems)} disabled={deleting}>
+                  <XCircle className="mr-2 h-4 w-4" />
+                  {t('settings.deletedItems.deleteSelected')} ({selectedItems.length})
+                </Button>
+              </>
             )}
           </div>
         }
@@ -244,6 +284,15 @@ const DeletedItemsList = () => {
             onClick: (rows) => {
               const payload = rows.map((row) => ({ model: row.model, id: row.id }));
               openRestoreDialog(payload);
+            },
+          },
+          {
+            key: 'delete-bulk',
+            label: t('settings.deletedItems.deleteSelected'),
+            icon: <XCircle className="h-4 w-4" />,
+            onClick: (rows) => {
+              const payload = rows.map((row) => ({ model: row.model, id: row.id }));
+              openDeleteDialog(payload);
             },
           },
         ]}
@@ -286,6 +335,35 @@ const DeletedItemsList = () => {
               disabled={restoring}
             >
               {restoring ? t('settings.deletedItems.restoring') : t('settings.deletedItems.restore')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">
+              {t('settings.deletedItems.deleteTitle')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('settings.deletedItems.deleteConfirm').replace(
+                '{{count}}',
+                String(pendingDeleteItems.length)
+              )}
+            </AlertDialogDescription>
+            <p className="text-sm text-muted-foreground mt-2">
+              {t('settings.deletedItems.deleteWarning', 'This action cannot be undone. The items will be permanently deleted from the database.')}
+            </p>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => runDelete(pendingDeleteItems)}
+              disabled={deleting}
+              className="bg-destructive hover:bg-destructive-hover"
+            >
+              {deleting ? t('settings.deletedItems.deleting') : t('settings.deletedItems.deletePermanently')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

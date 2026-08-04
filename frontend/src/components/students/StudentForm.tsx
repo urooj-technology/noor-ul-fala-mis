@@ -139,6 +139,18 @@ export const StudentForm: React.FC<StudentFormProps> = ({
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
+      // Save current step data before moving to next step
+      const submitData = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== '') {
+          submitData.append(key, value as string | Blob);
+        }
+      });
+      // Trigger save without validation
+      if (onSubmit) {
+        const dummyEvent = { preventDefault: () => {} } as React.FormEvent;
+        onSubmit(dummyEvent);
+      }
       setCurrentStep(currentStep + 1);
     }
   };
@@ -155,6 +167,18 @@ export const StudentForm: React.FC<StudentFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    onSubmit(e);
+  };
+
+  const handleSaveDraft = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Save without validation - just submit what we have
+    const submitData = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        submitData.append(key, value as string | Blob);
+      }
+    });
     onSubmit(e);
   };
 
@@ -238,7 +262,10 @@ export const StudentForm: React.FC<StudentFormProps> = ({
                   <div className="relative">
                     <div
                       className="h-28 w-28 rounded-full border border-border/60 flex items-center justify-center cursor-pointer overflow-hidden bg-background"
-                      onClick={() => photoRef.current?.click()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        photoRef.current?.click();
+                      }}
                     >
                       {previews.photo || existingFiles.photo ? (
                         <img
@@ -258,12 +285,19 @@ export const StudentForm: React.FC<StudentFormProps> = ({
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={(e) => onFileChange('photo', e.target.files?.[0] || null)}
+                      onChange={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onFileChange('photo', e.target.files?.[0] || null);
+                      }}
                     />
                     {(previews.photo || existingFiles.photo) && (
                       <button
                         type="button"
-                        onClick={() => onClearFile('photo')}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onClearFile('photo');
+                        }}
                         className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-white flex items-center justify-center"
                       >
                         <X className="h-3 w-3" />
@@ -638,8 +672,8 @@ export const StudentForm: React.FC<StudentFormProps> = ({
             )}
 
             {/* Navigation Buttons */}
-            <div className="flex justify-between pt-4 border-t">
-              <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t">
+              <div className="flex gap-3 w-full sm:w-auto">
                 <Button
                   type="button"
                   variant="outline"
@@ -661,29 +695,92 @@ export const StudentForm: React.FC<StudentFormProps> = ({
                   </Button>
                 )}
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-3 w-full sm:w-auto">
                 {currentStep < totalSteps ? (
-                  <Button
-                    type="button"
-                    onClick={handleNext}
-                    disabled={loading}
-                    className="h-10 px-6"
-                  >
-                    {t('common.next', 'Next')}
-                  </Button>
+                  <>
+                    {/* Save button for all steps in edit mode */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        // Save current step data
+                        const submitData = new FormData();
+                        Object.entries(formData).forEach(([key, value]) => {
+                          if (value !== null && value !== undefined && value !== '') {
+                            submitData.append(key, value as string | Blob);
+                          }
+                        });
+                        onSubmit(e as unknown as React.FormEvent);
+                      }}
+                      disabled={loading}
+                      className="h-10 px-6"
+                    >
+                      {loading ? (
+                        <>
+                          <RotateCw className="animate-spin mr-2 h-4 w-4" />
+                          {t('common.saving', 'Saving...')}
+                        </>
+                      ) : (
+                        t('common.save', 'Save')
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleNext}
+                      disabled={loading}
+                      className="h-10 px-6"
+                    >
+                      {t('common.next', 'Next')}
+                    </Button>
+                  </>
                 ) : (
-                  <Button type="submit" disabled={loading} className="h-10 px-6">
-                    {loading ? (
-                      <>
-                        <RotateCw className="animate-spin mr-2 h-4 w-4" />
-                        {isAdd ? t('common.adding') : t('common.updating')}
-                      </>
-                    ) : isAdd ? (
-                      t('common.add')
-                    ) : (
-                      t('common.update')
-                    )}
-                  </Button>
+                  <>
+                    {/* Save button - always enabled, doesn't require validation */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        // Save without validation
+                        const submitData = new FormData();
+                        Object.entries(formData).forEach(([key, value]) => {
+                          if (value !== null && value !== undefined && value !== '') {
+                            submitData.append(key, value as string | Blob);
+                          }
+                        });
+                        onSubmit(e as unknown as React.FormEvent);
+                      }}
+                      disabled={loading}
+                      className="h-10 px-6"
+                    >
+                      {loading ? (
+                        <>
+                          <RotateCw className="animate-spin mr-2 h-4 w-4" />
+                          {t('common.saving', 'Saving...')}
+                        </>
+                      ) : (
+                        t('common.save', 'Save')
+                      )}
+                    </Button>
+                    {/* Update button - requires validation */}
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="h-10 px-6"
+                    >
+                      {loading ? (
+                        <>
+                          <RotateCw className="animate-spin mr-2 h-4 w-4" />
+                          {isAdd ? t('common.adding') : t('common.updating')}
+                        </>
+                      ) : isAdd ? (
+                        t('common.add')
+                      ) : (
+                        t('common.update')
+                      )}
+                    </Button>
+                  </>
                 )}
               </div>
             </div>

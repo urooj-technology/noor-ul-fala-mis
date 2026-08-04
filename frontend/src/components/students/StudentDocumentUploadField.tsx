@@ -132,13 +132,19 @@ export function StudentDocumentUploadField({
           type="file"
           accept={accept}
           className="hidden"
-          onChange={handleInputChange}
+          onChange={(e) => {
+            e.stopPropagation();
+            validateAndSet(e.target.files?.[0] || null);
+          }}
         />
 
         {!hasFile ? (
           <button
             type="button"
-            onClick={() => inputRef.current?.click()}
+            onClick={(e) => {
+              e.stopPropagation();
+              inputRef.current?.click();
+            }}
             className="w-full flex flex-col items-center justify-center gap-3 px-4 py-8 text-center"
           >
             <div className="h-12 w-12 rounded-full bg-background border flex items-center justify-center text-muted-foreground">
@@ -192,7 +198,10 @@ export function StudentDocumentUploadField({
                   variant="outline"
                   size="sm"
                   className="h-8"
-                  onClick={() => inputRef.current?.click()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    inputRef.current?.click();
+                  }}
                 >
                   <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                   {t('students.replaceFile', 'Replace')}

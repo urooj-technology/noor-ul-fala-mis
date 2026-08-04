@@ -12,6 +12,9 @@ from api.services.accounting_service import AccountingService
 from api.models.data.choices import DEFAULT_CURRENCY
 from api.utils.currency import normalize_currency
 
+# Import file upload signal handlers
+from api.signals.file_upload_handler import connect_signal_handlers
+
 
 def _adj_reference(base_ref, instance):
     ts = instance.updated_at.strftime('%Y%m%d%H%M%S%f')
